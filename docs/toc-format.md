@@ -85,7 +85,6 @@ The script never adds these to the Files table:
 | Filename | Reason |
 |----------|--------|
 | `CONTEXT_TOC.md` | This file itself |
-| `CONTEXT_INSTRUCTIONS.md` | Inlined into the Instructions section |
-| `SYSTEM.md` | One-time system explanation; not a context document |
+| `CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` | Entry point file; not a context document |
 | Files matching `ignore` list | Explicitly excluded by config |
 | Files starting with `_` | Excluded by `skip_underscore: true` (default) |

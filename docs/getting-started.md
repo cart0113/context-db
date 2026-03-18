@@ -6,8 +6,8 @@
 your_project/
 └── CONTEXT/
     ├── CONTEXT.yml
-    ├── CONTEXT_INSTRUCTIONS.md   (optional)
-    └── SYSTEM.md                 (optional, first-time readers only)
+    ├── CONTEXT_MD_SYSTEM_INSTRUCTIONS.md
+    └── CONTEXT_TOC.md                     (will be generated)
 ```
 
 You can copy the example structure to get started:
@@ -79,11 +79,23 @@ cp hooks/pre-commit your_project/.git/hooks/pre-commit
 chmod +x your_project/.git/hooks/pre-commit
 ```
 
-## 6. Tell your LLM about the system (optional)
+## 6. Wire up the agent entry point
 
-Add a `CONTEXT/SYSTEM.md` file explaining the context-md system to any LLM that
-hasn't seen it before. This file is never indexed — it exists only to be read once.
-See `CONTEXT/SYSTEM.md` in this repository for a template.
+The `CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` file is only useful if agents know to read it.
+Choose one:
+
+**As a skill** (Claude Code, Codex, etc.):
+```bash
+ln -s /path/to/context-md/skills/context-md.md your_project/skills/context-md.md
+```
+
+**As a Cursor rule:**
+```bash
+mkdir -p your_project/.cursor/rules
+cp /path/to/context-md/templates/cursor-rule.mdc your_project/.cursor/rules/context-md.mdc
+```
+
+Copy the template and customize the "About This Project" section for your codebase.
 
 ## Organizing subfolders
 

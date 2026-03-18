@@ -15,26 +15,31 @@ Every project (or module) that wants to share context with an LLM includes a `CO
 ```
 my_project/
 ├── CONTEXT/
-│   ├── SYSTEM.md              ← one-time system explanation (never in TOC)
-│   ├── CONTEXT_TOC.md         ← entry point: discoverable index of all context
-│   ├── project_overview.md
-│   ├── architecture.md
+│   ├── CONTEXT.yml                        ← config: title, description, indexing options
+│   ├── CONTEXT_MD_SYSTEM_INSTRUCTIONS.md  ← entry point: system + project guidance
+│   ├── CONTEXT_TOC.md                     ← auto-generated discovery index
+│   ├── architecture.md                    ← context document
 │   └── CODING_STYLE/
+│       ├── CONTEXT.yml
 │       ├── CONTEXT_TOC.md
-│       └── defensive_coding.md
+│       └── conventions.md
 └── payments_module/
     └── CONTEXT/
+        ├── CONTEXT.yml
         └── CONTEXT_TOC.md
 ```
 
-`CONTEXT_TOC.md` is a lightweight index — front matter descriptions from every `.md` file and subfolder are collected into tables. An LLM reads the TOC to understand what context exists, then fetches only what it needs.
+The agent entry point is `CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` — a cursor rule or skill
+points the LLM here at session start. That file explains the context-md system and
+contains project-specific guidance. It then directs the LLM to `CONTEXT_TOC.md`, the
+auto-generated index of every available context resource.
 
 ## Key Features
 
+- **Clear entry point** — `CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` is the one file agents are directed to; it explains the system and orients them to the project
 - **Progressive discovery** — LLMs read a single TOC first; full documents are fetched only when relevant
 - **Modular** — any `CONTEXT/` subtree can be a symlink to a shared resource from another repo
-- **Auto-generated TOC** — `bin/build_toc.sh` rebuilds TOC tables from front matter; no manual maintenance
-- **Config-driven** — each TOC controls depth, ignore lists, and eager-read overrides
+- **Auto-generated TOC** — `bin/build_toc.sh` rebuilds the index from `CONTEXT.yml` configs and file front matter; no manual maintenance
 - **Portable** — pure bash (3.2+) script; works on any Unix system with no extra dependencies
 
 ## Quick Start
@@ -43,60 +48,61 @@ my_project/
 # 1. Copy the template into your project
 cp -r examples/my_project/CONTEXT your_project/CONTEXT
 
-# 2. Edit CONTEXT/CONTEXT_TOC.md front matter and instructions section
+# 2. Edit CONTEXT/CONTEXT.yml (title, description, options)
+# 3. Edit CONTEXT/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md (project-specific guidance)
+# 4. Add .md files with front matter to CONTEXT/
 
-# 3. Add .md files with front matter to CONTEXT/
-
-# 4. Build the TOC
+# 5. Build the TOC
 bin/build_toc.sh your_project/CONTEXT/
 
-# 5. Optional: wire up the git pre-commit hook
+# 6. Wire up the pre-commit hook
 cp hooks/pre-commit your_project/.git/hooks/pre-commit
 chmod +x your_project/.git/hooks/pre-commit
 ```
 
-## CONTEXT_TOC.md Format
+## CONTEXT.yml Format
 
-```markdown
----
+```yaml
 title: My Project Context
 description: Context for the payments service — architecture and coding conventions
----
 
-## Instructions for AI Assistants
-
-...your custom instructions...
-
-## Configuration
-<!-- CONTEXT_CONFIG
 depth: 1
 skip_underscore: true
-ignore: scratch, old_docs
-eager_read: CODING_STYLE
--->
-
-## Subfolders
-<!-- CONTEXT_FOLDERS:START -->
-<!-- CONTEXT_FOLDERS:END -->
-
-## Files
-<!-- CONTEXT_FILES:START -->
-<!-- CONTEXT_FILES:END -->
+ignore: []
+read_only: []      # Include in TOC but skip rebuilding (for symlinked external resources)
+eager_read: []     # Tell LLM to always load these when reading this TOC
 ```
 
-The `CONTEXT_FOLDERS` and `CONTEXT_FILES` sections are auto-generated from the `title` and `description` fields in each resource's front matter.
+## Wiring Up the Entry Point
 
-## Documentation
+### As a skill (Claude Code, Codex, etc.)
 
-Full documentation, specification, and a blog post explaining the rationale are available at [cart0113.github.io/context-md](https://cart0113.github.io/context-md).
+Symlink `skills/context-md.md` into your project's skills directory:
+
+```bash
+ln -s /path/to/context-md/skills/context-md.md your_project/skills/context-md.md
+```
+
+### As a Cursor rule
+
+Copy and customize `templates/cursor-rule.mdc` into your project:
+
+```bash
+mkdir -p your_project/.cursor/rules
+cp /path/to/context-md/templates/cursor-rule.mdc your_project/.cursor/rules/context-md.mdc
+```
 
 ## Tools
 
 | Script | Description |
 |--------|-------------|
-| `bin/build_toc.sh` | Rebuilds auto-generated TOC sections; run from project root or pass a specific path |
-| `bin/format_md.py` | Formats markdown tables to fixed-width alignment |
-| `hooks/pre-commit` | Example git pre-commit hook that runs `build_toc.sh` automatically |
+| `bin/build_toc.sh` | Rebuilds all `CONTEXT_TOC.md` files; run from project root or pass a specific path |
+| `bin/format_md.py` | Formats Markdown tables to fixed-width column alignment |
+| `hooks/pre-commit` | Example pre-commit hook that runs `build_toc.sh` automatically |
+
+## Documentation
+
+Full documentation and design rationale at [cart0113.github.io/context-md](https://cart0113.github.io/context-md).
 
 ## License
 
