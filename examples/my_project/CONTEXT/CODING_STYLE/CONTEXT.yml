@@ -1,0 +1,8 @@
+title: Coding Style
+description: Coding conventions and style guidelines for this project
+
+depth: 1
+skip_underscore: true
+ignore: []
+read_only: []
+eager_read: []

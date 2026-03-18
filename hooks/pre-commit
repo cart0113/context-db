@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+#
+# pre-commit — Rebuild CONTEXT_TOC.md files before each commit.
+#
+# Install:
+#   cp hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# The hook runs build_toc.sh, then stages any CONTEXT_TOC.md files that were
+# modified so they are included in the commit automatically.
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+BUILD_TOC="${REPO_ROOT}/bin/build_toc.sh"
+
+if [[ ! -x "$BUILD_TOC" ]]; then
+    echo "context-md: build_toc.sh not found or not executable — skipping TOC rebuild" >&2
+    exit 0
+fi
+
+cd "$REPO_ROOT"
+"$BUILD_TOC"
+
+# Stage any updated CONTEXT_TOC.md files so they land in this commit
+while IFS= read -r -d '' toc; do
+    git add "$toc" 2>/dev/null || true
+done < <(find . -name "CONTEXT_TOC.md" -not -path "*/.git/*" -print0)

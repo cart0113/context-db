@@ -1,0 +1,8 @@
+title: My Project Context
+description: Context for my_project — architecture, API conventions, and coding style
+
+depth: 1
+skip_underscore: true
+ignore: []
+read_only: []
+eager_read: []
