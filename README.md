@@ -2,7 +2,7 @@
 
 A portable standard for hierarchically organizing context as Markdown files, with auto-generated tables of contents for progressive disclosure.
 
-An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every subfolder and file, and fetches only what's relevant to the current task.
+An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every subfolder and file, and fetches only what's relevant to the current task. Agents don't read the description files directly — they read the TOC, then fetch individual documents.
 
 ## Structure
 
@@ -25,30 +25,37 @@ CONTEXT/
     └── git_standards_toc.md
 ```
 
-Every folder that has a description file is a context node. The script generates a `<folder>_toc.md` alongside it.
+Generated TOC (`CONTEXT_toc.md`):
+
+```markdown
+## Subfolders
+
+- The context-md standard — design decisions and tooling
+  [context_md_project/](context_md_project/context_md_project_toc.md)
+- Git workflow and commit conventions *(read-only)*
+  [git_standards/](git_standards/git_standards_toc.md)
+```
 
 ## Rules
 
-1. **Description file.** A folder is recognized as a context node if it contains any of: `<folder_name>.md`, `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`. The file must have YAML front matter with a `description` key.
+1. **Description file.** A folder is a context node if it contains any of: `<folder_name>.md`, `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`. The file needs only YAML front matter with a `description` key.
 
-2. **Context documents.** Individual `.md` files in a folder use the same format — YAML front matter with `description`. The description appears in the parent's `_toc.md`.
+2. **Context documents.** Individual `.md` files use the same format — YAML front matter with `description`. The description appears in the parent's `_toc.md`.
 
 3. **TOC generation.** `bin/build_toc.sh` walks the directory tree and generates `<folder>_toc.md` for each context node. With `--check`, it only rebuilds when source files are newer than the existing TOC.
 
-4. **Symlinks.** Symlinked folders appear in the parent's TOC with their description, marked *(read-only)*. The script never writes into a folder whose real path is outside the project root.
+4. **Symlinks.** Symlinked folders appear in the parent's TOC marked *(read-only)*. The script never writes into a folder whose real path is outside the project root.
 
 5. **Skipping.** Underscore-prefixed (`_draft/`) and dot-prefixed (`.hidden/`) names are always skipped.
 
 ## File Format
 
-Description file for a folder:
+Description file (`<folder>.md`) — only the description, nothing else:
 
 ```markdown
 ---
 description: Architecture decisions and coding conventions
 ---
-
-Optional prose guidance for the LLM.
 ```
 
 Context document:
@@ -110,7 +117,7 @@ context-md takes the good parts of skills (standard structure, portability via s
 
 ## Future
 
-A `<folder_name>.cfg` system for per-folder configuration (ignore lists, symlink follow rules) is a planned extension. For now, the rules above cover the core behavior.
+A `<folder_name>.cfg` system for per-folder configuration (ignore lists, symlink follow rules) is under consideration.
 
 ## License
 
