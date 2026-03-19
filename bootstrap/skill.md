@@ -1,22 +1,16 @@
 ---
 name: context-md
 description: >
-  Read CONTEXT/*_toc.md files for project context discovery. These auto-generated
-  indexes describe available background knowledge. Read descriptions to decide what
-  is relevant, then fetch only what you need.
+  Hierarchical project context with progressive disclosure. Start at
+  CONTEXT/CONTEXT_toc.md and follow paths to learn what you need.
 author: cart0113/context-md
 version: 1.0.0
 ---
 
-This project uses **context-md** to organize background knowledge.
+This project has background context organized in `CONTEXT/`.
 
-When you need to understand this project:
-
-1. Read `CONTEXT/CONTEXT_toc.md` — the auto-generated root index.
-   It lists subfolders and files with one-line descriptions.
-2. Scan descriptions to decide what is relevant to your current task.
-3. Fetch only what you need — do not load all context upfront.
-4. For subfolders, read that folder's `*_toc.md` before diving into individual files.
-
-Each `*_toc.md` is generated from the YAML front matter of context documents and
-description files. They are rebuilt by `bin/build_toc.sh`.
+Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
+Use the descriptions to decide what is relevant to your current task — skip
+everything that isn't. For entries you do need:
+- If the path ends in `_toc.md`, it's a subfolder — read that TOC and repeat.
+- Otherwise, it's a document — read it.
