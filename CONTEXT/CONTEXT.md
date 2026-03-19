@@ -1,1 +1,3 @@
+---
 description: Context for the context-md project — the standard itself, design decisions, and tooling
+---

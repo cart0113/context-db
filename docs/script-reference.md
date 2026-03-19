@@ -2,27 +2,26 @@
 
 ## build_toc.sh
 
-Generates TOC files from `context.cfg` / `<folder>.md` configs and context document
-front matter.
+Generates `<folder>_toc.md` files by walking context directories.
 
 ### Usage
 
 ```bash
 bin/build_toc.sh                    # Build all
-bin/build_toc.sh CONTEXT/           # Build one directory
+bin/build_toc.sh CONTEXT/           # Build one directory tree
 bin/build_toc.sh --check            # Only rebuild if sources changed
 ```
 
 ### Behavior
 
-- Finds root context nodes (directories containing `context.cfg`)
-- Recurses into subdirectories containing `<foldername>.md`
-- Skips symlinked directories (reads them for descriptions but never writes to them)
-- With `--check`: compares file modification times, skips up-to-date TOCs
+- Finds root context nodes (directories with a description file whose parent has none)
+- Recurses into subdirectories that have description files
+- Reads symlinked folders for descriptions but never writes into them
+- Skips underscore-prefixed and dot-prefixed names
 
 ### Requirements
 
-Bash 3.2+, awk, find, stat — all standard on macOS and Linux.
+Bash 3.2+, awk, find, stat — standard on macOS and Linux.
 
 ---
 
@@ -37,9 +36,3 @@ python3 bin/format_md.py file.md           # Format in place
 python3 bin/format_md.py file.md -o out    # Write to output
 cat file.md | python3 bin/format_md.py -   # Stdin to stdout
 ```
-
-### What it does
-
-Finds consecutive lines starting with `|`, calculates max column widths, and
-rewrites with consistent padding. Preserves alignment markers (`:---`, `---:`,
-`:---:`).

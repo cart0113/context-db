@@ -1,69 +1,20 @@
 # Specification
 
-## File Layout
+## Context Nodes
 
-A context hierarchy starts with a root directory containing `context.cfg`:
+A context node is any directory containing a recognized description file:
+- `<foldername>.md` (preferred)
+- `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`
 
-```
-CONTEXT/
-├── context.cfg              (required)  root config — plain YAML
-├── context_toc.md           (generated) discovery index
-├── my_project/
-│   ├── my_project.md        (required)  subfolder description
-│   ├── my_project_toc.md    (generated) subfolder index
-│   ├── architecture.md      (optional)  context document
-│   └── CODING/
-│       ├── CODING.md
-│       ├── CODING_toc.md
-│       └── defensive.md
-```
+The description file must have YAML front matter with a `description` key:
 
-## Root config: context.cfg
-
-Plain YAML file with at minimum a `description`:
-
-```yaml
-description: One-line summary (appears as the root TOC description)
-```
-
-Optional config fields:
-
-```yaml
-description: Payments service context
-ignore: [scratch, old_docs]
-follow_symlinks: [CODING]
-```
-
-| Field | Default | Description |
-|-------|---------|-------------|
-| `description` | *(required)* | Summary shown in the root `context_toc.md` |
-| `ignore` | `[]` | Names to exclude from the TOC and skip during walk |
-| `follow_symlinks` | `[]` | Symlinked folders to recurse into |
-
-## Subfolder description: `<folder>.md`
-
-Contains a fenced YAML `description` block, optionally followed by prose:
-
-~~~markdown
-```yaml description
+```markdown
+---
 description: One-line summary (appears in parent's TOC)
+---
+
+Optional prose.
 ```
-
-Optional prose guidance for LLMs.
-~~~
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `description` | string | Summary shown in parent's Subfolders table |
-
-An optional `config` block controls walk behavior for that subfolder:
-
-~~~markdown
-```yaml config
-ignore: [scratch]
-follow_symlinks: [CODING]
-```
-~~~
 
 ## Context Documents
 
@@ -79,23 +30,19 @@ Content...
 
 ## Discovery Rules
 
-When building a TOC, the script scans:
+When building a `<folder>_toc.md`, the script scans:
 
-**Subfolders** — immediate subdirectories containing `<subfoldername>.md`.
+**Subfolders** — immediate subdirectories containing a recognized description file.
 
-**Files** — `.md` files in the directory, excluding `<folder>.md`,
-`<folder>_toc.md`, `context_toc.md`, and anything in the ignore list or
-underscore/dot-prefixed.
+**Files** — `.md` files in the directory, excluding the description file, the `_toc.md`, and any underscore/dot-prefixed names.
 
 ## Symlinks
 
-Symlinked directories are read (to get descriptions) but never written to.
-They are automatically marked *(read-only)* in the TOC. Use `follow_symlinks`
-in the parent's config to recurse into a symlinked directory.
+Symlinked directories are read (to get descriptions) but never written to. They appear as *(read-only)* in the TOC.
 
 ## Change Detection
 
-`build_toc.sh --check` only rebuilds a TOC when any of these are newer:
-- The `context.cfg` or `<folder>.md` file
+`build_toc.sh --check` only rebuilds a `_toc.md` when any source file is newer:
+- The description file
 - Any `.md` file in the directory
-- Any `<subfolder>.md` in a subdirectory
+- Any description file in a subdirectory

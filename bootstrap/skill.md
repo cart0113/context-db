@@ -5,18 +5,18 @@ description: >
   indexes describe available background knowledge. Read descriptions to decide what
   is relevant, then fetch only what you need.
 author: cart0113/context-md
-version: 2.0.0
+version: 1.0.0
 ---
 
 This project uses **context-md** to organize background knowledge.
 
 When you need to understand this project:
 
-1. Read `CONTEXT/context_toc.md` — the auto-generated index of all available context.
+1. Read `CONTEXT/CONTEXT_toc.md` — the auto-generated root index.
    It lists subfolders and files with one-line descriptions.
 2. Scan descriptions to decide what is relevant to your current task.
 3. Fetch only what you need — do not load all context upfront.
 4. For subfolders, read that folder's `*_toc.md` before diving into individual files.
 
-Each `*_toc.md` is generated from the front matter of context documents and the
-description blocks in `<folder>.md` files. They are rebuilt by `bin/build_toc.sh`.
+Each `*_toc.md` is generated from the YAML front matter of context documents and
+description files. They are rebuilt by `bin/build_toc.sh`.
