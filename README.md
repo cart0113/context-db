@@ -30,10 +30,10 @@ Generated TOC (`CONTEXT_toc.md`):
 ```markdown
 ## Subfolders
 
-- The context-md standard — design decisions and tooling
-  [context_md_project/](context_md_project/context_md_project_toc.md)
-- Git workflow and commit conventions *(read-only)*
-  [git_standards/](git_standards/git_standards_toc.md)
+- description: The context-md standard — design decisions and tooling
+  path: context_md_project/context_md_project_toc.md
+- description: Git workflow and commit conventions *(read-only)*
+  path: git_standards/git_standards_toc.md
 ```
 
 ## Rules

@@ -7,18 +7,18 @@
 ```markdown
 ## Subfolders
 
-- Shared coding standards *(read-only)*
-  [coding/](coding/coding_toc.md)
-- Schema and migration patterns
-  [database/](database/database_toc.md)
+- description: Shared coding standards *(read-only)*
+  path: coding/coding_toc.md
+- description: Schema and migration patterns
+  path: database/database_toc.md
 
 ## Files
 
-- System components and data flow
-  [architecture.md](architecture.md)
+- description: System components and data flow
+  path: architecture.md
 ```
 
-Each entry is a bullet with the description on the first line and the link on the second. Symlinked folders are marked *(read-only)*.
+Each entry has `description:` on the first line and `path:` on the second. Symlinked folders are marked *(read-only)*.
 
 ## Sections
 

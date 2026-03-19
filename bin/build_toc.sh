@@ -126,7 +126,7 @@ build_dir() {
         [ -z "$sdesc" ] && sdesc="(no description)"
         [ -L "${subdir%/}" ] && ro_flag=" *(read-only)*"
 
-        folder_lines="${folder_lines}"$'\n'"- ${sdesc}${ro_flag}"$'\n'"  [${subname}/](${subname}/${subname}_toc.md)"
+        folder_lines="${folder_lines}"$'\n'"- description: ${sdesc}${ro_flag}"$'\n'"  path: ${subname}/${subname}_toc.md"
     done
 
     # File entries (skip the description file and the toc file)
@@ -142,7 +142,7 @@ build_dir() {
         fdesc=$(read_desc "$md_file")
         [ -z "$fdesc" ] && fdesc="(no description)"
 
-        file_lines="${file_lines}"$'\n'"- ${fdesc}"$'\n'"  [${fname}](${fname})"
+        file_lines="${file_lines}"$'\n'"- description: ${fdesc}"$'\n'"  path: ${fname}"
     done
 
     # Write
