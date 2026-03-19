@@ -6,47 +6,44 @@ An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every 
 
 ## Example
 
-A typical project might look like this:
+A payments service with shared coding and git standards (see `example/`):
 
 ```
-CONTEXT/
-├── CONTEXT.md                        ← description for this folder
-├── CONTEXT_toc.md                    ← auto-generated index (never edit)
-├── _drafts/                          ← skipped (underscore prefix)
-├── my_project/
-│   ├── my_project.md
-│   ├── my_project_toc.md
-│   ├── _notes.md                     ← skipped (underscore prefix)
-│   ├── architecture.md
-│   └── design_decisions/
-│       ├── design_decisions.md
-│       ├── design_decisions_toc.md
-│       └── ...
-├── coding_standards/ → ../../shared  ← symlink (read-only)
-│   ├── coding_standards.md
-│   ├── coding_standards_toc.md
-│   ├── naming_conventions.md
-│   └── error_handling.md
-└── git_standards/ → ../../shared     ← symlink (read-only)
-    ├── git_standards.md
-    ├── git_standards_toc.md
-    └── ...
+acme_payments/
+└── CONTEXT/
+    ├── CONTEXT.md
+    ├── CONTEXT_toc.md                    ← generated
+    ├── _drafts/                          ← skipped (underscore prefix)
+    │   └── migration_plan.md
+    ├── acme_payments/
+    │   ├── acme_payments.md
+    │   ├── acme_payments_toc.md          ← generated
+    │   ├── architecture.md
+    │   └── api_reference.md
+    ├── coding_standards/ → shared/...    ← symlink (read-only)
+    │   ├── coding_standards.md
+    │   ├── naming_conventions.md
+    │   └── error_handling.md
+    └── git_standards/ → shared/...       ← symlink (read-only)
+        ├── git_standards.md
+        ├── commit_messages.md
+        └── branching.md
 ```
 
-The generated `CONTEXT_toc.md`:
+The generated root TOC (`CONTEXT_toc.md`):
 
 ```
 ## Subfolders
 
-- description: Payment service — architecture, APIs, and data model
-  path: my_project/my_project_toc.md
+- description: Acme Payments — architecture, APIs, and data model
+  path: acme_payments/acme_payments_toc.md
 - description: Shared coding standards — naming, error handling, and testing conventions *(read-only)*
   path: coding_standards/coding_standards_toc.md
 - description: Git workflow — branching strategy, commit messages, and PR conventions *(read-only)*
   path: git_standards/git_standards_toc.md
 ```
 
-Symlinked folders show up with their descriptions, marked *(read-only)*. Underscore-prefixed names don't appear at all. The LLM reads this TOC, decides which paths are relevant, and follows the `_toc.md` links deeper.
+The LLM reads this TOC, decides which paths are relevant, and follows `_toc.md` paths deeper. Symlinked folders show *(read-only)*. `_drafts/` doesn't appear.
 
 ## Rules
 
