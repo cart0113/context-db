@@ -1,8 +1,0 @@
-title: API Module Context
-description: Context for the api_module subcomponent — client patterns and error handling
-
-depth: 1
-skip_underscore: true
-ignore: []
-read_only: []
-eager_read: []

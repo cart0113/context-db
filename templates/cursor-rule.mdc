@@ -3,11 +3,11 @@ description: Use context-md for project context discovery
 alwaysApply: true
 ---
 
-At the start of each session, or when you need to understand this project:
+This project uses context-md to organize background knowledge.
 
-1. Read `CONTEXT/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` — this explains the context
-   system and contains project-specific guidance.
-2. Read `CONTEXT/CONTEXT_TOC.md` — the auto-generated index of all available context.
-3. From the TOC, fetch only the resources relevant to the current task.
+At the start of each session or when you need project context:
 
-Do not load all context upfront. Read descriptions in the TOC first, then fetch.
+1. Read `CONTEXT/CONTEXT_toc.md` — the auto-generated index of all available context.
+2. Scan descriptions to decide what is relevant to your current task.
+3. Fetch only what you need.
+4. For subfolders, read that folder's `*_toc.md` before individual files.
