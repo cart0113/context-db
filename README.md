@@ -143,14 +143,13 @@ Skills are designed for *procedures* — filling them with background knowledge 
 
 context-md takes the good parts of skills (standard structure, portability via symlinks, front matter) and applies them to background knowledge. The hierarchical folder structure enables progressive disclosure — keeping token usage low and context focused.
 
-**Skills** → *what to do* | **context-md** → *what to know*
+**Skills** → *procedures, what an agent can do* | **Context** → *what an agent knows, system understanding needed to reason about code updates/changes, answer questions, etc.*
 
 ## Tools
 
 | Script | Description |
 |--------|-------------|
 | `bin/build_toc.sh` | Recursive TOC builder with change detection |
-| `bin/format_md.py` | Format Markdown tables to fixed-width alignment |
 | `hooks/pre-commit` | Git hook that runs `build_toc.sh` before commit |
 
 ## Future

@@ -26,7 +26,5 @@ The build script reads descriptions from symlinked folders but never writes into
 
 context-md is a complement to SKILL.md, not a replacement:
 
-- **SKILL.md** — *what to do*: procedures, workflows, step-by-step instructions
-- **context-md** — *what to know*: background, architecture, conventions, domain knowledge
-
-Keep your skills lean and procedural. Keep your context organized and discoverable.
+- **Skills** — *procedures, what an agent can do*
+- **Context** — *what an agent knows, system understanding needed to reason about code updates/changes, answer questions, etc.*
