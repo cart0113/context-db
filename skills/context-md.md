@@ -1,1 +1,0 @@
-../bootstrap/skill.md

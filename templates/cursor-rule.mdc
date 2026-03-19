@@ -1,13 +1,12 @@
 ---
-description: Use context-md for project context discovery
+description: Discover project context via context-md TOC files
 alwaysApply: true
 ---
 
-This project uses context-md to organize background knowledge.
+This project uses context-md to organize background knowledge in `CONTEXT/`.
 
-When you need project context:
-
-1. Read `CONTEXT/CONTEXT_toc.md` — the auto-generated index of all available context.
-2. Scan descriptions to decide what is relevant to your current task.
-3. Fetch only what you need.
-4. For subfolders, read that folder's `*_toc.md` before individual files.
+Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
+Use the descriptions to decide what is relevant to your current task — skip
+everything that isn't. For entries you do need:
+- If the path ends in `_toc.md`, it's a subfolder — read that TOC and repeat.
+- Otherwise, it's a document — read it.

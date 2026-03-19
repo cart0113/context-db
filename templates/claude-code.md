@@ -1,13 +1,8 @@
 ---
-name: context-md
-description: >
-  Hierarchical project context with progressive disclosure. Start at
-  CONTEXT/CONTEXT_toc.md and follow paths to learn what you need.
-author: cart0113/context-md
-version: 1.0.0
+description: Discover project context via context-md TOC files
 ---
 
-This project has background context organized in `CONTEXT/`.
+This project uses context-md to organize background knowledge in `CONTEXT/`.
 
 Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
 Use the descriptions to decide what is relevant to your current task — skip

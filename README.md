@@ -4,6 +4,16 @@ A portable standard for hierarchically organizing context as Markdown files, wit
 
 An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every subfolder and file, and fetches only what's relevant to the current task. Agents don't read the description files — they read the TOC, then fetch individual documents.
 
+## Why
+
+Large projects need more background knowledge than a single context file can hold. `CLAUDE.md` is recommended under 200 lines. `AGENTS.md` caps at 32 KiB. But a legacy enterprise system might need thousands of lines of context — architecture, data models, API contracts, deployment constraints, historical decisions — for an agent to reason safely about changes.
+
+The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-md solves this with auto-generated `_toc.md` indexes: lightweight maps (~100 tokens) that show the agent what knowledge is available, so it can fetch only what's relevant.
+
+A TOC is a **discovery** mechanism ("here's what exists"), complementing retrieval mechanisms like grep and RAG ("find me X"). Research shows LLM performance degrades as context grows — progressive disclosure keeps the window focused on what matters.
+
+See [docs/motivation.md](docs/motivation.md) for the full rationale.
+
 ## Example
 
 A payments service with shared coding and git standards (see `example/`):
@@ -123,27 +133,34 @@ chmod +x .git/hooks/pre-commit
 
 ## Agent Entry Point
 
-The LLM needs to know context-md exists. The `bootstrap/` folder has a skill and system instructions — wire one into your agent:
+The LLM needs to know context-md exists. Add this to whatever rule file or system prompt your tool reads on startup:
 
-**Skill** (Claude Code, Codex):
+> This project uses context-md to organize background knowledge in `CONTEXT/`.
+>
+> Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a
+> path. Use the descriptions to decide what is relevant to your current task —
+> skip everything that isn't. For entries you do need:
+> - If the path ends in `_toc.md`, it's a subfolder — read that TOC and repeat.
+> - Otherwise, it's a document — read it.
+
+Or copy a ready-made template for your tool:
+
+**Claude Code:**
 ```bash
-mkdir -p skills
-ln -s /path/to/context-md/bootstrap/skill.md skills/context-md.md
+mkdir -p .claude/rules
+cp templates/claude-code.md .claude/rules/context-md.md
 ```
 
-**Cursor rule:**
+**Cursor:**
 ```bash
 mkdir -p .cursor/rules
-cp /path/to/context-md/templates/cursor-rule.mdc .cursor/rules/context-md.mdc
+cp templates/cursor-rule.mdc .cursor/rules/context-md.mdc
 ```
 
-### Why Not SKILL.md?
-
-Skills are designed for *procedures* — filling them with background knowledge degrades skill performance and conflates "what to do" with "what to know."
-
-context-md takes the good parts of skills (standard structure, portability via symlinks, front matter) and applies them to background knowledge. The hierarchical folder structure enables progressive disclosure — keeping token usage low and context focused.
-
-**Skills** → *procedures, what an agent can do* | **Context** → *what an agent knows, system understanding needed to reason about code updates/changes, answer questions, etc.*
+**Codex:**
+```bash
+cat templates/codex.md >> AGENTS.md
+```
 
 ## Tools
 

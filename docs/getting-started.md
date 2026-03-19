@@ -48,15 +48,26 @@ chmod +x .git/hooks/pre-commit
 
 ## 6. Wire up the agent entry point
 
-**Skill** (Claude Code, Codex):
+Copy the template for your tool so it reads `CONTEXT/` on startup:
+
+**Claude Code:**
 ```bash
-ln -s /path/to/context-md/bootstrap/skill.md your_project/skills/context-md.md
+mkdir -p .claude/rules
+cp templates/claude-code.md .claude/rules/context-md.md
 ```
 
-**Cursor rule:**
+**Cursor:**
 ```bash
-cp /path/to/context-md/templates/cursor-rule.mdc .cursor/rules/context-md.mdc
+mkdir -p .cursor/rules
+cp templates/cursor-rule.mdc .cursor/rules/context-md.mdc
 ```
+
+**Codex:**
+```bash
+cat templates/codex.md >> AGENTS.md
+```
+
+Or paste the text from `bootstrap/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` into any rule file or system prompt.
 
 ## Sharing context via symlinks
 

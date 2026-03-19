@@ -1,3 +1,5 @@
+## context-md
+
 This project uses context-md to organize background knowledge in `CONTEXT/`.
 
 Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
