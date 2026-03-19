@@ -13,12 +13,9 @@ context-md is a dedicated standard for **background knowledge and project contex
 
 ## How It Works
 
-Every context directory has two files:
-
-| File | Purpose |
-|------|---------|
-| `<folder>.md` | Human-edited — description, optional config, LLM guidance |
-| `<folder>_toc.md` | Auto-generated — discovery index of subfolders and files |
+The root `CONTEXT/` directory has a `context.cfg` (plain YAML) and a generated
+`context_toc.md`. Each subfolder has `<folder>.md` (human-edited) and
+`<folder>_toc.md` (generated).
 
 The LLM reads the `_toc.md` first, sees one-line descriptions of every resource,
 and fetches only what's relevant.

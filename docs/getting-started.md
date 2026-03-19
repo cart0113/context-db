@@ -1,52 +1,57 @@
 # Quick Start
 
-## 1. Create a CONTEXT/ directory
+## 1. Create a CONTEXT/ directory with context.cfg
 
 ```
 your_project/
 └── CONTEXT/
-    ├── CONTEXT.md       ← you write this
-    └── CONTEXT_toc.md   ← generated
+    ├── context.cfg        ← you write this (plain YAML)
+    └── context_toc.md     ← generated
 ```
 
-## 2. Write CONTEXT.md
+## 2. Write context.cfg
 
-~~~markdown
-```yaml description
-title: My Project
+```yaml
 description: Payments service — architecture and coding conventions
 ```
 
-Load CODING/ when writing or reviewing code.
-~~~
+Optional config fields:
 
-The `description` block is required. A `config` block is optional:
+```yaml
+description: Payments service — architecture and coding conventions
+ignore: [scratch]
+follow_symlinks: [CODING]
+```
+
+## 3. Add context subfolders
+
+Create a subfolder with a `<folder>.md` description file:
 
 ~~~markdown
-```yaml config
-read_only: [CODING]
-ignore: [scratch]
+```yaml description
+description: System architecture and data flow
 ```
 ~~~
 
-## 3. Add context documents
+## 4. Add context documents
+
+Individual `.md` files use standard YAML front matter:
 
 ```markdown
 ---
-title: Architecture Overview
 description: System components and data flow
 ---
 
 (content)
 ```
 
-## 4. Build
+## 5. Build
 
 ```bash
 bin/build_toc.sh CONTEXT/
 ```
 
-## 5. Wire up auto-rebuild
+## 6. Wire up auto-rebuild
 
 ```bash
 cp hooks/pre-commit .git/hooks/pre-commit
@@ -55,7 +60,7 @@ chmod +x .git/hooks/pre-commit
 
 The hook uses `--check` mode — TOCs are only rebuilt when source files change.
 
-## 6. Wire up the agent entry point
+## 7. Wire up the agent entry point
 
 **Skill** (Claude Code, Codex):
 ```bash

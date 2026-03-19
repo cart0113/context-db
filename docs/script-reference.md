@@ -2,7 +2,7 @@
 
 ## build_toc.sh
 
-Generates `<folder>_toc.md` files from `<folder>.md` configs and context document
+Generates TOC files from `context.cfg` / `<folder>.md` configs and context document
 front matter.
 
 ### Usage
@@ -15,7 +15,8 @@ bin/build_toc.sh --check            # Only rebuild if sources changed
 
 ### Behavior
 
-- Finds directories containing a `<dirname>.md` file
+- Finds root context nodes (directories containing `context.cfg`)
+- Recurses into subdirectories containing `<foldername>.md`
 - Skips symlinked directories (reads them for descriptions but never writes to them)
 - With `--check`: compares file modification times, skips up-to-date TOCs
 

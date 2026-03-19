@@ -1,6 +1,5 @@
 ```yaml description
-title: My Project
-description: One-line summary of what this project is about
+description: One-line summary of what this context subfolder is about
 ```
 
 Any additional guidance for the LLM goes here.

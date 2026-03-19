@@ -1,5 +1,4 @@
 ---
-title: No Cross-Symlink Edits
 description: Why build_toc.sh never writes to directories that are symlinks
 ---
 

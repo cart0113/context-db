@@ -1,5 +1,4 @@
 ---
-title: Naming Convention
 description: Why files are named after their parent folder rather than using fixed names
 ---
 

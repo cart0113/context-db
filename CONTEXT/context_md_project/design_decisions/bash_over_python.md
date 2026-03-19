@@ -1,5 +1,4 @@
 ---
-title: Bash Over Python
 description: Why build_toc.sh is pure bash rather than Python or another language
 ---
 

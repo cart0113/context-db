@@ -1,5 +1,4 @@
 ---
-title: Fenced YAML Format
 description: Why context-md uses fenced YAML blocks instead of front matter or a separate YAML file
 ---
 
@@ -9,12 +8,11 @@ The `<folder>.md` file uses fenced code blocks for structured data:
 
 ~~~
 ```yaml description
-title: My Project
 description: One-line summary
 ```
 
 ```yaml config
-read_only: [CODING]
+ignore: [scratch, old_docs]
 ```
 ~~~
 

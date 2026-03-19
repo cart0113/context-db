@@ -72,57 +72,59 @@ portability, standardized structure — and applies them specifically to the pro
 organizing background knowledge for LLMs.
 
 The key insight is **progressive discovery**. Instead of loading everything upfront,
-an LLM reads a lightweight index first — `CONTEXT_TOC.md` — that describes what
+an LLM reads a lightweight index first — `context_toc.md` — that describes what
 context is available. Based on the current task, it fetches only what it needs. A
 question about the database schema doesn't need the UI component conventions loaded.
 A refactoring task in the auth module doesn't need the billing architecture.
 
 The index itself is auto-generated from the front matter of context documents and the
-`CONTEXT.yml` configs of subfolders. Humans write context, add front matter, and run
-one script. The discovery structure maintains itself.
+description files of subfolders. Humans write context, add front matter, and run one
+script. The discovery structure maintains itself.
 
-## The Three Files
+## The Structure
 
-Every context node has three files with distinct roles:
+The root `CONTEXT/` directory has a `context.cfg` — a plain YAML file that declares
+what this context hierarchy is about:
 
-**`CONTEXT.yml`** is configuration. It declares what this node is (title, description),
-and controls what the script indexes (depth, ignore lists, read-only markers for
-external resources). It is the only file that the script reads for metadata about the
-node itself.
+```yaml
+description: Payments service — architecture and coding conventions
+```
 
-**`CONTEXT_INSTRUCTIONS.md`** is prose addressed directly to the LLM. Write here
-whatever guidance is specific to this context node: which subfolder to load for API
-work, key relationships to keep in mind, things that are easy to get wrong. This file
-is human-written and never modified by the script.
+Each subfolder has `<folder>.md` with a fenced YAML description block:
 
-**`CONTEXT_TOC.md`** is generated. Never edit it. It combines the title and
-description from `CONTEXT.yml`, the prose from `CONTEXT_INSTRUCTIONS.md`, and
-auto-generated tables of available subfolders and files. This is the only file the
-LLM needs to read to understand what context exists and where to find it.
+~~~markdown
+```yaml description
+description: Shared coding standards and conventions
+```
+~~~
+
+And `<folder>_toc.md` is generated, indexing all subfolders and context documents
+beneath it. The LLM reads the TOC, scans descriptions, and fetches only what's
+relevant.
 
 ## Portability Is Preserved
 
 One of the most valuable properties of the skills format carries over directly. Any
-`CONTEXT/` subfolder can be a symlink to a shared resource. A team maintaining
-shared coding conventions publishes them in one repository:
+subfolder can be a symlink to a shared resource. A team maintaining shared coding
+conventions publishes them in one repository:
 
 ```
 shared-context/
-└── CODING_STYLE/
-    ├── CONTEXT.yml
-    ├── CONTEXT_TOC.md
+└── coding_style/
+    ├── coding_style.md
+    ├── coding_style_toc.md
     └── defensive_coding.md
 ```
 
 Any project that wants these conventions symlinks the folder:
 
 ```bash
-ln -s /path/to/shared-context/CODING_STYLE  your_project/CONTEXT/CODING_STYLE
+ln -s /path/to/shared-context/coding_style  your_project/CONTEXT/coding_style
 ```
 
-The parent `CONTEXT/CONTEXT.yml` marks it as `read_only` so the build script doesn't
-try to modify files in the shared repository. The conventions show up in the project's
-TOC automatically, sourced from their canonical location.
+The build script reads the description from the symlinked folder but never writes
+into it. Symlinked directories appear as *(read-only)* in the parent's TOC. The
+conventions show up automatically, sourced from their canonical location.
 
 ## Why Not Just a Wiki?
 

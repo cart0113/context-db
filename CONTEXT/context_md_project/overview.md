@@ -1,5 +1,4 @@
 ---
-title: Project Overview
 description: What context-md is, why it was built, and how it differs from SKILL.md
 ---
 
