@@ -2,39 +2,51 @@
 
 A portable standard for hierarchically organizing context as Markdown files, with auto-generated tables of contents for progressive disclosure.
 
-An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every subfolder and file, and fetches only what's relevant to the current task. Agents don't read the description files directly — they read the TOC, then fetch individual documents.
+An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every subfolder and file, and fetches only what's relevant to the current task. Agents don't read the description files — they read the TOC, then fetch individual documents.
 
-## Structure
+## Example
 
-This project's own `CONTEXT/` folder is a working example:
+A typical project might look like this:
 
 ```
 CONTEXT/
-├── CONTEXT.md                           ← description for this folder
-├── CONTEXT_toc.md                       ← auto-generated index (never edit)
-├── context_md_project/                  ← project-specific context
-│   ├── context_md_project.md
-│   ├── context_md_project_toc.md
-│   ├── overview.md
+├── CONTEXT.md                        ← description for this folder
+├── CONTEXT_toc.md                    ← auto-generated index (never edit)
+├── _drafts/                          ← skipped (underscore prefix)
+├── my_project/
+│   ├── my_project.md
+│   ├── my_project_toc.md
+│   ├── _notes.md                     ← skipped (underscore prefix)
+│   ├── architecture.md
 │   └── design_decisions/
 │       ├── design_decisions.md
 │       ├── design_decisions_toc.md
 │       └── ...
-└── git_standards/                       ← symlinked shared context (read-only)
+├── coding_standards/ → ../../shared  ← symlink (read-only)
+│   ├── coding_standards.md
+│   ├── coding_standards_toc.md
+│   ├── naming_conventions.md
+│   └── error_handling.md
+└── git_standards/ → ../../shared     ← symlink (read-only)
     ├── git_standards.md
-    └── git_standards_toc.md
+    ├── git_standards_toc.md
+    └── ...
 ```
 
-Generated TOC (`CONTEXT_toc.md`):
+The generated `CONTEXT_toc.md`:
 
-```markdown
+```
 ## Subfolders
 
-- description: The context-md standard — design decisions and tooling
-  path: context_md_project/context_md_project_toc.md
-- description: Git workflow and commit conventions *(read-only)*
+- description: Payment service — architecture, APIs, and data model
+  path: my_project/my_project_toc.md
+- description: Shared coding standards — naming, error handling, and testing conventions *(read-only)*
+  path: coding_standards/coding_standards_toc.md
+- description: Git workflow — branching strategy, commit messages, and PR conventions *(read-only)*
   path: git_standards/git_standards_toc.md
 ```
+
+Symlinked folders show up with their descriptions, marked *(read-only)*. Underscore-prefixed names don't appear at all. The LLM reads this TOC, decides which paths are relevant, and follows the `_toc.md` links deeper.
 
 ## Rules
 
@@ -46,11 +58,11 @@ Generated TOC (`CONTEXT_toc.md`):
 
 4. **Symlinks.** Symlinked folders appear in the parent's TOC marked *(read-only)*. The script never writes into a folder whose real path is outside the project root.
 
-5. **Skipping.** Underscore-prefixed (`_draft/`) and dot-prefixed (`.hidden/`) names are always skipped.
+5. **Skipping.** Underscore-prefixed (`_drafts/`) and dot-prefixed (`.hidden/`) names are always skipped.
 
 ## File Format
 
-Description file (`<folder>.md`) — only the description, nothing else:
+Description file (`<folder>.md`) — only the description:
 
 ```markdown
 ---
