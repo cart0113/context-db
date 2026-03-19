@@ -1,46 +1,44 @@
 # Specification
 
-## Context Nodes
+## Description File
 
-A context node is any directory containing a recognized description file:
-- `<foldername>.md` (preferred)
-- `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`
-
-The description file should only have YAML front matter with a single `description` key. Other content is ignored and should not be included.
+A folder is a context node if it contains any of: `<folder_name>.md`, `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`. The file should only have YAML front matter with a single `description` key. Other content is ignored and should not be included.
 
 ```markdown
 ---
-description: One-line summary (appears in parent's TOC)
+description: Acme Payments — architecture, APIs, and data model
 ---
 ```
 
 ## Context Documents
 
-Standard `.md` files with YAML front matter:
+Individual `.md` files with YAML front matter and content. The description appears in the parent's `_toc.md`.
 
 ```markdown
 ---
-description: One-line summary for the TOC
+description: System components, data flow, and service boundaries
 ---
 
-Content...
+# Architecture
+
+(content)
 ```
 
-## Discovery Rules
+## TOC Generation
 
-When building a `<folder>_toc.md`, the script scans:
-
-**Subfolders** — immediate subdirectories containing a recognized description file.
-
-**Files** — `.md` files in the directory, excluding the description file, the `_toc.md`, and any underscore/dot-prefixed names.
+`bin/build_toc.sh` walks the directory tree and generates `<folder>_toc.md` for each context node. By default it only rebuilds when source files are newer than the existing TOC. Use `--build-all` to force a full rebuild.
 
 ## Symlinks
 
-Symlinked directories are read (to get descriptions) but never written to.
+Symlinked folders appear in the parent's TOC. The script never writes into a folder whose real path is outside the project root.
+
+## Skipping
+
+Underscore-prefixed (`_drafts/`) and dot-prefixed (`.hidden/`) names are always skipped.
 
 ## Change Detection
 
-By default, `build_toc.sh` only rebuilds a `_toc.md` when any source file is newer (use `--build-all` to force a full rebuild):
+The script compares file modification times. A TOC is rebuilt when any of these are newer:
 - The description file
 - Any `.md` file in the directory
 - Any description file in a subdirectory

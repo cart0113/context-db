@@ -11,6 +11,8 @@ your_project/
 
 ## 2. Write the description file
 
+The description file identifies the folder as a context node. It should only contain YAML front matter with a `description` key:
+
 ```markdown
 ---
 description: My project — architecture and coding conventions
@@ -24,14 +26,18 @@ description: My project — architecture and coding conventions
 description: System components and data flow
 ---
 
+# Architecture
+
 (content)
 ```
 
 ## 4. Build
 
 ```bash
-bin/build_toc.sh CONTEXT/
+bin/build_toc.sh
 ```
+
+By default, only changed TOC files are rebuilt. Use `--build-all` to force a full rebuild.
 
 ## 5. Wire up auto-rebuild
 
@@ -57,7 +63,7 @@ cp /path/to/context-md/templates/cursor-rule.mdc .cursor/rules/context-md.mdc
 Any subfolder can be a symlink to a shared resource:
 
 ```bash
-ln -s /shared/coding-standards CONTEXT/coding_standards
+ln -s /shared/coding_standards CONTEXT/coding_standards
 ```
 
 The script reads descriptions from symlinked directories but never writes into them.
