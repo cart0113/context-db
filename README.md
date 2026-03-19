@@ -19,12 +19,17 @@ acme_payments/
     │   ├── acme_payments.md
     │   ├── acme_payments_toc.md          ← generated
     │   ├── architecture.md
-    │   └── api_reference.md
-    ├── coding_standards/ → shared/...    ← symlink (read-only)
+    │   ├── api_reference.md
+    │   └── data_model/
+    │       ├── data_model.md
+    │       ├── data_model_toc.md         ← generated
+    │       ├── entities.md
+    │       └── schema_conventions.md
+    ├── coding_standards/ → shared/...    ← symlink
     │   ├── coding_standards.md
     │   ├── naming_conventions.md
     │   └── error_handling.md
-    └── git_standards/ → shared/...       ← symlink (read-only)
+    └── git_standards/ → shared/...       ← symlink
         ├── git_standards.md
         ├── commit_messages.md
         └── branching.md
@@ -37,51 +42,75 @@ The generated root TOC (`CONTEXT_toc.md`):
 
 - description: Acme Payments — architecture, APIs, and data model
   path: acme_payments/acme_payments_toc.md
-- description: Shared coding standards — naming, error handling, and testing conventions *(read-only)*
+- description: Shared coding standards — naming, error handling, and testing conventions
   path: coding_standards/coding_standards_toc.md
-- description: Git workflow — branching strategy, commit messages, and PR conventions *(read-only)*
+- description: Git workflow — branching strategy, commit messages, and PR conventions
   path: git_standards/git_standards_toc.md
 ```
 
-The LLM reads this TOC, decides which paths are relevant, and follows `_toc.md` paths deeper. Symlinked folders show *(read-only)*. `_drafts/` doesn't appear.
+Following `acme_payments/acme_payments_toc.md` shows the next level:
+
+```
+## Subfolders
+
+- description: Database schema, entities, and relationships
+  path: data_model/data_model_toc.md
+
+## Files
+
+- description: REST API endpoints, authentication, and error codes
+  path: api_reference.md
+- description: System components, data flow, and service boundaries
+  path: architecture.md
+```
+
+The LLM reads each TOC, decides which paths are relevant, and follows `_toc.md` paths deeper. `_drafts/` doesn't appear.
 
 ## Rules
 
-1. **Description file.** A folder is a context node if it contains any of: `<folder_name>.md`, `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`. The file needs only YAML front matter with a `description` key.
+1. **Description file.** A folder is a context node if it contains any of: `<folder_name>.md`, `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`. The file should only have YAML front matter with a single `description` key. Other content in this file is ignored and should not be included.
 
 2. **Context documents.** Individual `.md` files use the same format — YAML front matter with `description`. The description appears in the parent's `_toc.md`.
 
-3. **TOC generation.** `bin/build_toc.sh` walks the directory tree and generates `<folder>_toc.md` for each context node. With `--check`, it only rebuilds when source files are newer than the existing TOC.
+3. **TOC generation.** `bin/build_toc.sh` walks the directory tree and generates `<folder>_toc.md` for each context node. By default it only rebuilds when source files are newer than the existing TOC. Use `--build-all` to force a full rebuild.
 
-4. **Symlinks.** Symlinked folders appear in the parent's TOC marked *(read-only)*. The script never writes into a folder whose real path is outside the project root.
+4. **Symlinks.** Symlinked folders appear in the parent's TOC. The script never writes into a folder whose real path is outside the project root.
 
 5. **Skipping.** Underscore-prefixed (`_drafts/`) and dot-prefixed (`.hidden/`) names are always skipped.
 
 ## File Format
 
-Description file (`<folder>.md`) — only the description:
+Description file (`acme_payments.md`) — identifies the folder as a context node:
 
 ```markdown
 ---
-description: Architecture decisions and coding conventions
+description: Acme Payments — architecture, APIs, and data model
 ---
 ```
 
-Context document:
+Context document (`architecture.md`) — description plus content:
 
 ```markdown
 ---
-description: Why build_toc.sh is pure bash rather than Python
+description: System components, data flow, and service boundaries
 ---
 
-(content)
+# Architecture
+
+Acme Payments is a three-tier service:
+
+1. **API Gateway** — validates requests, rate limiting, auth
+2. **Payment Engine** — orchestrates payment flows, retries, idempotency
+3. **Ledger** — append-only transaction log, double-entry bookkeeping
+
+All inter-service communication is async via message queue.
 ```
 
 ## Building
 
 ```bash
-bin/build_toc.sh                    # Build all _toc.md files
-bin/build_toc.sh --check            # Only rebuild if sources changed
+bin/build_toc.sh                    # Rebuild changed _toc.md files
+bin/build_toc.sh --build-all        # Rebuild all _toc.md files unconditionally
 bin/build_toc.sh CONTEXT/           # Build from a specific directory
 ```
 
@@ -122,7 +151,7 @@ context-md takes the good parts of skills (standard structure, portability via s
 |--------|-------------|
 | `bin/build_toc.sh` | Recursive TOC builder with change detection |
 | `bin/format_md.py` | Format Markdown tables to fixed-width alignment |
-| `hooks/pre-commit` | Git hook that runs `build_toc.sh --check` |
+| `hooks/pre-commit` | Git hook that runs `build_toc.sh` before commit |
 
 ## Future
 

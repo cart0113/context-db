@@ -14,7 +14,7 @@ BUILD_TOC="${REPO_ROOT}/bin/build_toc.sh"
 [ -x "$BUILD_TOC" ] || exit 0
 
 cd "$REPO_ROOT"
-"$BUILD_TOC" --check
+"$BUILD_TOC"
 
 # Stage any updated _toc.md files
 while IFS= read -r -d '' toc; do

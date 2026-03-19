@@ -49,7 +49,7 @@ Any subfolder can be a symlink to a shared resource:
 ln -s /path/to/shared/coding_standards CONTEXT/coding_standards
 ```
 
-The build script reads the description from the symlinked folder but never writes into it. Symlinked directories appear as *(read-only)* in the parent's TOC.
+The build script reads the description from the symlinked folder but never writes into it.
 
 ## Relationship to SKILL.md
 

@@ -7,7 +7,7 @@
 ```markdown
 ## Subfolders
 
-- description: Shared coding standards *(read-only)*
+- description: Shared coding standards
   path: coding/coding_toc.md
 - description: Schema and migration patterns
   path: database/database_toc.md
@@ -18,7 +18,7 @@
   path: architecture.md
 ```
 
-Each entry has `description:` on the first line and `path:` on the second. Symlinked folders are marked *(read-only)*.
+Each entry has `description:` on the first line and `path:` on the second.
 
 ## Sections
 

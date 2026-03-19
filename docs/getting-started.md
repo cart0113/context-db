@@ -60,4 +60,4 @@ Any subfolder can be a symlink to a shared resource:
 ln -s /shared/coding-standards CONTEXT/coding_standards
 ```
 
-Symlinked directories appear as *(read-only)* in the TOC. The script never writes into them.
+The script reads descriptions from symlinked directories but never writes into them.

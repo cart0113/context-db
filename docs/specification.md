@@ -6,14 +6,12 @@ A context node is any directory containing a recognized description file:
 - `<foldername>.md` (preferred)
 - `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`
 
-The description file must have YAML front matter with a `description` key:
+The description file should only have YAML front matter with a single `description` key. Other content is ignored and should not be included.
 
 ```markdown
 ---
 description: One-line summary (appears in parent's TOC)
 ---
-
-Optional prose.
 ```
 
 ## Context Documents
@@ -38,11 +36,11 @@ When building a `<folder>_toc.md`, the script scans:
 
 ## Symlinks
 
-Symlinked directories are read (to get descriptions) but never written to. They appear as *(read-only)* in the TOC.
+Symlinked directories are read (to get descriptions) but never written to.
 
 ## Change Detection
 
-`build_toc.sh --check` only rebuilds a `_toc.md` when any source file is newer:
+By default, `build_toc.sh` only rebuilds a `_toc.md` when any source file is newer (use `--build-all` to force a full rebuild):
 - The description file
 - Any `.md` file in the directory
 - Any description file in a subdirectory

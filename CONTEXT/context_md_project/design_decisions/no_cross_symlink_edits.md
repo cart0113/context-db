@@ -19,5 +19,5 @@ writes a `_toc.md` inside it.
   ownership) adds complexity for a marginal benefit. If you need the symlinked
   directory's TOC rebuilt, run the script from that project.
 
-Symlinked directories are automatically marked *(read-only)* in the parent's generated
-TOC to signal to the LLM that the resource is externally managed.
+The script reads descriptions from symlinked directories for the parent's TOC but never
+writes into them.

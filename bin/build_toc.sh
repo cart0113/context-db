@@ -14,15 +14,15 @@
 #   - Only writes _toc.md files whose real path is under the project root
 #
 # Usage:
-#   bin/build_toc.sh                   Build all context nodes
-#   bin/build_toc.sh --check           Only rebuild if sources changed
+#   bin/build_toc.sh                   Rebuild changed TOC files
+#   bin/build_toc.sh --build-all       Rebuild all TOC files unconditionally
 #   bin/build_toc.sh CONTEXT/          Build from a specific directory
 #
 # Requirements: bash 3.2+, awk, stat, find
 
 set -eo pipefail
 
-CHECK_MODE=false
+BUILD_ALL=false
 DESC_NAMES="SKILL.md CONTEXT.md AGENT.md AGENTS.md"
 
 # ── Parsing ───────────────────────────────────────────────────────────────────
@@ -121,12 +121,10 @@ build_dir() {
         local sub_desc
         sub_desc=$(find_desc_file "$subdir") || continue
 
-        local sdesc ro_flag=""
+        local sdesc
         sdesc=$(read_desc "$sub_desc")
         [ -z "$sdesc" ] && sdesc="(no description)"
-        [ -L "${subdir%/}" ] && ro_flag=" *(read-only)*"
-
-        folder_lines="${folder_lines}"$'\n'"- description: ${sdesc}${ro_flag}"$'\n'"  path: ${subname}/${subname}_toc.md"
+        folder_lines="${folder_lines}"$'\n'"- description: ${sdesc}"$'\n'"  path: ${subname}/${subname}_toc.md"
     done
 
     # File entries (skip the description file and the toc file)
@@ -173,7 +171,7 @@ walk() {
     case "$real_dir" in
         "$project_root"|"${project_root}"/*)
             local toc_file="$dir/${foldername}_toc.md"
-            if ! $CHECK_MODE || needs_rebuild "$dir" "$toc_file"; then
+            if $BUILD_ALL || needs_rebuild "$dir" "$toc_file"; then
                 build_dir "$dir"
             fi
             ;;
@@ -198,7 +196,7 @@ walk() {
 main() {
     while [ $# -gt 0 ]; do
         case "$1" in
-            --check) CHECK_MODE=true; shift ;;
+            --build-all) BUILD_ALL=true; shift ;;
             *) break ;;
         esac
     done
