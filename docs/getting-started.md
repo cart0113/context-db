@@ -46,9 +46,9 @@ cp hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-## 6. Wire up the agent entry point
+## 6. Bootstrap the agent
 
-Copy the template for your tool so it reads `CONTEXT/` on startup:
+The agent needs instructions on how context-md works. The `bootstrap/` folder has a reference document; `templates/` has ready-made wrappers for common tools.
 
 **Claude Code:**
 ```bash
@@ -67,14 +67,22 @@ cp templates/cursor-rule.mdc .cursor/rules/context-md.mdc
 cat templates/codex.md >> AGENTS.md
 ```
 
-Or paste the text from `bootstrap/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` into any rule file or system prompt.
+Or paste the text from `bootstrap/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` into any rule file or system prompt. These are reference documents — the exact delivery mechanism depends on your setup.
 
-## Sharing context via symlinks
+## Sharing and wiring up context
 
-Any subfolder can be a symlink to a shared resource:
+context-md doesn't prescribe where context lives. A few patterns:
 
 ```bash
+# Symlink shared context into your project
 ln -s /shared/coding_standards CONTEXT/coding_standards
+
+# Point rules at context outside the project
+# (in CLAUDE.md, .cursorrules, or AGENTS.md)
+# Read ~/team/CONTEXT/CONTEXT_toc.md for team standards.
+
+# Reference a specific subfolder instead of the whole tree
+# Read CONTEXT/acme_payments/acme_payments_toc.md to start.
 ```
 
-The script reads descriptions from symlinked directories but never writes into them.
+The build script reads descriptions from symlinked directories but never writes into them.

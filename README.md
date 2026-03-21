@@ -131,19 +131,9 @@ cp hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
-## Agent Entry Point
+## Bootstrap
 
-The LLM needs to know context-md exists. Add this to whatever rule file or system prompt your tool reads on startup:
-
-> This project uses context-md to organize background knowledge in `CONTEXT/`.
->
-> Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a
-> path. Use the descriptions to decide what is relevant to your current task —
-> skip everything that isn't. For entries you do need:
-> - If the path ends in `_toc.md`, it's a subfolder — read that TOC and repeat.
-> - Otherwise, it's a document — read it.
-
-Or copy a ready-made template for your tool:
+The agent needs instructions on how to read and write context-md. The `bootstrap/` folder has a reference document — get its content into whatever your agent reads on startup. The exact mechanism varies by tool; ready-made templates are in `templates/`.
 
 **Claude Code:**
 ```bash
@@ -160,6 +150,29 @@ cp templates/cursor-rule.mdc .cursor/rules/context-md.mdc
 **Codex:**
 ```bash
 cat templates/codex.md >> AGENTS.md
+```
+
+Or paste the text from `bootstrap/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` into any rule file, system prompt, or `CLAUDE.md`.
+
+### Workspace patterns
+
+context-md doesn't prescribe where context lives or how it's wired in. A few patterns:
+
+**Symlink shared context into your project:**
+```bash
+ln -s /shared/coding_standards CONTEXT/coding_standards
+```
+
+**Point rules at multiple locations:**
+```markdown
+# In CLAUDE.md, .cursorrules, or AGENTS.md:
+Read CONTEXT/CONTEXT_toc.md for project context.
+Read ~/team/CONTEXT/CONTEXT_toc.md for team coding standards.
+```
+
+**Reference a specific subfolder** when you don't need the whole tree:
+```markdown
+Read CONTEXT/acme_payments/acme_payments_toc.md to start.
 ```
 
 ## Tools
