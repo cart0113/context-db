@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(cd:*)",
-      "Bash(chmod +x ~/workspace/GIT_CONTEXT_MD_TESTS/bin/build_toc.sh)",
-      "Bash(bin/build_toc.sh --build-all CONTEXT/)"
-    ]
-  }
-}
