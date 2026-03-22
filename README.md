@@ -133,26 +133,7 @@ chmod +x .git/hooks/pre-commit
 
 ## Bootstrap
 
-The agent needs instructions on how to read and write context-md. The `bootstrap/` folder has a reference document — get its content into whatever your agent reads on startup. The exact mechanism varies by tool; ready-made templates are in `templates/`.
-
-**Claude Code:**
-```bash
-mkdir -p .claude/rules
-cp templates/claude-code.md .claude/rules/context-md.md
-```
-
-**Cursor:**
-```bash
-mkdir -p .cursor/rules
-cp templates/cursor-rule.mdc .cursor/rules/context-md.mdc
-```
-
-**Codex:**
-```bash
-cat templates/codex.md >> AGENTS.md
-```
-
-Or paste the text from `bootstrap/CONTEXT_MD_SYSTEM_INSTRUCTIONS.md` into any rule file, system prompt, or `CLAUDE.md`.
+The agent needs instructions on how to read and write context-md. Copy the text from [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) into whatever file your agent reads on startup — `CONTEXT.md`, `AGENTS.md`, `.cursorrules`, a `.claude/rules/` file, or a system prompt. The text is what matters, not the delivery mechanism.
 
 ### Workspace patterns
 
