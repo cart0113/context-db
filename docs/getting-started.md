@@ -46,6 +46,8 @@ cp hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
+The hook targets `CONTEXT/` by default. Edit the path inside the hook if your context tree lives elsewhere.
+
 ## 6. Bootstrap the agent
 
 The agent needs to know how to navigate and maintain the context tree. The `bootstrap/` directory has reference texts you can start from — adapt the wording for your project and tools:

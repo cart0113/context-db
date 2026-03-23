@@ -1,3 +1,3 @@
 ---
-description: Context for the context-md project — the standard itself, design decisions, and tooling
+description: Project knowledge for context-md — design principles, format decisions, and research backing
 ---

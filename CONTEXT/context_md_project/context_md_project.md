@@ -1,3 +1,3 @@
 ---
-description: The context-md standard — design decisions and tooling
+description: The context-md standard — overview, design decisions, and context engineering research
 ---

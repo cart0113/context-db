@@ -2,7 +2,7 @@
 
 - description: Why build_toc.sh is pure bash rather than Python or another language
   path: bash_over_python.md
-- description: Why context-md uses fenced YAML blocks instead of front matter or a separate YAML file
+- description: Why frontmatter is the standard format and fenced YAML blocks are a supported fallback
   path: fenced_yaml_format.md
 - description: Why files are named after their parent folder rather than using fixed names
   path: naming_convention.md

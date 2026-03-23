@@ -1,35 +1,29 @@
 ---
-description: Why context-md uses fenced YAML blocks instead of front matter or a separate YAML file
+description: Why frontmatter is the standard format and fenced YAML blocks are a supported fallback
 ---
 
-# Fenced YAML Format
+# File Format Design
 
-The `<folder>.md` file uses fenced code blocks for structured data:
+context-md uses standard YAML front matter (`---` delimiters) as the primary format for descriptions:
 
-~~~
-```yaml description
+```markdown
+---
 description: One-line summary
+---
 ```
 
-```yaml config
-ignore: [scratch, old_docs]
+The build script also supports fenced YAML blocks as a fallback:
+
+~~~markdown
+```yaml description
+description: One-line summary
 ```
 ~~~
 
 ## Rationale
 
-**Why not YAML front matter?** Front matter (`---` delimiters) is standard for
-individual documents, and context-md uses it there. But for the folder description
-file, we need two distinct sections (description and config) in a file that also
-contains freeform Markdown prose. Front matter only supports one block at the top
-of the file.
+**Why YAML front matter?** It's the most widely recognized Markdown metadata format. Every Markdown-aware tool (GitHub, docsify, Jekyll, VS Code) already understands it. LLMs recognize it without explanation.
 
-**Why not a separate YAML file?** An earlier version used `CONTEXT.yml`. This works
-but adds an extra file per directory. Merging config into the `.md` file means each
-context node has exactly two files: `<folder>.md` (human) and `<folder>_toc.md`
-(generated). Fewer files, simpler.
+**Why support fenced blocks at all?** The fenced format was the original design, chosen because it can hold multiple named sections (`description`, `config`) in one file. Front matter only supports one block at the top. When per-folder config (`ignore`, `follow_symlinks`) was deferred, the multi-block advantage disappeared and front matter became the simpler choice. Fenced block support was kept for backward compatibility.
 
-**Why fenced blocks specifically?** Fenced code blocks (```` ```yaml description ````)
-are trivially parseable with awk — look for the opening fence, read key-value pairs,
-stop at the closing fence. They render cleanly in any Markdown viewer (as a YAML code
-block). And the block label (`description`, `config`) makes the purpose explicit.
+**Why not a separate YAML file?** An earlier version used `CONTEXT.yml`. Merging metadata into the `.md` file means each context node has exactly two files: `<folder>.md` (human-authored) and `<folder>_toc.md` (generated). Fewer files, simpler.

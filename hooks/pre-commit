@@ -13,8 +13,11 @@ BUILD_TOC="${REPO_ROOT}/bin/build_toc.sh"
 
 [ -x "$BUILD_TOC" ] || exit 0
 
+# Target the project's context directory. Most projects use CONTEXT/ —
+# change this path if your context tree lives elsewhere or if you have
+# multiple trees to build.
 cd "$REPO_ROOT"
-"$BUILD_TOC"
+"$BUILD_TOC" CONTEXT/
 
 # Stage any updated _toc.md files
 while IFS= read -r -d '' toc; do

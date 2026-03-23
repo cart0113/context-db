@@ -131,6 +131,8 @@ cp hooks/pre-commit .git/hooks/pre-commit
 chmod +x .git/hooks/pre-commit
 ```
 
+The hook targets `CONTEXT/` by default. Edit the path inside the hook if your context tree lives elsewhere or if you need to build multiple trees.
+
 ## Bootstrap
 
 An agent needs to understand three ideas to work with context-md:
