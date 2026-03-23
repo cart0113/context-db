@@ -1,51 +1,66 @@
-# context-md — Bootstrap Text
+## context-md
 
-Copy the relevant sections below into whatever file your agent reads on startup — `CONTEXT.md`, `AGENTS.md`, `.cursorrules`, a `.claude/rules/` file, or a system prompt. Adjust paths to match your project.
+This project organizes knowledge using [context-md](https://github.com/cart0113/context-md) — hierarchical Markdown files with auto-generated tables of contents for progressive disclosure.
 
-For multiple CONTEXT/ trees, add a `Read ...` line for each entry point in the same file.
+### Structure
 
----
+Example structure (names are illustrative — use whatever fits your project):
 
-## 1. Reading Context
+```
+CONTEXT/
+├── CONTEXT_toc.md                  ← generated — never edit
+├── CONTEXT.md                      ← folder description (frontmatter only)
+├── main_project_context/
+│   ├── main_project_context_toc.md ← generated
+│   ├── main_project_context.md     ← folder description
+│   ├── topic_a/
+│   │   ├── topic_a_toc.md          ← generated
+│   │   ├── topic_a.md              ← folder description
+│   │   ├── document_1.md           ← document (frontmatter + body)
+│   │   └── document_2.md
+│   └── topic_b/
+│       ├── topic_b_toc.md
+│       ├── topic_b.md
+│       └── ...
+└── standards/
+    ├── standards_toc.md
+    ├── standards.md
+    └── ...
+```
 
-Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
-Use descriptions to decide relevance — skip what you don't need.
+Knowledge lives in `.md` files inside folders. Every file has YAML frontmatter with a `description` — a one-line summary of what it covers. Every folder with a description file gets an auto-generated `_toc.md` listing its contents by description and path.
 
-- `_toc.md` path → subfolder. Read that TOC and repeat.
-- Otherwise → read the document.
+### Reading
 
-## 2. Writing Descriptions
+Start at `CONTEXT/CONTEXT_toc.md`. Each TOC entry has a description and a path:
 
-Every `.md` file needs YAML frontmatter with a `description`:
+- Path ending in `_toc.md` → subfolder. Read that TOC to go deeper.
+- Any other path → document. Read it if the description is relevant to your task.
+
+Only fetch what you need. Descriptions exist so you can skip irrelevant branches without opening files.
+
+### Writing
+
+There are two kinds of `.md` files in the context tree. Both require YAML frontmatter with a `description`.
+
+**Documents** — frontmatter plus a markdown body. When you create or edit a document, keep its `description` accurate — it's the only thing shown in the TOC.
 
 ```yaml
 ---
-description: One-line summary — what this covers and why you'd read it
+description: What this covers and why you'd read it
+---
+
+# Title
+
+(content)
+```
+
+**Folder descriptions** — `<foldername>.md` with frontmatter only, no body. These register the folder as a context node so it appears in the parent TOC.
+
+```yaml
+---
+description: What this folder covers
 ---
 ```
 
-**Folder markers:** `<foldername>.md` with only the frontmatter above (no body). This registers the folder as a context node.
-
-**Content documents:** Frontmatter + markdown body.
-
-**Descriptions are critical.** The TOC shows only descriptions — it's the only thing an agent sees when deciding whether to open a file. Write the most specific summary you can.
-
-To have your agent write descriptions for files that don't have them yet:
-
-> For each `.md` file in `CONTEXT/` that has no `description` in its YAML frontmatter, read the file and add a description that tells a reader whether they need it without opening it.
-
-## 3. Rebuilding TOCs
-
-After adding, removing, or editing context files, regenerate the TOC indexes:
-
-```bash
-bin/build_toc.sh               # rebuild changed TOCs
-bin/build_toc.sh --build-all   # rebuild all TOCs unconditionally
-```
-
-A pre-commit hook is available to do this automatically:
-
-```bash
-cp hooks/pre-commit .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
+**Never edit `_toc.md` files.** They are built automatically from descriptions by `bin/build_toc.sh`.

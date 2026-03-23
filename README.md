@@ -133,7 +133,13 @@ chmod +x .git/hooks/pre-commit
 
 ## Bootstrap
 
-The agent needs instructions on how to read and write context-md. Copy the text from [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) into whatever file your agent reads on startup — `CONTEXT.md`, `AGENTS.md`, `.cursorrules`, a `.claude/rules/` file, or a system prompt. The text is what matters, not the delivery mechanism.
+An agent needs to know three things to work with context-md:
+
+1. **How files are organized** — hierarchical folders, each file with a `description` in YAML frontmatter, auto-generated `_toc.md` indexes.
+2. **How to navigate** — start at the root TOC, use descriptions to decide relevance, follow `_toc.md` paths deeper.
+3. **How to maintain descriptions** — keep frontmatter descriptions accurate when editing files. Never edit `_toc.md` files — they are built programmatically from the descriptions.
+
+The bootstrap text in [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) conveys exactly this. Copy it into whatever file your agent reads on startup. How you package it is up to you — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, a skill, or any other mechanism. The text is what matters, not the delivery format. The `templates/` directory has pre-formatted versions for specific tools.
 
 ### Workspace patterns
 

@@ -1,24 +1,66 @@
 ## context-md
 
-This project uses context-md to organize background knowledge in `CONTEXT/`.
+This project organizes knowledge using [context-md](https://github.com/cart0113/context-md) — hierarchical Markdown files with auto-generated tables of contents for progressive disclosure.
+
+### Structure
+
+Example structure (names are illustrative — use whatever fits your project):
+
+```
+CONTEXT/
+├── CONTEXT_toc.md                  ← generated — never edit
+├── CONTEXT.md                      ← folder description (frontmatter only)
+├── main_project_context/
+│   ├── main_project_context_toc.md ← generated
+│   ├── main_project_context.md     ← folder description
+│   ├── topic_a/
+│   │   ├── topic_a_toc.md          ← generated
+│   │   ├── topic_a.md              ← folder description
+│   │   ├── document_1.md           ← document (frontmatter + body)
+│   │   └── document_2.md
+│   └── topic_b/
+│       ├── topic_b_toc.md
+│       ├── topic_b.md
+│       └── ...
+└── standards/
+    ├── standards_toc.md
+    ├── standards.md
+    └── ...
+```
+
+Knowledge lives in `.md` files inside folders. Every file has YAML frontmatter with a `description` — a one-line summary of what it covers. Every folder with a description file gets an auto-generated `_toc.md` listing its contents by description and path.
 
 ### Reading
 
-Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
-Use descriptions to decide relevance — skip what you don't need.
+Start at `CONTEXT/CONTEXT_toc.md`. Each TOC entry has a description and a path:
 
-- If the path ends in `_toc.md`, it's a subfolder — read that TOC and repeat.
-- Otherwise, read the document.
+- Path ending in `_toc.md` → subfolder. Read that TOC to go deeper.
+- Any other path → document. Read it if the description is relevant to your task.
+
+Only fetch what you need. Descriptions exist so you can skip irrelevant branches without opening files.
 
 ### Writing
 
-When creating or updating context documents:
+There are two kinds of `.md` files in the context tree. Both require YAML frontmatter with a `description`.
 
-- **New folder**: create `<foldername>.md` with only YAML frontmatter:
-  `description: <one-line summary>`. This marks the folder as a context node.
-- **New document**: YAML frontmatter with `description`, then markdown content.
-- **Descriptions are critical.** The description is the only thing an agent sees in
-  the TOC when deciding whether to read a document. Write the most useful, concise
-  summary possible — it should tell the reader whether they need this document
-  without opening it.
-- Run `bin/build_toc.sh` to regenerate TOC files after changes.
+**Documents** — frontmatter plus a markdown body. When you create or edit a document, keep its `description` accurate — it's the only thing shown in the TOC.
+
+```yaml
+---
+description: What this covers and why you'd read it
+---
+
+# Title
+
+(content)
+```
+
+**Folder descriptions** — `<foldername>.md` with frontmatter only, no body. These register the folder as a context node so it appears in the parent TOC.
+
+```yaml
+---
+description: What this folder covers
+---
+```
+
+**Never edit `_toc.md` files.** They are built automatically from descriptions by `bin/build_toc.sh`.
