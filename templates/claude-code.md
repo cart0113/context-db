@@ -6,7 +6,7 @@ This project organizes knowledge using [context-md](https://github.com/cart0113/
 
 ## Structure
 
-Example structure (names are illustrative — use whatever fits your project):
+Example structure below. All folder and file names are abstract placeholders — they have nothing to do with this project's actual files. Name yours to match your content:
 
 ```
 CONTEXT/
