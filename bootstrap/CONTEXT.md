@@ -28,7 +28,9 @@ CONTEXT/
     └── ...
 ```
 
-Knowledge lives in `.md` files inside folders. Every file has YAML frontmatter with a `description` — a one-line summary of what it covers. Every folder with a description file gets an auto-generated `_toc.md` listing its contents by description and path.
+Every `.md` file has YAML frontmatter with a `description` — a one-line summary of what it covers. Every folder with a description file gets an auto-generated `_toc.md` listing its contents by description and path.
+
+The `description` is the only thing shown in the TOC. It is how an agent decides whether to read a file without opening it. Write descriptions that make this decision easy.
 
 ### Reading
 
@@ -37,13 +39,13 @@ Start at `CONTEXT/CONTEXT_toc.md`. Each TOC entry has a description and a path:
 - Path ending in `_toc.md` → subfolder. Read that TOC to go deeper.
 - Any other path → document. Read it if the description is relevant to your task.
 
-Only fetch what you need. Descriptions exist so you can skip irrelevant branches without opening files.
+Only fetch what you need. Use descriptions to skip irrelevant branches entirely.
 
 ### Writing
 
-There are two kinds of `.md` files in the context tree. Both require YAML frontmatter with a `description`.
+There are two kinds of `.md` files in the context tree:
 
-**Documents** — frontmatter plus a markdown body. When you create or edit a document, keep its `description` accurate — it's the only thing shown in the TOC.
+**Documents** — frontmatter plus a markdown body. When you create or edit a document, keep its `description` accurate so future reads are correctly filtered.
 
 ```yaml
 ---

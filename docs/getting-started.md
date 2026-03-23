@@ -48,7 +48,12 @@ chmod +x .git/hooks/pre-commit
 
 ## 6. Bootstrap the agent
 
-The agent needs to know how to navigate and maintain the context tree. Copy the text from [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) into whatever file your agent reads on startup. How you package it is up to you — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, a skill, or any other mechanism. The `templates/` directory has pre-formatted versions for specific tools.
+The agent needs to know how to navigate and maintain the context tree. The `bootstrap/` directory has reference texts you can start from — adapt the wording for your project and tools:
+
+- [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) — core instructions: structure, reading, writing.
+- [`bootstrap/CONTEXT-extended.md`](bootstrap/CONTEXT-extended.md) — adds proactive maintenance behaviors.
+
+Copy whichever fits into whatever file your agent reads on startup — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, or any other mechanism. The `templates/` directory has pre-formatted versions for specific tools.
 
 ## Sharing and wiring up context
 

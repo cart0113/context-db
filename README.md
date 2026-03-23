@@ -133,13 +133,18 @@ chmod +x .git/hooks/pre-commit
 
 ## Bootstrap
 
-An agent needs to know three things to work with context-md:
+An agent needs to understand three ideas to work with context-md:
 
-1. **How files are organized** — hierarchical folders, each file with a `description` in YAML frontmatter, auto-generated `_toc.md` indexes.
-2. **How to navigate** — start at the root TOC, use descriptions to decide relevance, follow `_toc.md` paths deeper.
-3. **How to maintain descriptions** — keep frontmatter descriptions accurate when editing files. Never edit `_toc.md` files — they are built programmatically from the descriptions.
+1. **Descriptions are the interface.** A `description` in YAML frontmatter is the only thing shown in the TOC — it's how the agent decides whether to read a file without opening it.
+2. **Structure is retrieval.** The folder hierarchy isn't just organization. Each folder becomes a TOC node. Deeper nesting means more granular filtering before committing tokens.
+3. **TOCs are derived.** The agent maintains content and descriptions. `_toc.md` indexes are generated automatically — never edit them.
 
-The bootstrap text in [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) conveys exactly this. Copy it into whatever file your agent reads on startup. How you package it is up to you — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, a skill, or any other mechanism. The text is what matters, not the delivery format. The `templates/` directory has pre-formatted versions for specific tools.
+The `bootstrap/` directory has reference texts that convey these ideas to an agent. They are starting points — adapt the wording for your project, your tools, and your workflow:
+
+- [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) — core instructions: structure, reading, writing.
+- [`bootstrap/CONTEXT-extended.md`](bootstrap/CONTEXT-extended.md) — adds proactive maintenance: the agent suggests updates when it learns important information, flags stale docs, and proposes reorganization when folders outgrow their structure.
+
+How you deliver the text is up to you — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, a skill, or any other mechanism. The `templates/` directory has pre-formatted versions for specific tools.
 
 ### Workspace patterns
 

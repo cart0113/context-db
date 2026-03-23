@@ -1,10 +1,8 @@
----
-description: Discover and maintain project context via context-md TOC files
----
+## context-md
 
 This project organizes knowledge using [context-md](https://github.com/cart0113/context-md) — hierarchical Markdown files with auto-generated tables of contents for progressive disclosure.
 
-## Structure
+### Structure
 
 Example structure below. All folder and file names are abstract placeholders — they have nothing to do with this project's actual files. Name yours to match your content:
 
@@ -34,7 +32,7 @@ Every `.md` file has YAML frontmatter with a `description` — a one-line summar
 
 The `description` is the only thing shown in the TOC. It is how an agent decides whether to read a file without opening it. Write descriptions that make this decision easy.
 
-## Reading
+### Reading
 
 Start at `CONTEXT/CONTEXT_toc.md`. Each TOC entry has a description and a path:
 
@@ -43,7 +41,7 @@ Start at `CONTEXT/CONTEXT_toc.md`. Each TOC entry has a description and a path:
 
 Only fetch what you need. Use descriptions to skip irrelevant branches entirely.
 
-## Writing
+### Writing
 
 There are two kinds of `.md` files in the context tree:
 
@@ -68,3 +66,18 @@ description: What this folder covers
 ```
 
 **Never edit `_toc.md` files.** They are built automatically from descriptions by `bin/build_toc.sh`.
+
+### Maintaining knowledge
+
+The `CONTEXT/` tree is a living knowledge base, not a snapshot. It should reflect the current state of the project. Stale context is worse than missing context — an agent will act on outdated information with confidence.
+
+**Suggest updates** when you discover something a future agent would need to work safely on this codebase — architecture decisions, non-obvious patterns, constraints, gotchas, data model relationships. The heuristic: if you had to figure it out the hard way, it belongs in `CONTEXT/`. Ask before writing.
+
+**Flag stale content** when you read a context document that contradicts the current code, describes something that no longer exists, or would lead an agent to a wrong decision. Remove or correct it.
+
+**Suggest reorganization** when a document covers multiple distinct topics or a folder's TOC has grown past a quick scan. Moving content into a subfolder automatically creates a new TOC node — a new level of progressive disclosure. This isn't tidying; it directly improves how well a future agent can filter what it reads.
+
+**After any change** to context files:
+1. Make sure the `description` in its frontmatter still matches the content.
+2. If you created a new folder, add the `<foldername>.md` description file.
+3. If a document was deleted or moved, update any references to it in other documents.
