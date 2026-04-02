@@ -63,7 +63,7 @@ The bootstrap text names `CONTEXT/` as a "context knowledge database." Once your
 
 ## Sharing and wiring up context
 
-context-md doesn't prescribe where context lives. A few patterns:
+context-db doesn't prescribe where context lives. A few patterns:
 
 ```bash
 # Symlink shared context into your project

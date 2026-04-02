@@ -1,4 +1,4 @@
 ## Subfolders
 
-- description: The context-md standard — overview, design decisions, and context engineering research
-  path: context_md_project/context_md_project_toc.md
+- description: The context-db standard — overview, design decisions, and context engineering research
+  path: context_db_project/context_db_project_toc.md

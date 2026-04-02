@@ -1,8 +1,8 @@
 ---
-description: What context-md is, why it was built, and the core design principles
+description: What context-db is, why it was built, and the core design principles
 ---
 
-# context-md — Overview
+# context-db — Overview
 
 ## What It Is
 
@@ -12,7 +12,7 @@ A standard for organizing project knowledge as hierarchical Markdown files with 
 
 Large projects need more background knowledge than a single context file can hold. But dumping everything into the LLM's context window degrades performance — research shows accuracy drops as input grows, especially with irrelevant content.
 
-The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-md solves this with auto-generated `_toc.md` indexes: lightweight maps that show the agent what knowledge is available, so it can fetch selectively.
+The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-db solves this with auto-generated `_toc.md` indexes: lightweight maps that show the agent what knowledge is available, so it can fetch selectively.
 
 ## Core Design Principles
 
@@ -24,4 +24,4 @@ The fix is smaller documents organized in folders. But then agents need a way to
 
 ## What It Is Not
 
-Not a replacement for procedural tools like SKILL.md or workflows. context-md is for *knowledge* — architecture, conventions, domain context, design decisions — not step-by-step instructions.
+Not a replacement for procedural tools like SKILL.md or workflows. context-db is for *knowledge* — architecture, conventions, domain context, design decisions — not step-by-step instructions.

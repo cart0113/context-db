@@ -1,5 +1,5 @@
 ---
-description: Why context-md exists and the problem it solves
+description: Why context-db exists and the problem it solves
 ---
 
 # Motivation
@@ -32,9 +32,9 @@ Skills are designed around invocation — `/deploy`, `/review-pr`, `/run-tests`.
 
 The ecosystem reflects this. Codex has `AGENTS.md` for persistent context and a separate skills system for actions. Claude Code's skill format distinguishes "reference content" from "task content" with different frontmatter flags. The tools support background knowledge in skills, but the design pressure points toward separation.
 
-## What context-md does
+## What context-db does
 
-context-md takes the portable parts of skills — front matter, symlinks, standard structure — and applies them to background knowledge, with one key difference: **you control the discovery mechanism**.
+context-db takes the portable parts of skills — front matter, symlinks, standard structure — and applies them to background knowledge, with one key difference: **you control the discovery mechanism**.
 
 A shell script generates `_toc.md` indexes from YAML front matter. Each TOC is a lightweight list of descriptions with paths. An agent reads the TOC, decides what's relevant, and fetches only those documents. Nested folders produce nested TOCs, supporting arbitrarily deep hierarchies — scaling from a handful of documents to hundreds.
 

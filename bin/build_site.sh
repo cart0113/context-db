@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# build_site.sh — Generate a Docsify site from a context-md directory.
+# build_site.sh — Generate a Docsify site from a context-db directory.
 #
 # Takes a context node (directory with a _toc.md) and produces a browsable
 # Docsify site: sidebar from the TOC structure, content with YAML frontmatter
@@ -199,7 +199,7 @@ main() {
         root_desc=$(read_desc "$desc_file")
     [ -z "$root_desc" ] && root_desc="$foldername"
 
-    echo "context-md: building site from $src_dir → $out_dir"
+    echo "context-db: building site from $src_dir → $out_dir"
 
     mkdir -p "$out_dir"
 
@@ -242,7 +242,7 @@ generate_default_index() {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>context-md</title>
+  <title>context-db</title>
   <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/buble.css">
   <style>
     :root { --theme-color: #2b6cb0; }

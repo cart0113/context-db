@@ -1,6 +1,6 @@
-## context-md
+## context-db
 
-`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-md](https://github.com/cart0113/context-md).
+`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-db](https://github.com/cart0113/context-db).
 
 ### Structure
 

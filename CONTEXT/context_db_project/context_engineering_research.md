@@ -1,5 +1,5 @@
 ---
-description: Research landscape on context engineering for LLM coding agents — how tools handle context, structured vs unstructured evidence, and implications for context-md
+description: Research landscape on context engineering for LLM coding agents — how tools handle context, structured vs unstructured evidence, and implications for context-db
 ---
 
 # Context Engineering Research Landscape (2024–2026)
@@ -101,11 +101,11 @@ Implication: an **agent-navigable TOC** that lets the agent decide what to load 
 
 Practical strategies: subagent isolation, observation masking (hiding verbose tool output), rolling compression, tool-based retrieval over pre-loading, .claudeignore.
 
-## Implications for context-md
+## Implications for context-db
 
 1. **Agent-navigable TOCs are the right pattern.** Letting the agent decide what to read based on descriptions is better than dumping everything. This is what `CONTEXT_toc.md` + description-based filtering does.
 
-2. **Descriptions are the critical mechanism.** The ETH Zurich study says agents waste tokens on irrelevant pre-loaded structure. context-md's descriptions-as-filter approach is closer to the "load on demand" pattern that Anthropic recommends.
+2. **Descriptions are the critical mechanism.** The ETH Zurich study says agents waste tokens on irrelevant pre-loaded structure. context-db's descriptions-as-filter approach is closer to the "load on demand" pattern that Anthropic recommends.
 
 3. **Minimal, high-signal content only.** Anthropic's guidance, ETH Zurich, and the context rot research all converge: less is more. Only include what the agent cannot infer from the code.
 

@@ -1,4 +1,4 @@
-# context-md
+# context-db
 
 A portable standard for hierarchically organizing context as Markdown files, with auto-generated tables of contents for progressive disclosure.
 
@@ -8,7 +8,7 @@ An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every 
 
 Large projects need more background knowledge than a single context file can hold. `CLAUDE.md` is recommended under 200 lines. `AGENTS.md` caps at 32 KiB. But a legacy enterprise system might need thousands of lines of context — architecture, data models, API contracts, deployment constraints, historical decisions — for an agent to reason safely about changes.
 
-The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-md solves this with auto-generated `_toc.md` indexes: lightweight maps (~100 tokens) that show the agent what knowledge is available, so it can fetch only what's relevant.
+The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-db solves this with auto-generated `_toc.md` indexes: lightweight maps (~100 tokens) that show the agent what knowledge is available, so it can fetch only what's relevant.
 
 A TOC is a **discovery** mechanism ("here's what exists"), complementing retrieval mechanisms like grep and RAG ("find me X"). Research shows LLM performance degrades as context grows — progressive disclosure keeps the window focused on what matters.
 
@@ -135,7 +135,7 @@ The hook targets `CONTEXT/` by default. Edit the path inside the hook if your co
 
 ## Bootstrap
 
-An agent needs to understand three ideas to work with context-md:
+An agent needs to understand three ideas to work with context-db:
 
 1. **Descriptions are the interface.** A `description` in YAML frontmatter is the only thing shown in the TOC — it's how the agent decides whether to read a file without opening it.
 2. **Structure is retrieval.** The folder hierarchy isn't just organization. Each folder becomes a TOC node. Deeper nesting means more granular filtering before committing tokens.
@@ -152,7 +152,7 @@ The bootstrap text names `CONTEXT/` as a "context knowledge database." Once your
 
 ### Workspace patterns
 
-context-md doesn't prescribe where context lives or how it's wired in. A few patterns:
+context-db doesn't prescribe where context lives or how it's wired in. A few patterns:
 
 **Symlink shared context into your project:**
 ```bash

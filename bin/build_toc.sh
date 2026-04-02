@@ -205,7 +205,7 @@ main() {
     project_root=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
     project_root=$(cd "$project_root" && pwd -P)
 
-    echo "context-md: building TOC files..."
+    echo "context-db: building TOC files..."
 
     if [ $# -eq 0 ]; then
         # Find root context nodes: dirs with a desc file whose parent has none

@@ -1,9 +1,9 @@
 ---
-description: Discover and maintain project context via context-md TOC files
+description: Discover and maintain project context via context-db TOC files
 alwaysApply: true
 ---
 
-`CONTEXT/` is this project's **context knowledge database**, managed by [context-md](https://github.com/cart0113/context-md).
+`CONTEXT/` is this project's **context knowledge database**, managed by [context-db](https://github.com/cart0113/context-db).
 
 ## Reading
 

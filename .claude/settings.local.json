@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /Users/ajcarter/workspace -maxdepth 3 -name index.html -path */docs/*)"
+    ]
+  }
+}

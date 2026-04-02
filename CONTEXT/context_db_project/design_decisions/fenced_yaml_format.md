@@ -4,7 +4,7 @@ description: Why frontmatter is the standard format and fenced YAML blocks are a
 
 # File Format Design
 
-context-md uses standard YAML front matter (`---` delimiters) as the primary format for descriptions:
+context-db uses standard YAML front matter (`---` delimiters) as the primary format for descriptions:
 
 ```markdown
 ---

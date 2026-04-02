@@ -1,3 +1,3 @@
 ---
-description: Project knowledge for context-md — design principles, format decisions, and research backing
+description: Project knowledge for context-db — design principles, format decisions, and research backing
 ---

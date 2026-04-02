@@ -1,4 +1,4 @@
-# context-md
+# context-db
 
 A portable standard for hierarchically organizing context as Markdown files, with auto-generated tables of contents for progressive disclosure.
 
@@ -8,4 +8,4 @@ A portable standard for hierarchically organizing context as Markdown files, wit
 - [Script Reference](script-reference.md) — build_toc.sh
 - [Motivation](motivation.md) — why we built this
 
-[github.com/cart0113/context-md](https://github.com/cart0113/context-md)
+[github.com/cart0113/context-db](https://github.com/cart0113/context-db)

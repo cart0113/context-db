@@ -1,8 +1,8 @@
 ---
-description: Discover and maintain project context via context-md TOC files
+description: Discover and maintain project context via context-db TOC files
 ---
 
-`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-md](https://github.com/cart0113/context-md).
+`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-db](https://github.com/cart0113/context-db).
 
 ## Structure
 
