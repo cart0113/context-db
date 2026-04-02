@@ -50,12 +50,16 @@ The hook targets `CONTEXT/` by default. Edit the path inside the hook if your co
 
 ## 6. Bootstrap the agent
 
-The agent needs to know how to navigate and maintain the context tree. The `bootstrap/` directory has reference texts you can start from — adapt the wording for your project and tools:
+The agent needs to know how to navigate and maintain the context knowledge database. Paste the bootstrap text into whatever file your agent reads on startup — `AGENT.md`, `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, or any other mechanism. It can be inline or in a separate file that your startup file references.
+
+The `bootstrap/` directory has reference texts to start from:
 
 - [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) — core instructions: structure, reading, writing.
 - [`bootstrap/CONTEXT-extended.md`](bootstrap/CONTEXT-extended.md) — adds proactive maintenance behaviors.
 
-Copy whichever fits into whatever file your agent reads on startup — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, or any other mechanism. The `templates/` directory has pre-formatted versions for specific tools.
+The `templates/` directory has pre-formatted versions for specific tools.
+
+The bootstrap text names `CONTEXT/` as a "context knowledge database." Once your agent has read it, you can say things like "update the context knowledge database" or "add this to the context db" and the agent will know what you mean.
 
 ## Sharing and wiring up context
 

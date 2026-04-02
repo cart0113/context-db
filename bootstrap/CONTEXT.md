@@ -1,6 +1,6 @@
 ## context-md
 
-This project organizes knowledge using [context-md](https://github.com/cart0113/context-md) — hierarchical Markdown files with auto-generated tables of contents for progressive disclosure.
+`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-md](https://github.com/cart0113/context-md).
 
 ### Structure
 

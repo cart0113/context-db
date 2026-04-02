@@ -146,7 +146,9 @@ The `bootstrap/` directory has reference texts that convey these ideas to an age
 - [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) — core instructions: structure, reading, writing.
 - [`bootstrap/CONTEXT-extended.md`](bootstrap/CONTEXT-extended.md) — adds proactive maintenance: the agent suggests updates when it learns important information, flags stale docs, and proposes reorganization when folders outgrow their structure.
 
-How you deliver the text is up to you — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, a skill, or any other mechanism. The `templates/` directory has pre-formatted versions for specific tools.
+Paste the bootstrap text into whatever file your agent reads on startup — `AGENT.md`, `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, or any other mechanism. It can be inline or in a separate file that your startup file references. The `templates/` directory has pre-formatted versions for specific tools.
+
+The bootstrap text names `CONTEXT/` as a "context knowledge database." Once your agent has read it, you can instruct it to "update the context knowledge database" or "add this to the context db" and it will know what you mean.
 
 ### Workspace patterns
 

@@ -1,6 +1,6 @@
 ## context-md
 
-This project organizes knowledge using [context-md](https://github.com/cart0113/context-md) — hierarchical Markdown files with auto-generated tables of contents for progressive disclosure.
+`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-md](https://github.com/cart0113/context-md).
 
 ### Structure
 
@@ -67,11 +67,11 @@ description: What this folder covers
 
 **Never edit `_toc.md` files.** They are built automatically from descriptions by `bin/build_toc.sh`.
 
-### Maintaining knowledge
+### Maintaining the context knowledge database
 
-The `CONTEXT/` tree is a living knowledge base, not a snapshot. It should reflect the current state of the project. Stale context is worse than missing context — an agent will act on outdated information with confidence.
+The context knowledge database is a living knowledge base, not a snapshot. It should reflect the current state of the project. Stale context is worse than missing context — an agent will act on outdated information with confidence.
 
-**Suggest updates** when you discover something a future agent would need to work safely on this codebase — architecture decisions, non-obvious patterns, constraints, gotchas, data model relationships. The heuristic: if you had to figure it out the hard way, it belongs in `CONTEXT/`. Ask before writing.
+**Suggest updates** when you discover something a future agent would need to work safely on this codebase — architecture decisions, non-obvious patterns, constraints, gotchas, data model relationships. The heuristic: if you had to figure it out the hard way, it belongs in the context knowledge database. Ask before writing.
 
 **Flag stale content** when you read a context document that contradicts the current code, describes something that no longer exists, or would lead an agent to a wrong decision. Remove or correct it.
 

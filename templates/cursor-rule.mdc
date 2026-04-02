@@ -3,7 +3,7 @@ description: Discover and maintain project context via context-md TOC files
 alwaysApply: true
 ---
 
-This project uses context-md to organize background knowledge in `CONTEXT/`.
+`CONTEXT/` is this project's **context knowledge database**, managed by [context-md](https://github.com/cart0113/context-md).
 
 ## Reading
 
