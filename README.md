@@ -6,7 +6,7 @@ Hierarchical Markdown knowledge base with auto-generated tables of contents for 
 
 ```
 your-project/
-├── AGENT.md                         ← "read context-db/context-db-instructions.md"
+├── AGENTS.md                         ← "read context-db/context-db-instructions.md"
 └── context-db/
     ├── context-db-instructions.md   ← teaches the agent to navigate the tree
     ├── context-db-toc.md            ← generated — never edit
@@ -23,7 +23,7 @@ your-project/
         └── naming-conventions.md
 ```
 
-`AGENT.md` bootstraps the agent into `context-db/`. The instructions file teaches navigation. The agent reads TOCs, uses descriptions to decide relevance, and only fetches what it needs.
+`AGENTS.md` bootstraps the agent into `context-db/`. The instructions file teaches navigation. The agent reads TOCs, uses descriptions to decide relevance, and only fetches what it needs.
 
 ## Quick start
 
@@ -31,7 +31,7 @@ your-project/
 2. Add your project subfolder with a `<foldername>.md` description file
 3. Add context documents with `description:` frontmatter
 4. Run `bin/build_toc.sh` to generate TOCs
-5. Point `AGENT.md` to read `context-db/context-db-instructions.md`
+5. Point `AGENTS.md` to read `context-db/context-db-instructions.md`
 
 ## File format
 
@@ -59,7 +59,7 @@ description: System components, data flow, and service boundaries
 
 ## Rules
 
-1. A folder is a context node if it contains `<folder_name>.md`, `<folder_name>-instructions.md`, or one of `AGENT.md`, `CONTEXT.md`, `SKILL.md`, `AGENTS.md`
+1. A folder is a context node if it contains `<folder_name>.md`, `<folder_name>-instructions.md`, or one of `AGENTS.md`, `CONTEXT.md`, `SKILL.md`, `AGENTS.md`
 2. `bin/build_toc.sh` generates `<folder>-toc.md` for each context node
 3. Underscore-prefixed and dot-prefixed names are skipped
 4. Symlinked folders appear in the TOC but are never written into

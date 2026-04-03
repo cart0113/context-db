@@ -4,7 +4,7 @@
 
 ```
 your-project/
-├── AGENT.md
+├── AGENTS.md
 └── context-db/
     ├── context-db-instructions.md
     └── context-db-toc.md            ← generated
@@ -49,7 +49,7 @@ chmod +x .git/hooks/pre-commit
 
 ## 6. Bootstrap
 
-In your project's `AGENT.md`:
+In your project's `AGENTS.md`:
 
 ```markdown
 ## context-db
