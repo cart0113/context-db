@@ -3,14 +3,14 @@ description: Discover and maintain project context via context-db TOC files
 alwaysApply: true
 ---
 
-`CONTEXT/` is this project's **context knowledge database**, managed by [context-db](https://github.com/cart0113/context-db).
+`context-db/` is this project's **context knowledge database**, managed by [context-db](https://github.com/cart0113/context-db).
 
 ## Reading
 
-Read `CONTEXT/CONTEXT_toc.md` to start. Each entry has a description and a path.
+Read `context-db/context-db-toc.md` to start. Each entry has a description and a path.
 Use descriptions to decide relevance — skip what you don't need.
 
-- If the path ends in `_toc.md`, it's a subfolder — read that TOC and repeat.
+- If the path ends in `-toc.md`, it's a subfolder — read that TOC and repeat.
 - Otherwise, read the document.
 
 ## Writing

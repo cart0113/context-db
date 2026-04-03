@@ -1,22 +1,24 @@
 #!/usr/bin/env bash
 #
-# build_toc.sh — Generate <folder>_toc.md files for context directories.
+# build_toc.sh — Generate <folder>-toc.md files for context directories.
 #
 # A context node is any directory containing a recognized description file:
-#   <foldername>.md, SKILL.md, CONTEXT.md, AGENT.md, or AGENTS.md
+#   <foldername>.md, <foldername>-instructions.md, SKILL.md, CONTEXT.md,
+#   AGENT.md, or AGENTS.md
 #
 # The description file must have YAML front matter with a `description` key.
-# The script reads that description and builds a _toc.md index for each node.
+# The script reads that description and builds a -toc.md index for each node.
 #
 # Rules:
 #   - Underscore-prefixed and dot-prefixed names are always skipped
 #   - Symlinked folders appear in the parent TOC but are never written into
-#   - Only writes _toc.md files whose real path is under the project root
+#   - Only writes -toc.md files whose real path is under the project root
+#   - The project root directory is never treated as a context node
 #
 # Usage:
 #   bin/build_toc.sh                   Rebuild changed TOC files
 #   bin/build_toc.sh --build-all       Rebuild all TOC files unconditionally
-#   bin/build_toc.sh CONTEXT/          Build from a specific directory
+#   bin/build_toc.sh context-db/       Build from a specific directory
 #
 # Requirements: bash 3.2+, awk, stat, find
 
@@ -56,6 +58,7 @@ find_desc_file() {
     local dir="$1" name
     name=$(basename "$dir")
     [ -f "$dir/${name}.md" ] && { echo "$dir/${name}.md"; return 0; }
+    [ -f "$dir/${name}-instructions.md" ] && { echo "$dir/${name}-instructions.md"; return 0; }
     local f
     for f in $DESC_NAMES; do
         [ -f "$dir/$f" ] && { echo "$dir/$f"; return 0; }
@@ -103,7 +106,7 @@ build_dir() {
     local foldername desc_file toc_file description
     foldername=$(basename "$dir")
     desc_file=$(find_desc_file "$dir") || return 0
-    toc_file="$dir/${foldername}_toc.md"
+    toc_file="$dir/${foldername}-toc.md"
     description=$(read_desc "$desc_file")
 
     local desc_fname
@@ -124,7 +127,7 @@ build_dir() {
         local sdesc
         sdesc=$(read_desc "$sub_desc")
         [ -z "$sdesc" ] && sdesc="(no description)"
-        folder_lines="${folder_lines}"$'\n'"- description: ${sdesc}"$'\n'"  path: ${subname}/${subname}_toc.md"
+        folder_lines="${folder_lines}"$'\n'"- description: ${sdesc}"$'\n'"  path: ${subname}/${subname}-toc.md"
     done
 
     # File entries (skip the description file and the toc file)
@@ -133,7 +136,7 @@ build_dir() {
         [ -f "$md_file" ] || continue
         local fname=$(basename "$md_file")
         [ "$fname" = "$desc_fname" ] && continue
-        [ "$fname" = "${foldername}_toc.md" ] && continue
+        [ "$fname" = "${foldername}-toc.md" ] && continue
         should_skip "$fname" && continue
 
         local fdesc
@@ -170,7 +173,7 @@ walk() {
     real_dir=$(cd "$dir" && pwd -P)
     case "$real_dir" in
         "$project_root"|"${project_root}"/*)
-            local toc_file="$dir/${foldername}_toc.md"
+            local toc_file="$dir/${foldername}-toc.md"
             if $BUILD_ALL || needs_rebuild "$dir" "$toc_file"; then
                 build_dir "$dir"
             fi
@@ -210,6 +213,7 @@ main() {
     if [ $# -eq 0 ]; then
         # Find root context nodes: dirs with a desc file whose parent has none
         find "$project_root" -name "*.md" \
+             -not -name "*-toc.md" \
              -not -name "*_toc.md" \
              -not -path "*/.git/*" \
              -not -path "*/node_modules/*" \
@@ -219,8 +223,13 @@ main() {
             local base=$(basename "$f" .md)
             local dname=$(basename "$d")
 
+            # Never treat the project root as a context node
+            local real_d
+            real_d=$(cd "$d" && pwd -P)
+            [ "$real_d" = "$project_root" ] && continue
+
             # Must be a recognized description file for this directory
-            if [ "$base" != "$dname" ]; then
+            if [ "$base" != "$dname" ] && [ "$base" != "${dname}-instructions" ]; then
                 case "$base" in SKILL|CONTEXT|AGENT|AGENTS) ;; *) continue ;; esac
             fi
 

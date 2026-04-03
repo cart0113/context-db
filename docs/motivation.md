@@ -36,7 +36,7 @@ The ecosystem reflects this. Codex has `AGENTS.md` for persistent context and a 
 
 context-db takes the portable parts of skills — front matter, symlinks, standard structure — and applies them to background knowledge, with one key difference: **you control the discovery mechanism**.
 
-A shell script generates `_toc.md` indexes from YAML front matter. Each TOC is a lightweight list of descriptions with paths. An agent reads the TOC, decides what's relevant, and fetches only those documents. Nested folders produce nested TOCs, supporting arbitrarily deep hierarchies — scaling from a handful of documents to hundreds.
+A shell script generates `-toc.md` indexes from YAML front matter. Each TOC is a lightweight list of descriptions with paths. An agent reads the TOC, decides what's relevant, and fetches only those documents. Nested folders produce nested TOCs, supporting arbitrarily deep hierarchies — scaling from a handful of documents to hundreds.
 
 The target is large projects with substantial background knowledge: legacy systems with years of accumulated decisions, enterprise services with complex data models, multi-team codebases where no single person holds the full picture. These are the projects where a few hundred lines of context isn't enough, and where an agent needs a map before it can search.
 
@@ -57,7 +57,7 @@ For small projects, built-in search is likely sufficient. The TOC becomes essent
 Someone publishes a set of knowledge documents — coding standards, onboarding guides, architecture overviews. Another project symlinks to them:
 
 ```bash
-ln -s /path/to/shared/coding_standards CONTEXT/coding_standards
+ln -s /path/to/shared/coding-standards context-db/coding-standards
 ```
 
 `build_toc.sh` reads the descriptions and generates a unified TOC, giving the LLM a map into an arbitrary collection of documents regardless of where they live on disk. The build script never writes into symlinked folders.

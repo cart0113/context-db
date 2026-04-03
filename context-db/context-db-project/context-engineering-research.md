@@ -103,7 +103,7 @@ Practical strategies: subagent isolation, observation masking (hiding verbose to
 
 ## Implications for context-db
 
-1. **Agent-navigable TOCs are the right pattern.** Letting the agent decide what to read based on descriptions is better than dumping everything. This is what `CONTEXT_toc.md` + description-based filtering does.
+1. **Agent-navigable TOCs are the right pattern.** Letting the agent decide what to read based on descriptions is better than dumping everything. This is what `context-db-toc.md` + description-based filtering does.
 
 2. **Descriptions are the critical mechanism.** The ETH Zurich study says agents waste tokens on irrelevant pre-loaded structure. context-db's descriptions-as-filter approach is closer to the "load on demand" pattern that Anthropic recommends.
 

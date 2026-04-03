@@ -1,42 +1,46 @@
+---
+description: How to navigate and maintain this project's context knowledge database
+---
+
 ## context-db
 
-`CONTEXT/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-db](https://github.com/cart0113/context-db).
+`context-db/` is this project's **context knowledge database** — hierarchical Markdown files with auto-generated tables of contents, managed by [context-db](https://github.com/cart0113/context-db).
 
 ### Structure
 
-Example structure below. All folder and file names are abstract placeholders — they have nothing to do with this project's actual files. Name yours to match your content:
+Example structure below. All folder and file names are abstract placeholders — name yours to match your content:
 
 ```
-CONTEXT/
-├── CONTEXT_toc.md                  ← generated — never edit
-├── CONTEXT.md                      ← folder description (frontmatter only)
-├── main_project_context/
-│   ├── main_project_context_toc.md ← generated
-│   ├── main_project_context.md     ← folder description
-│   ├── topic_a/
-│   │   ├── topic_a_toc.md          ← generated
-│   │   ├── topic_a.md              ← folder description
-│   │   ├── document_1.md           ← document (frontmatter + body)
-│   │   └── document_2.md
-│   └── topic_b/
-│       ├── topic_b_toc.md
-│       ├── topic_b.md
+context-db/
+├── context-db-instructions.md      ← you are here
+├── context-db-toc.md               ← generated — never edit
+├── my-project/
+│   ├── my-project.md               ← folder description
+│   ├── my-project-toc.md           ← generated
+│   ├── topic-a/
+│   │   ├── topic-a.md              ← folder description
+│   │   ├── topic-a-toc.md          ← generated
+│   │   ├── document-1.md           ← document (frontmatter + body)
+│   │   └── document-2.md
+│   └── topic-b/
+│       ├── topic-b.md
+│       ├── topic-b-toc.md
 │       └── ...
 └── standards/
-    ├── standards_toc.md
     ├── standards.md
+    ├── standards-toc.md
     └── ...
 ```
 
-Every `.md` file has YAML frontmatter with a `description` — a one-line summary of what it covers. Every folder with a description file gets an auto-generated `_toc.md` listing its contents by description and path.
+Every `.md` file has YAML frontmatter with a `description` — a one-line summary of what it covers. Every folder with a description file gets an auto-generated `-toc.md` listing its contents by description and path.
 
 The `description` is the only thing shown in the TOC. It is how an agent decides whether to read a file without opening it. Write descriptions that make this decision easy.
 
 ### Reading
 
-Start at `CONTEXT/CONTEXT_toc.md`. Each TOC entry has a description and a path:
+Start at `context-db-toc.md`. Each TOC entry has a description and a path:
 
-- Path ending in `_toc.md` → subfolder. Read that TOC to go deeper.
+- Path ending in `-toc.md` → subfolder. Read that TOC to go deeper.
 - Any other path → document. Read it if the description is relevant to your task.
 
 Only fetch what you need. Use descriptions to skip irrelevant branches entirely.
@@ -65,7 +69,7 @@ description: What this folder covers
 ---
 ```
 
-**Never edit `_toc.md` files.** They are built automatically from descriptions by `bin/build_toc.sh`.
+**Never edit `-toc.md` files.** They are built automatically from descriptions by `bin/build_toc.sh`.
 
 ### Maintaining the context knowledge database
 

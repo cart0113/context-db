@@ -12,7 +12,7 @@ A standard for organizing project knowledge as hierarchical Markdown files with 
 
 Large projects need more background knowledge than a single context file can hold. But dumping everything into the LLM's context window degrades performance — research shows accuracy drops as input grows, especially with irrelevant content.
 
-The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-db solves this with auto-generated `_toc.md` indexes: lightweight maps that show the agent what knowledge is available, so it can fetch selectively.
+The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-db solves this with auto-generated `-toc.md` indexes: lightweight maps that show the agent what knowledge is available, so it can fetch selectively.
 
 ## Core Design Principles
 

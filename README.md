@@ -1,186 +1,78 @@
 # context-db
 
-A portable standard for hierarchically organizing context as Markdown files, with auto-generated tables of contents for progressive disclosure.
+Hierarchical Markdown knowledge base with auto-generated tables of contents for LLM agents.
 
-An LLM reads a lightweight `_toc.md` index, sees one-line descriptions of every subfolder and file, and fetches only what's relevant to the current task. Agents don't read the description files — they read the TOC, then fetch individual documents.
-
-## Why
-
-Large projects need more background knowledge than a single context file can hold. `CLAUDE.md` is recommended under 200 lines. `AGENTS.md` caps at 32 KiB. But a legacy enterprise system might need thousands of lines of context — architecture, data models, API contracts, deployment constraints, historical decisions — for an agent to reason safely about changes.
-
-The fix is smaller documents organized in folders. But then agents need a way to discover what exists without loading everything. context-db solves this with auto-generated `_toc.md` indexes: lightweight maps (~100 tokens) that show the agent what knowledge is available, so it can fetch only what's relevant.
-
-A TOC is a **discovery** mechanism ("here's what exists"), complementing retrieval mechanisms like grep and RAG ("find me X"). Research shows LLM performance degrades as context grows — progressive disclosure keeps the window focused on what matters.
-
-See [docs/motivation.md](docs/motivation.md) for the full rationale.
-
-## Example
-
-A payments service with shared coding and git standards (see `example/`):
+## How it works
 
 ```
-acme_payments/
-└── CONTEXT/
-    ├── CONTEXT.md
-    ├── CONTEXT_toc.md                    ← generated
-    ├── _drafts/                          ← skipped (underscore prefix)
-    │   └── migration_plan.md
-    ├── acme_payments/
-    │   ├── acme_payments.md
-    │   ├── acme_payments_toc.md          ← generated
-    │   ├── architecture.md
-    │   ├── api_reference.md
-    │   └── data_model/
-    │       ├── data_model.md
-    │       ├── data_model_toc.md         ← generated
-    │       ├── entities.md
-    │       └── schema_conventions.md
-    ├── coding_standards/ → shared/...    ← symlink
-    │   ├── coding_standards.md
-    │   ├── naming_conventions.md
-    │   └── error_handling.md
-    └── git_standards/ → shared/...       ← symlink
-        ├── git_standards.md
-        ├── commit_messages.md
-        └── branching.md
+your-project/
+├── AGENT.md                         ← "read context-db/context-db-instructions.md"
+└── context-db/
+    ├── context-db-instructions.md   ← teaches the agent to navigate the tree
+    ├── context-db-toc.md            ← generated — never edit
+    ├── my-project/
+    │   ├── my-project.md            ← folder description (frontmatter only)
+    │   ├── my-project-toc.md        ← generated
+    │   ├── architecture.md          ← document (frontmatter + body)
+    │   └── data-model/
+    │       ├── data-model.md
+    │       ├── data-model-toc.md
+    │       └── entities.md
+    └── coding-standards/            ← can be a symlink to shared context
+        ├── coding-standards.md
+        └── naming-conventions.md
 ```
 
-The generated root TOC (`CONTEXT_toc.md`):
+`AGENT.md` bootstraps the agent into `context-db/`. The instructions file teaches navigation. The agent reads TOCs, uses descriptions to decide relevance, and only fetches what it needs.
 
-```
-## Subfolders
+## Quick start
 
-- description: Acme Payments — architecture, APIs, and data model
-  path: acme_payments/acme_payments_toc.md
-- description: Shared coding standards — naming, error handling, and testing conventions
-  path: coding_standards/coding_standards_toc.md
-- description: Git workflow — branching strategy, commit messages, and PR conventions
-  path: git_standards/git_standards_toc.md
-```
+1. Create `context-db/` and copy `context-db-instructions.md` into it
+2. Add your project subfolder with a `<foldername>.md` description file
+3. Add context documents with `description:` frontmatter
+4. Run `bin/build_toc.sh` to generate TOCs
+5. Point `AGENT.md` to read `context-db/context-db-instructions.md`
 
-Following `acme_payments/acme_payments_toc.md` shows the next level:
+## File format
 
-```
-## Subfolders
+Every `.md` file has YAML frontmatter with a `description` key. This is the only thing shown in the TOC — it's how the agent decides whether to read a file.
 
-- description: Database schema, entities, and relationships
-  path: data_model/data_model_toc.md
+**Folder description** (`my-project.md`) — frontmatter only, registers the folder:
 
-## Files
-
-- description: REST API endpoints, authentication, and error codes
-  path: api_reference.md
-- description: System components, data flow, and service boundaries
-  path: architecture.md
-```
-
-The LLM reads each TOC, decides which paths are relevant, and follows `_toc.md` paths deeper. `_drafts/` doesn't appear.
-
-## Rules
-
-1. **Description file.** A folder is a context node if it contains any of: `<folder_name>.md`, `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`. The file should only have YAML front matter with a single `description` key. Other content in this file is ignored and should not be included.
-
-2. **Context documents.** Individual `.md` files use the same format — YAML front matter with `description`. The description appears in the parent's `_toc.md`.
-
-3. **TOC generation.** `bin/build_toc.sh` walks the directory tree and generates `<folder>_toc.md` for each context node. By default it only rebuilds when source files are newer than the existing TOC. Use `--build-all` to force a full rebuild.
-
-4. **Symlinks.** Symlinked folders appear in the parent's TOC. The script never writes into a folder whose real path is outside the project root.
-
-5. **Skipping.** Underscore-prefixed (`_drafts/`) and dot-prefixed (`.hidden/`) names are always skipped.
-
-## File Format
-
-Description file (`acme_payments.md`) — identifies the folder as a context node:
-
-```markdown
+```yaml
 ---
-description: Acme Payments — architecture, APIs, and data model
+description: My project — architecture and data model
 ---
 ```
 
-Context document (`architecture.md`) — description plus content:
+**Document** (`architecture.md`) — frontmatter plus content:
 
-```markdown
+```yaml
 ---
 description: System components, data flow, and service boundaries
 ---
 
 # Architecture
 
-Acme Payments is a three-tier service:
-
-1. **API Gateway** — validates requests, rate limiting, auth
-2. **Payment Engine** — orchestrates payment flows, retries, idempotency
-3. **Ledger** — append-only transaction log, double-entry bookkeeping
-
-All inter-service communication is async via message queue.
+(content)
 ```
+
+## Rules
+
+1. A folder is a context node if it contains `<folder_name>.md`, `<folder_name>-instructions.md`, or one of `AGENT.md`, `CONTEXT.md`, `SKILL.md`, `AGENTS.md`
+2. `bin/build_toc.sh` generates `<folder>-toc.md` for each context node
+3. Underscore-prefixed and dot-prefixed names are skipped
+4. Symlinked folders appear in the TOC but are never written into
 
 ## Building
 
 ```bash
-bin/build_toc.sh                    # Rebuild changed _toc.md files
-bin/build_toc.sh --build-all        # Rebuild all _toc.md files unconditionally
-bin/build_toc.sh CONTEXT/           # Build from a specific directory
+bin/build_toc.sh                    # rebuild changed TOCs
+bin/build_toc.sh --build-all        # force rebuild all
+bin/build_toc.sh context-db/        # build specific tree
 ```
 
-### Pre-commit hook
-
-```bash
-cp hooks/pre-commit .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-```
-
-The hook targets `CONTEXT/` by default. Edit the path inside the hook if your context tree lives elsewhere or if you need to build multiple trees.
-
-## Bootstrap
-
-An agent needs to understand three ideas to work with context-db:
-
-1. **Descriptions are the interface.** A `description` in YAML frontmatter is the only thing shown in the TOC — it's how the agent decides whether to read a file without opening it.
-2. **Structure is retrieval.** The folder hierarchy isn't just organization. Each folder becomes a TOC node. Deeper nesting means more granular filtering before committing tokens.
-3. **TOCs are derived.** The agent maintains content and descriptions. `_toc.md` indexes are generated automatically — never edit them.
-
-The `bootstrap/` directory has reference texts that convey these ideas to an agent. They are starting points — adapt the wording for your project, your tools, and your workflow:
-
-- [`bootstrap/CONTEXT.md`](bootstrap/CONTEXT.md) — core instructions: structure, reading, writing.
-- [`bootstrap/CONTEXT-extended.md`](bootstrap/CONTEXT-extended.md) — adds proactive maintenance: the agent suggests updates when it learns important information, flags stale docs, and proposes reorganization when folders outgrow their structure.
-
-Paste the bootstrap text into whatever file your agent reads on startup — `AGENT.md`, `CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.claude/rules/`, a system prompt, or any other mechanism. It can be inline or in a separate file that your startup file references. The `templates/` directory has pre-formatted versions for specific tools.
-
-The bootstrap text names `CONTEXT/` as a "context knowledge database." Once your agent has read it, you can instruct it to "update the context knowledge database" or "add this to the context db" and it will know what you mean.
-
-### Workspace patterns
-
-context-db doesn't prescribe where context lives or how it's wired in. A few patterns:
-
-**Symlink shared context into your project:**
-```bash
-ln -s /shared/coding_standards CONTEXT/coding_standards
-```
-
-**Point rules at multiple locations:**
-```markdown
-# In CLAUDE.md, .cursorrules, or AGENTS.md:
-Read CONTEXT/CONTEXT_toc.md for project context.
-Read ~/team/CONTEXT/CONTEXT_toc.md for team coding standards.
-```
-
-**Reference a specific subfolder** when you don't need the whole tree:
-```markdown
-Read CONTEXT/acme_payments/acme_payments_toc.md to start.
-```
-
-## Tools
-
-| Script | Description |
-|--------|-------------|
-| `bin/build_toc.sh` | Recursive TOC builder with change detection |
-| `hooks/pre-commit` | Git hook that runs `build_toc.sh` before commit |
-
-## Future
-
-A `<folder_name>.cfg` system for per-folder configuration (ignore lists, symlink follow rules) is under consideration.
+Pre-commit hook: `cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
 
 ## License
 

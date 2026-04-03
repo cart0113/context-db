@@ -2,13 +2,13 @@
 
 ## build_toc.sh
 
-Generates `<folder>_toc.md` files by walking context directories.
+Generates `<folder>-toc.md` files by walking context directories.
 
 ### Usage
 
 ```bash
 bin/build_toc.sh                    # Rebuild changed TOC files
-bin/build_toc.sh CONTEXT/           # Build one directory tree
+bin/build_toc.sh context-db/        # Build one directory tree
 bin/build_toc.sh --build-all        # Rebuild all TOC files unconditionally
 ```
 
@@ -18,6 +18,7 @@ bin/build_toc.sh --build-all        # Rebuild all TOC files unconditionally
 - Recurses into subdirectories that have description files
 - Reads symlinked folders for descriptions but never writes into them
 - Skips underscore-prefixed and dot-prefixed names
+- Never treats the project root as a context node
 
 ### Requirements
 

@@ -1,21 +1,21 @@
 # TOC File Format
 
-`<folder>_toc.md` files are fully generated. Never edit them.
+`<folder>-toc.md` files are fully generated. Never edit them.
 
 ## Example
 
-From the acme_payments example (`acme_payments_toc.md`):
+From the acme-payments example (`acme-payments-toc.md`):
 
 ```markdown
 ## Subfolders
 
 - description: Database schema, entities, and relationships
-  path: data_model/data_model_toc.md
+  path: data-model/data-model-toc.md
 
 ## Files
 
 - description: REST API endpoints, authentication, and error codes
-  path: api_reference.md
+  path: api-reference.md
 - description: System components, data flow, and service boundaries
   path: architecture.md
 ```
@@ -29,6 +29,6 @@ Sections only appear when there are entries — an empty folder produces an empt
 | Section    | Contents                                                          |
 |------------|-------------------------------------------------------------------|
 | Subfolders | Subdirectories that have a description file                       |
-| Files      | `.md` files (excluding the description file and the `_toc.md`)    |
+| Files      | `.md` files (excluding the description file and the `-toc.md`)    |
 
 Underscore-prefixed and dot-prefixed names are excluded.
