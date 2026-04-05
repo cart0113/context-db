@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Document page -->
+  <rect x="10" y="6" width="34" height="44" rx="3" fill="#ede8e1" stroke="#4a6591" stroke-width="2.5"/>
+  <!-- Folded corner -->
+  <path d="M34 6v10h10" fill="#d8d2c8" stroke="#4a6591" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M34 6l10 10" fill="none" stroke="#4a6591" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Hierarchy lines (TOC structure) -->
+  <line x1="16" y1="22" x2="32" y2="22" stroke="#4a6591" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="19" y1="28" x2="36" y2="28" stroke="#6b5b95" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="19" y1="33" x2="34" y2="33" stroke="#6b5b95" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <line x1="16" y1="39" x2="30" y2="39" stroke="#4a6591" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+  <line x1="19" y1="44" x2="33" y2="44" stroke="#6b5b95" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+  <!-- Database cylinder -->
+  <g transform="translate(38, 36)">
+    <ellipse cx="10" cy="4" rx="10" ry="4" fill="#2d3a4a"/>
+    <rect x="0" y="4" width="20" height="16" fill="#2d3a4a"/>
+    <ellipse cx="10" cy="20" rx="10" ry="4" fill="#3d4d5f"/>
+    <ellipse cx="10" cy="4" rx="10" ry="4" fill="#4a6591"/>
+    <!-- Middle ring -->
+    <ellipse cx="10" cy="12" rx="10" ry="3" fill="none" stroke="#6d90c0" stroke-width="1.2" opacity="0.5"/>
+    <!-- Shine -->
+    <ellipse cx="10" cy="4" rx="6" ry="2" fill="#6d90c0" opacity="0.35"/>
+  </g>
+  <!-- Gold accent star -->
+  <path d="M8 4l1.2-2.7 1.2 2.7 2.7 1.2-2.7 1.2-1.2 2.7-1.2-2.7-2.7-1.2z" fill="#f0c040" opacity="0.85"/>
+  <!-- Small star -->
+  <path d="M50 8l.8-1.8.8 1.8 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8z" fill="#e89840" opacity="0.7"/>
+</svg>

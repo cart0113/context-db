@@ -4,41 +4,6 @@
 Markdown files with auto-generated tables of contents, managed by
 [context-db](https://github.com/cart0113/context-db).
 
-### Structure
-
-Example structure below. All folder and file names are abstract placeholders —
-name yours to match your content:
-
-```
-context-db/
-├── context-db-instructions.md      ← how to use the context-db
-├── context-db-toc.md               ← generated — never edit
-├── my-project/
-│   ├── my-project.md               ← folder description
-│   ├── my-project-toc.md           ← generated
-│   ├── topic-a/
-│   │   ├── topic-a.md              ← folder description
-│   │   ├── topic-a-toc.md          ← generated
-│   │   ├── document-1.md           ← document (frontmatter + body)
-│   │   └── document-2.md
-│   └── topic-b/
-│       ├── topic-b.md
-│       ├── topic-b-toc.md
-│       └── ...
-└── standards/
-    ├── standards.md
-    ├── standards-toc.md
-    └── ...
-```
-
-Every `.md` file has YAML frontmatter with a `description` — a one-line summary
-of what it covers. Every folder with a description file gets an auto-generated
-`-toc.md` listing its contents by description and path.
-
-The `description` is the only thing shown in the TOC. It is how an agent decides
-whether to read a file without opening it. Write descriptions that make this
-decision easy.
-
 ### Reading
 
 Start at `context-db/context-db-toc.md`. Each TOC entry has a description and a
@@ -50,34 +15,27 @@ path:
 
 Only fetch what you need. Use descriptions to skip irrelevant branches entirely.
 
-### Writing
+### IMPORTANT: Writing Back to the Context-DB
 
-There are two kinds of `.md` files in the context tree:
+**You are expected to update the context-db when you learn something
+important.**
 
-**Documents** — frontmatter plus a markdown body. When you create or edit a
-document, keep its `description` accurate so future reads are correctly
-filtered.
+When you discover architecture decisions, non-obvious patterns, constraints,
+gotchas, data model relationships, or anything a future agent would need to work
+safely on this codebase — add it to the context-db. If you had to figure it out
+the hard way, it belongs there.
 
-```yaml
----
-description: What this covers and why you'd read it
----
-# Title
+When creating or updating context documents:
 
-(content)
-```
-
-**Folder descriptions** — `<foldername>.md` with frontmatter only, no body.
-These register the folder as a context node so it appears in the parent TOC.
-
-```yaml
----
-description: What this folder covers
----
-```
-
-**Never edit `-toc.md` files.** They are built automatically from descriptions
-by `bin/build_toc.sh`.
+- **New document**: YAML frontmatter with `description`, then markdown content.
+- **New folder**: create `<foldername>.md` with only YAML frontmatter:
+  `description: <one-line summary>`. This marks the folder as a context node.
+- **Descriptions are critical.** The description is the only thing an agent sees
+  in the TOC. Write the most useful, concise summary possible.
+- **Fix stale content.** If a context document contradicts the current code,
+  correct it or remove it.
+- Run `bin/build_toc.sh` to regenerate TOC files after changes.
+- **Never edit `-toc.md` files.** They are generated automatically.
 
 Documents can optionally include `status: draft`, `status: stable`, or
 `status: deprecated`. When omitted, the document is assumed stable. Non-stable

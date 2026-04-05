@@ -96,27 +96,28 @@ status: deprecated
 ---
 ```
 
-### Maintaining the context knowledge database
+### IMPORTANT: Maintaining the context knowledge database
 
-The context knowledge database is a living knowledge base, not a snapshot. It
-should reflect the current state of the project. Stale context is worse than
-missing context — an agent will act on outdated information with confidence.
+**This is not optional.** The context-db is a living knowledge base, not a
+snapshot. You are expected to keep it current. Stale context is worse than
+missing context — a future agent will act on outdated information with
+confidence.
 
-**Suggest updates** when you discover something a future agent would need to
-work safely on this codebase — architecture decisions, non-obvious patterns,
-constraints, gotchas, data model relationships. The heuristic: if you had to
-figure it out the hard way, it belongs in the context knowledge database. Ask
-before writing.
+**Update the context-db when you learn something important.** Architecture
+decisions, non-obvious patterns, constraints, gotchas, data model relationships,
+service boundaries, deployment quirks — if you had to figure it out the hard
+way, it belongs here. When you finish a task that revealed something a future
+agent would need, add or update the relevant context document. Keep descriptions
+in frontmatter accurate so the TOC stays useful.
 
-**Flag stale content** when you read a context document that contradicts the
-current code, describes something that no longer exists, or would lead an agent
-to a wrong decision. Remove or correct it.
+**Flag and fix stale content.** When you read a context document that
+contradicts the current code, describes something that no longer exists, or
+would lead an agent to a wrong decision — correct it or remove it immediately.
 
-**Suggest reorganization** when a document covers multiple distinct topics or a
-folder's TOC has grown past a quick scan. Moving content into a subfolder
-automatically creates a new TOC node — a new level of progressive disclosure.
-This isn't tidying; it directly improves how well a future agent can filter what
-it reads.
+**Reorganize when needed.** When a document covers multiple distinct topics or a
+folder's TOC has grown past a quick scan, move content into a subfolder. This
+creates a new TOC node — a new level of progressive disclosure. This directly
+improves how well a future agent can filter what it reads.
 
 **After any change** to context files:
 

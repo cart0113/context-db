@@ -1,7 +1,0 @@
-- [Home](/)
-- [Quick Start](getting-started.md)
-- [Specification](specification.md)
-- [TOC Format](toc-format.md)
-- [Script Reference](script-reference.md)
-- [Motivation](motivation.md)
-- [GitHub](https://github.com/cart0113/context-db)

@@ -8,5 +8,5 @@
   path: naming-convention.md
 - description: Why build_toc.sh never writes to directories that are symlinks
   path: no-cross-symlink-edits.md
-- description: Why status is the only optional frontmatter field, and why other metadata was rejected
+- description: (no description)
   path: optional-frontmatter-fields.md
