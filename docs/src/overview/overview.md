@@ -47,6 +47,24 @@ your-project/
 - **Progressive disclosure** — agents load what they need, not everything at
   once.
 
+## Portability
+
+Folders are self-describing. Symlink a published knowledge folder into any
+project's `context-db/` and `build_toc.sh` picks it up automatically:
+
+```
+context-db/
+├── my-project/
+│   ├── my-project.md
+│   └── architecture.md
+└── coding-standards/ → /shared/coding-standards   ← symlink
+    ├── coding-standards.md
+    └── naming-conventions.md
+```
+
+The build script reads descriptions from symlinked folders but never writes into
+them. Separate teams publish and consume context independently.
+
 ## Documentation
 
 - [Getting Started](guide/getting-started.md) — step-by-step setup

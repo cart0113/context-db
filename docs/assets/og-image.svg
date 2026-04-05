@@ -3,31 +3,22 @@
   <rect width="1200" height="630" fill="#ede8e1"/>
 
   <!-- Icon (centered, scaled up) -->
-  <g transform="translate(410, 60) scale(3.5)">
-    <!-- Document page -->
-    <rect x="10" y="6" width="34" height="44" rx="3" fill="#f5f0ea" stroke="#4a6591" stroke-width="2.5"/>
-    <!-- Folded corner -->
-    <path d="M34 6v10h10" fill="#d8d2c8" stroke="#4a6591" stroke-width="2.5" stroke-linejoin="round"/>
-    <path d="M34 6l10 10" fill="none" stroke="#4a6591" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- Hierarchy lines -->
-    <line x1="16" y1="22" x2="32" y2="22" stroke="#4a6591" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-    <line x1="19" y1="28" x2="36" y2="28" stroke="#6b5b95" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-    <line x1="19" y1="33" x2="34" y2="33" stroke="#6b5b95" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-    <line x1="16" y1="39" x2="30" y2="39" stroke="#4a6591" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
-    <line x1="19" y1="44" x2="33" y2="44" stroke="#6b5b95" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-    <!-- Database cylinder -->
-    <g transform="translate(38, 36)">
-      <ellipse cx="10" cy="4" rx="10" ry="4" fill="#2d3a4a"/>
-      <rect x="0" y="4" width="20" height="16" fill="#2d3a4a"/>
-      <ellipse cx="10" cy="20" rx="10" ry="4" fill="#3d4d5f"/>
-      <ellipse cx="10" cy="4" rx="10" ry="4" fill="#4a6591"/>
-      <ellipse cx="10" cy="12" rx="10" ry="3" fill="none" stroke="#6d90c0" stroke-width="1.2" opacity="0.5"/>
-      <ellipse cx="10" cy="4" rx="6" ry="2" fill="#6d90c0" opacity="0.35"/>
+  <g transform="translate(430, 40) scale(4.5)">
+    <!-- Purple page (largest) — top, tilted left -->
+    <g transform="rotate(-10, 30, 20)">
+      <path d="M16 4h18l6 6v24a3 3 0 01-3 3H16a3 3 0 01-3-3V7a3 3 0 013-3z" fill="#6b5b95" opacity="0.72"/>
+      <path d="M34 4v6h6z" fill="#6b5b95" opacity="0.5"/>
     </g>
-    <!-- Gold star -->
-    <path d="M8 4l1.2-2.7 1.2 2.7 2.7 1.2-2.7 1.2-1.2 2.7-1.2-2.7-2.7-1.2z" fill="#f0c040" opacity="0.85"/>
-    <!-- Small star -->
-    <path d="M50 8l.8-1.8.8 1.8 1.8.8-1.8.8-.8 1.8-.8-1.8-1.8-.8z" fill="#e89840" opacity="0.7"/>
+    <!-- Slate blue page (medium) — bottom-right, tilted right -->
+    <g transform="rotate(12, 44, 38)">
+      <path d="M33 24h12l4 4v16a2.5 2.5 0 01-2.5 2.5H33a2.5 2.5 0 01-2.5-2.5V26.5a2.5 2.5 0 012.5-2.5z" fill="#4a6591" opacity="0.76"/>
+      <path d="M45 24v4h4z" fill="#4a6591" opacity="0.54"/>
+    </g>
+    <!-- Gold page (smallest) — bottom-left, slight tilt -->
+    <g transform="rotate(4, 18, 44)">
+      <path d="M13 36h8l3 3v8a2 2 0 01-2 2H13a2 2 0 01-2-2V38a2 2 0 012-2z" fill="#e89840" opacity="0.8"/>
+      <path d="M21 36v3h3z" fill="#e89840" opacity="0.58"/>
+    </g>
   </g>
 
   <!-- Title -->

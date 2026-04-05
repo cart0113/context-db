@@ -12,11 +12,6 @@ under 500 lines. Meanwhile, the background knowledge needed to work in large
 systems — architecture, data models, API contracts, deployment constraints,
 historical decisions — doesn't fit in a few hundred lines.
 
-Research confirms the gap. A 2025 arXiv study on a 108K LOC C# project found
-that effective AI-assisted development required ~26,000 lines of structured
-context — a 24% knowledge-to-code ratio. Single-file manifests at ~1,000 lines
-were "an order of magnitude" insufficient.
-
 Loading everything eagerly isn't the answer. Chroma Research tested 18 LLMs and
 found that performance degrades as input length increases — models perform best
 when relevant information appears at the beginning or end of context, with
@@ -40,20 +35,15 @@ reader instead of humans. Where a human navigates visually through a sidebar or
 graph view, an agent reads a generated TOC of descriptions and paths, then
 fetches only what it needs.
 
-## The journey here
+## From single file to hierarchy
 
-This project started with a single `CONTEXT.md` file explaining how a large
-legacy system works. Architecture, data models, service boundaries, domain
-quirks — everything an agent needs to reason about changes.
+A single context file works until it doesn't. Past a few hundred lines, agents
+start missing instructions. Breaking it into smaller documents solves the length
+problem but creates a discovery problem — the agent doesn't know what exists.
 
-As the project grew, the file grew. Past a few hundred lines, agents started
-missing instructions. The fix was obvious: break it into smaller documents. But
-that created a discovery problem — how does the agent find what exists?
-
-First attempt: manually maintain a table of contents in the root file. This
-drifts every time you add or reorganize a document. Second attempt: a skill
-(`/reindex`) to regenerate the TOC by reading individual files. This worked, but
-required the agent to maintain the index correctly.
+A manually maintained table of contents drifts every time a document is added or
+reorganized. Delegating index maintenance to the agent introduces its own
+failure modes. The index needs to be generated from the documents themselves.
 
 ## Skills and their limits
 
@@ -113,19 +103,3 @@ For small projects, built-in search is sufficient. The TOC becomes useful as
 projects grow, as knowledge spans multiple domains, and especially when context
 is shared across projects via symlinks — where the agent has no prior knowledge
 of what's been linked in.
-
-## Portability
-
-Someone publishes a set of knowledge documents — coding standards, onboarding
-guides, architecture overviews. Another project symlinks them:
-
-```bash
-ln -s /path/to/shared/coding-standards context-db/coding-standards
-```
-
-`build_toc.sh` reads the descriptions and generates a unified TOC, giving the
-agent a map into an arbitrary collection of documents regardless of where they
-live on disk. The build script never writes into symlinked folders.
-
-Self-describing folders that compose into larger hierarchies without
-coordination — this is the core portability mechanism.

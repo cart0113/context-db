@@ -1,6 +1,7 @@
 # context-db
 
-Hierarchical Markdown knowledge base with auto-generated tables of contents for LLM agents.
+Hierarchical Markdown knowledge base with auto-generated tables of contents for
+LLM agents.
 
 ## How it works
 
@@ -23,7 +24,9 @@ your-project/
         └── naming-conventions.md
 ```
 
-`AGENTS.md` bootstraps the agent into `context-db/`. The instructions file teaches navigation. The agent reads TOCs, uses descriptions to decide relevance, and only fetches what it needs.
+`AGENTS.md` bootstraps the agent into `context-db/`. The instructions file
+teaches navigation. The agent reads TOCs, uses descriptions to decide relevance,
+and only fetches what it needs.
 
 ## Quick start
 
@@ -33,11 +36,30 @@ your-project/
 4. Run `bin/build_toc.sh` to generate TOCs
 5. Point `AGENTS.md` to read `context-db/context-db-instructions.md`
 
+## Portability
+
+Symlink a published knowledge folder into `context-db/` and the build script
+picks it up:
+
+```
+context-db/
+├── my-project/
+│   ├── my-project.md
+│   └── architecture.md
+└── coding-standards/ → /shared/coding-standards   ← symlink
+    ├── coding-standards.md
+    └── naming-conventions.md
+```
+
+The build script reads symlinked folders but never writes into them.
+
 ## File format
 
-Every `.md` file has YAML frontmatter with a `description` key. This is the only thing shown in the TOC — it's how the agent decides whether to read a file.
+Every `.md` file has YAML frontmatter with a `description` key. This is the only
+thing shown in the TOC — it's how the agent decides whether to read a file.
 
-**Folder description** (`my-project.md`) — frontmatter only, registers the folder:
+**Folder description** (`my-project.md`) — frontmatter only, registers the
+folder:
 
 ```yaml
 ---
@@ -51,7 +73,6 @@ description: My project — architecture and data model
 ---
 description: System components, data flow, and service boundaries
 ---
-
 # Architecture
 
 (content)
@@ -59,7 +80,9 @@ description: System components, data flow, and service boundaries
 
 ## Rules
 
-1. A folder is a context node if it contains `<folder_name>.md`, `<folder_name>-instructions.md`, or one of `AGENTS.md`, `CONTEXT.md`, `SKILL.md`, `AGENTS.md`
+1. A folder is a context node if it contains `<folder_name>.md`,
+   `<folder_name>-instructions.md`, or one of `AGENTS.md`, `CONTEXT.md`,
+   `SKILL.md`, `AGENTS.md`
 2. `bin/build_toc.sh` generates `<folder>-toc.md` for each context node
 3. Underscore-prefixed and dot-prefixed names are skipped
 4. Symlinked folders appear in the TOC but are never written into
@@ -72,7 +95,8 @@ bin/build_toc.sh --build-all        # force rebuild all
 bin/build_toc.sh context-db/        # build specific tree
 ```
 
-Pre-commit hook: `cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
+Pre-commit hook:
+`cp hooks/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit`
 
 ## License
 
