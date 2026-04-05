@@ -3,22 +3,15 @@
   <rect width="1200" height="630" fill="#ede8e1"/>
 
   <!-- Icon (centered, scaled up) -->
-  <g transform="translate(430, 40) scale(4.5)">
-    <!-- Purple page (largest) — top, tilted left -->
-    <g transform="rotate(-10, 30, 20)">
-      <path d="M16 4h18l6 6v24a3 3 0 01-3 3H16a3 3 0 01-3-3V7a3 3 0 013-3z" fill="#6b5b95" opacity="0.72"/>
-      <path d="M34 4v6h6z" fill="#6b5b95" opacity="0.5"/>
-    </g>
-    <!-- Slate blue page (medium) — bottom-right, tilted right -->
-    <g transform="rotate(12, 44, 38)">
-      <path d="M33 24h12l4 4v16a2.5 2.5 0 01-2.5 2.5H33a2.5 2.5 0 01-2.5-2.5V26.5a2.5 2.5 0 012.5-2.5z" fill="#4a6591" opacity="0.76"/>
-      <path d="M45 24v4h4z" fill="#4a6591" opacity="0.54"/>
-    </g>
-    <!-- Gold page (smallest) — bottom-left, slight tilt -->
-    <g transform="rotate(4, 18, 44)">
-      <path d="M13 36h8l3 3v8a2 2 0 01-2 2H13a2 2 0 01-2-2V38a2 2 0 012-2z" fill="#e89840" opacity="0.8"/>
-      <path d="M21 36v3h3z" fill="#e89840" opacity="0.58"/>
-    </g>
+  <g transform="translate(440, 20) scale(4.2)">
+    <!-- Document body -->
+    <path d="M2 2L46 2L62 18L62 78L2 78Z" fill="#d4edda" stroke="#5a9a68" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Folded corner -->
+    <path d="M46 2L46 18L62 18" fill="#b8dcc0" stroke="#5a9a68" stroke-width="4" stroke-linejoin="round"/>
+    <!-- Diagonal arrow line (bottom-left to upper-right) -->
+    <path d="M20 60L40 40" fill="none" stroke="#c4a8d8" stroke-width="8" stroke-linecap="round"/>
+    <!-- Arrowhead (chevron) -->
+    <path d="M30 34L46 34L46 50" fill="none" stroke="#c4a8d8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
   <!-- Title -->

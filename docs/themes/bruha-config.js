@@ -25,8 +25,7 @@ window.__docsifyExtConfig = {
     document.documentElement.classList.add('ext-no-hamburger');
   if (!c.github_corner)
     document.documentElement.classList.add('ext-no-github-corner');
-  if (c.top_level_folders_as_top_control)
-    document.documentElement.classList.add('ext-has-top-nav');
+  document.documentElement.classList.add('ext-has-top-nav');
   if (c.folder_chevron)
     document.documentElement.classList.add('ext-folder-chevron');
   if (c.document_inline_sidebar_selector)
