@@ -6,3 +6,5 @@ __pycache__/
 *.tmp
 
 node_modules/
+
+context-db/using-bruha/

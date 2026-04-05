@@ -67,7 +67,8 @@ read_status() {
 # Find the description file for a directory (returns path or fails)
 find_desc_file() {
     local dir="$1" name
-    name=$(basename "$dir")
+    # Resolve symlinks — use the real folder name for description file lookup
+    name=$(basename "$(cd "$dir" && pwd -P)")
     [ -f "$dir/${name}.md" ] && { echo "$dir/${name}.md"; return 0; }
     [ -f "$dir/${name}-instructions.md" ] && { echo "$dir/${name}-instructions.md"; return 0; }
     local f
@@ -187,6 +188,13 @@ walk() {
 
     find_desc_file "$dir" >/dev/null 2>&1 || return 0
 
+    # Never write TOC files into symlinked directories — they are owned
+    # by another repo. They still appear as entries in the parent TOC
+    # (build_dir iterates symlinked subdirs when building folder_lines).
+    if [ -L "${dir%/}" ]; then
+        return 0
+    fi
+
     # Only write if real path is under project root
     local real_dir
     real_dir=$(cd "$dir" && pwd -P)
@@ -202,12 +210,11 @@ walk() {
             ;;
     esac
 
-    # Recurse into subdirectories (never into symlinks)
+    # Recurse into subdirectories
     for subdir in "$dir"/*/; do
         [ -d "$subdir" ] || continue
         local subname=$(basename "$subdir")
         should_skip "$subname" && continue
-        [ -L "${subdir%/}" ] && continue
 
         walk "$subdir" "$project_root"
     done
