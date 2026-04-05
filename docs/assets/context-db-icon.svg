@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 68 76">
   <!-- Back page (purple) — highest, furthest right -->
-  <path d="M27 -1H51L58 6V44Q58 46 56 46H27Q25 46 25 44V1Q25 -1 27 -1Z" fill="#b8a8d4" stroke="#6b5b95" stroke-width="2.4" stroke-linejoin="round"/>
-  <path d="M51 -1V6H58Z" fill="#a090c4" stroke="#6b5b95" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M27 -1H49L58 8V44Q58 46 56 46H27Q25 46 25 44V1Q25 -1 27 -1Z" fill="#d8d0e8" stroke="#6b5b95" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M49 -1V8H58Z" fill="#c4b8da" stroke="#6b5b95" stroke-width="3" stroke-linejoin="round"/>
   <!-- Middle page (slate blue) — middle height, left -->
-  <path d="M6 9H30L37 16V54Q37 56 35 56H6Q4 56 4 54V11Q4 9 6 9Z" fill="#a0b8d4" stroke="#4a6591" stroke-width="2.4" stroke-linejoin="round"/>
-  <path d="M30 9V16H37Z" fill="#88a4c8" stroke="#4a6591" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M6 9H28L37 18V54Q37 56 35 56H6Q4 56 4 54V11Q4 9 6 9Z" fill="#c4d4e8" stroke="#4a6591" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M28 9V18H37Z" fill="#aec4de" stroke="#4a6591" stroke-width="3" stroke-linejoin="round"/>
   <!-- Front page (gold) — lowest, center -->
-  <path d="M14 21H44L51 28V66Q51 68 49 68H14Q12 68 12 66V23Q12 21 14 21Z" fill="#f0d080" stroke="#c49520" stroke-width="2.4" stroke-linejoin="round"/>
-  <path d="M44 21V28H51Z" fill="#e4c060" stroke="#c49520" stroke-width="2.4" stroke-linejoin="round"/>
+  <path d="M14 21H42L51 30V66Q51 68 49 68H14Q12 68 12 66V23Q12 21 14 21Z" fill="#f8e8a8" stroke="#c49520" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M42 21V30H51Z" fill="#f0d880" stroke="#c49520" stroke-width="3" stroke-linejoin="round"/>
 </svg>

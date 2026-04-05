@@ -1,6 +1,6 @@
 # Motivation
 
-## The problem: knowledge doesn't fit
+## The goal: keeping the loaded context to a minimum
 
 AI coding tools give agents background knowledge through a single entry-point
 file — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`. This works for small projects.
@@ -17,6 +17,13 @@ found that performance degrades as input length increases — models perform bes
 when relevant information appears at the beginning or end of context, with
 "substantial performance gaps" as context grows. More context doesn't mean
 better results; it means more noise.
+
+A single context file works until it doesn't. Past a few hundred lines, agents
+start missing instructions. Breaking it into smaller documents solves the length
+problem but creates a discovery problem — the agent doesn't know what exists. A
+manually maintained table of contents drifts every time a document is added or
+reorganized. Delegating index maintenance to the agent introduces its own
+failure modes. The index needs to be generated from the documents themselves.
 
 ## A familiar pattern: structured knowledge vaults
 
@@ -35,71 +42,16 @@ reader instead of humans. Where a human navigates visually through a sidebar or
 graph view, an agent reads a generated TOC of descriptions and paths, then
 fetches only what it needs.
 
-## From single file to hierarchy
-
-A single context file works until it doesn't. Past a few hundred lines, agents
-start missing instructions. Breaking it into smaller documents solves the length
-problem but creates a discovery problem — the agent doesn't know what exists.
-
-A manually maintained table of contents drifts every time a document is added or
-reorganized. Delegating index maintenance to the agent introduces its own
-failure modes. The index needs to be generated from the documents themselves.
-
 ## Skills and their limits
 
-Some teams organize background knowledge as skills. Skills have useful
-properties: YAML frontmatter makes files self-describing, vendors have built
-progressive disclosure on top (metadata at startup, full content on demand), and
-skills are portable — symlink a published folder and it works.
+Some teams organize background knowledge as skills. Fitting all project
+knowledge into a skills format is a stretch — skills are designed around
+invocation (`/deploy`, `/review-pr`, `/run-tests`), not background knowledge.
 
-But skills are designed around invocation — `/deploy`, `/review-pr`,
-`/run-tests`. The progressive disclosure mechanism is vendor-managed: each tool
+But skills have useful properties worth borrowing: YAML frontmatter makes files
+self-describing, vendors have built progressive disclosure on top, and skills
+are portable — symlink a published folder and it works.
+
+The progressive disclosure mechanism, however, is vendor-managed: each tool
 decides when and how to surface skill content. Claude Code, Codex, and Cursor
 each handle it differently. You write the files; the vendor controls discovery.
-
-## What context-db does
-
-context-db takes the portable parts of skills — frontmatter, symlinks, standard
-structure — and applies them to background knowledge, with one key difference:
-**you control the discovery mechanism**.
-
-A shell script generates `-toc.md` indexes from YAML frontmatter. Each TOC is a
-list of descriptions with paths. An agent reads a TOC, decides what's relevant,
-and fetches only those documents. Nested folders produce nested TOCs, supporting
-arbitrarily deep hierarchies.
-
-```
-context-db-toc.md
-├── acme-payments/acme-payments-toc.md
-│   ├── architecture.md
-│   ├── api-reference.md
-│   └── data-model/data-model-toc.md
-│       ├── entities.md
-│       └── schema-conventions.md
-└── coding-standards/coding-standards-toc.md
-    ├── error-handling.md
-    └── naming-conventions.md
-```
-
-The target is large projects with substantial background knowledge: legacy
-systems, enterprise services, multi-team codebases. These are the projects where
-a few hundred lines of context isn't enough, and an agent needs a map before it
-can search.
-
-## Discovery vs. retrieval
-
-Claude Code has grep and glob. Cursor has RAG. Can't the agent just search?
-
-These are **retrieval** mechanisms — they answer "find something matching this
-query." A TOC is a **discovery** mechanism — it answers "here's what exists."
-
-Without a map, the agent must already know what to search for. A grep for
-"schema" finds schema-related files, but won't surface the deployment
-constraints or API contracts that also matter. A TOC at startup gives the agent
-a picture of available knowledge in a few hundred tokens, then lets it pull in
-what it needs.
-
-For small projects, built-in search is sufficient. The TOC becomes useful as
-projects grow, as knowledge spans multiple domains, and especially when context
-is shared across projects via symlinks — where the agent has no prior knowledge
-of what's been linked in.

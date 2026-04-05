@@ -46,6 +46,21 @@ your-project/
   reads Markdown.
 - **Progressive disclosure** — agents load what they need, not everything at
   once.
+- **You control discovery** — a shell script generates TOC indexes from YAML
+  frontmatter, unlike skills where each vendor decides when and how to surface
+  content.
+
+## Discovery vs. retrieval
+
+Built-in tools like grep and RAG answer "find something matching this query." A
+TOC answers "here's what exists." Without a map, the agent must already know
+what to search for — a grep for "schema" won't surface the deployment
+constraints that also matter. A TOC gives the agent a picture of available
+knowledge in a few hundred tokens, then lets it pull in what it needs.
+
+context-db targets large projects with substantial background knowledge: legacy
+systems, enterprise services, multi-team codebases — where a few hundred lines
+of context isn't enough, and an agent needs a map before it can search.
 
 ## Portability
 
