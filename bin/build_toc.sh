@@ -29,28 +29,39 @@ DESC_NAMES="SKILL.md CONTEXT.md AGENT.md AGENTS.md"
 
 # ── Parsing ───────────────────────────────────────────────────────────────────
 
-# Read description — tries YAML front matter first, then fenced ```yaml description```
-read_desc() {
-    local desc
-    desc=$(awk '
+# Read a YAML front matter field by name
+read_field() {
+    local file="$1" field="$2"
+    local val
+    val=$(awk -v key="$field" '
         /^---$/ { fc++; next }
-        fc == 1 && /^description:/ {
-            sub(/^description:[[:space:]]*/, "")
+        fc == 1 && $0 ~ "^" key ":" {
+            sub("^" key ":[[:space:]]*", "")
             gsub(/^["'"'"']|["'"'"']$/, "")
             print; exit
         }
         fc >= 2 { exit }
-    ' "$1")
-    [ -z "$desc" ] && desc=$(awk '
+    ' "$file")
+    [ -z "$val" ] && val=$(awk -v key="$field" '
         /^```yaml description/ { in_b=1; next }
         in_b && /^```/ { exit }
-        in_b && /^description:/ {
-            sub(/^description:[[:space:]]*/, "")
+        in_b && $0 ~ "^" key ":" {
+            sub("^" key ":[[:space:]]*", "")
             gsub(/^["'"'"']|["'"'"']$/, "")
             print; exit
         }
-    ' "$1")
-    echo "$desc"
+    ' "$file")
+    echo "$val"
+}
+
+# Read description from a file's front matter
+read_desc() {
+    read_field "$1" "description"
+}
+
+# Read status from a file's front matter (empty means stable)
+read_status() {
+    read_field "$1" "status"
 }
 
 # Find the description file for a directory (returns path or fails)
@@ -124,9 +135,13 @@ build_dir() {
         local sub_desc
         sub_desc=$(find_desc_file "$subdir") || continue
 
-        local sdesc
+        local sdesc sstatus
         sdesc=$(read_desc "$sub_desc")
         [ -z "$sdesc" ] && sdesc="(no description)"
+        sstatus=$(read_status "$sub_desc")
+        if [ -n "$sstatus" ] && [ "$sstatus" != "stable" ]; then
+            sdesc="${sdesc} [${sstatus}]"
+        fi
         folder_lines="${folder_lines}"$'\n'"- description: ${sdesc}"$'\n'"  path: ${subname}/${subname}-toc.md"
     done
 
@@ -139,9 +154,13 @@ build_dir() {
         [ "$fname" = "${foldername}-toc.md" ] && continue
         should_skip "$fname" && continue
 
-        local fdesc
+        local fdesc fstatus
         fdesc=$(read_desc "$md_file")
         [ -z "$fdesc" ] && fdesc="(no description)"
+        fstatus=$(read_status "$md_file")
+        if [ -n "$fstatus" ] && [ "$fstatus" != "stable" ]; then
+            fdesc="${fdesc} [${fstatus}]"
+        fi
 
         file_lines="${file_lines}"$'\n'"- description: ${fdesc}"$'\n'"  path: ${fname}"
     done

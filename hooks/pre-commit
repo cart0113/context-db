@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 #
-# pre-commit — Rebuild -toc.md files only if source files changed.
+# pre-commit — Format staged files and rebuild context-db TOC files.
+#
+# Runs:
+#   1. bin/build_toc.sh (if present) to rebuild context-db TOC files
+#   2. prettier on staged md/js/ts/json/css/yaml files
+#   3. ruff on staged python files
 #
 # Install:
 #   cp hooks/pre-commit .git/hooks/pre-commit
@@ -9,14 +14,50 @@
 set -eo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
-BUILD_TOC="${REPO_ROOT}/bin/build_toc.sh"
-
-[ -x "$BUILD_TOC" ] || exit 0
-
 cd "$REPO_ROOT"
-"$BUILD_TOC" context-db/
 
-# Stage any updated -toc.md files
-while IFS= read -r -d '' toc; do
-    git add "$toc" 2>/dev/null || true
-done < <(find . -name "*-toc.md" -not -path "*/.git/*" -print0)
+# ── 1. Rebuild context-db TOC files ─────────────────────────────────────────
+
+BUILD_TOC="${REPO_ROOT}/bin/build_toc.sh"
+if [ -x "$BUILD_TOC" ]; then
+    "$BUILD_TOC" context-db/ 2>/dev/null || true
+    while IFS= read -r -d '' toc; do
+        git add "$toc" 2>/dev/null || true
+    done < <(find . -name "*-toc.md" -not -path "*/.git/*" -print0)
+fi
+
+# ── 2. Prettier on staged web/markdown files ────────────────────────────────
+
+PRETTIER="./node_modules/.bin/prettier"
+if [ -x "$PRETTIER" ]; then
+    PRETTIER_FILES=$(git diff --cached --name-only --diff-filter=ACM \
+        | grep -E '\.(md|js|ts|jsx|tsx|json|css|html|yaml|yml)$' \
+        | grep -v -- '-toc\.md$' \
+        || true)
+
+    if [ -n "$PRETTIER_FILES" ]; then
+        echo "$PRETTIER_FILES" | while IFS= read -r file; do
+            [ -f "$file" ] || continue
+            "$PRETTIER" --write "$file" 2>/dev/null || true
+            git add "$file" 2>/dev/null || true
+        done
+    fi
+fi
+
+# ── 3. Ruff on staged Python files ──────────────────────────────────────────
+
+RUFF="$(command -v ruff-main 2>/dev/null || true)"
+if [ -n "$RUFF" ]; then
+    PY_FILES=$(git diff --cached --name-only --diff-filter=ACM \
+        | grep -E '\.py$' \
+        || true)
+
+    if [ -n "$PY_FILES" ]; then
+        echo "$PY_FILES" | while IFS= read -r file; do
+            [ -f "$file" ] || continue
+            "$RUFF" format "$file" 2>/dev/null || true
+            "$RUFF" check --fix "$file" 2>/dev/null || true
+            git add "$file" 2>/dev/null || true
+        done
+    fi
+fi
