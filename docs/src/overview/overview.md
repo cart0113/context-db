@@ -37,6 +37,21 @@ your-project/
    descriptions and paths.
 4. The agent reads TOCs top-down, deciding at each level what to fetch.
 
+## Why
+
+AI coding tools give agents background knowledge through a single entry-point
+file — `CLAUDE.md`, `AGENTS.md`, `.cursorrules`. For a small project, that
+works. For a large one, the background knowledge needed — architecture, data
+models, API contracts, deployment constraints — doesn't fit in a few hundred
+lines.
+
+Loading everything eagerly isn't the answer either. Models do best when relevant
+information appears early in context; performance degrades as input length
+grows. And built-in tools like grep answer "find something matching this query"
+— but the agent has to already know what to search for. A TOC answers "here's
+what exists," giving the agent a map of available knowledge in a few hundred
+tokens before it decides what to pull in.
+
 ## Key properties
 
 - **Zero dependencies** — bash 3.2+ and awk, pre-installed on macOS and Linux.
@@ -46,44 +61,9 @@ your-project/
   reads Markdown.
 - **Progressive disclosure** — agents load what they need, not everything at
   once.
-- **You control discovery** — a shell script generates TOC indexes from YAML
-  frontmatter, unlike skills where each vendor decides when and how to surface
-  content.
-
-## Discovery vs. retrieval
-
-Built-in tools like grep and RAG answer "find something matching this query." A
-TOC answers "here's what exists." Without a map, the agent must already know
-what to search for — a grep for "schema" won't surface the deployment
-constraints that also matter. A TOC gives the agent a picture of available
-knowledge in a few hundred tokens, then lets it pull in what it needs.
-
-context-db targets large projects with substantial background knowledge: legacy
-systems, enterprise services, multi-team codebases — where a few hundred lines
-of context isn't enough, and an agent needs a map before it can search.
-
-## Portability
-
-Folders are self-describing. Symlink a published knowledge folder into any
-project's `context-db/` and `build_toc.sh` picks it up automatically:
-
-```
-context-db/
-├── my-project/
-│   ├── my-project.md
-│   └── architecture.md
-└── coding-standards/ → /shared/coding-standards   ← symlink
-    ├── coding-standards.md
-    └── naming-conventions.md
-```
-
-The build script reads descriptions from symlinked folders but never writes into
-them. Separate teams publish and consume context independently.
 
 ## Documentation
 
 - [Getting Started](guide/getting-started.md) — step-by-step setup
-- [Specification](reference/specification.md) — format reference
-- [TOC Format](reference/toc-format.md) — generated file structure
-- [Script Reference](reference/script-reference.md) — build_toc.sh usage
-- [Motivation](motivation/motivation.md) — why this exists
+- [Reference](reference/specification.md) — format specification, TOC format,
+  and script usage

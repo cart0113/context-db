@@ -3,8 +3,4 @@
 - **Guide**
   - [Getting Started](guide/getting-started.md)
 - **Reference**
-  - [Specification](reference/specification.md)
-  - [TOC Format](reference/toc-format.md)
-  - [Script Reference](reference/script-reference.md)
-- **Motivation**
-  - [Motivation](motivation/motivation.md)
+  - [Reference](reference/specification.md)
