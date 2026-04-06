@@ -65,15 +65,14 @@ your-project/
 ├── bin/show_toc.sh                      ← TOC generator
 └── context-db/
     ├── context-db-instructions.md       ← reading/writing rules
-    ├── project-name/
-    │   ├── project-name.md              ← folder description
+    ├── project-name-project/            ← main project context
+    │   ├── project-name-project.md      ← folder description
     │   ├── architecture.md              ← context document
     │   └── data-model/                  ← nested subfolder
     │       ├── data-model.md
     │       └── entities.md
-    └── shared/                          ← symlinked folder
-        └── coding-standards/
-            └── coding-standards.md
+    └── coding-standards/                ← ancillary (symlinked)
+        └── coding-standards.md
 ```
 
 ## Symlinks

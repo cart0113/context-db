@@ -1,22 +1,22 @@
 # Getting Started
 
-## 1. Copy the scripts
+## 1. Copy the bootstrap files
 
-Copy `bin/show_toc.sh` into your project's `bin/` directory and make it
-executable. Copy `context-db-instructions.md` into your `context-db/` folder —
-this is the single source of truth that tells agents how to read, write, and
-maintain context documents.
+Copy the `bootstrap/` directory contents into your project root:
+
+```bash
+cp -r bootstrap/bin your-project/bin
+cp -r bootstrap/context-db your-project/context-db
+chmod +x your-project/bin/show_toc.sh
+```
+
+This gives you:
 
 ```
 your-project/
-├── AGENTS.md
 ├── bin/show_toc.sh
 └── context-db/
     └── context-db-instructions.md
-```
-
-```bash
-chmod +x bin/show_toc.sh
 ```
 
 > [!important] `context-db-instructions.md` is the file you copy into each
@@ -26,21 +26,21 @@ chmod +x bin/show_toc.sh
 > Re-copy this file periodically from the context-db repo to stay current with
 > the latest instructions.
 
-## 2. Create a project subfolder
+## 2. Create a project folder
 
-Create a folder named after your project. Inside it, create a description file
-(`<folder>.md`) with YAML frontmatter containing a one-line `description`. The
-description file has frontmatter only — no body content.
+Create a `<project>-project/` folder for your core project knowledge. Inside it,
+create a description file with YAML frontmatter. The description file has
+frontmatter only — no body content.
 
 ```
 context-db/
-└── my-project/
-    └── my-project.md
+└── my-project-project/
+    └── my-project-project.md
 ```
 
 ```yaml
 ---
-description: My project — architecture, APIs, and data model
+description: My Project — architecture, APIs, and data model
 ---
 ```
 
@@ -54,8 +54,8 @@ the TOC) and markdown content below.
 
 ```
 context-db/
-└── my-project/
-    ├── my-project.md
+└── my-project-project/
+    ├── my-project-project.md
     ├── architecture.md
     └── data-model.md
 ```
@@ -83,14 +83,14 @@ bin/show_toc.sh context-db/
 ```
 ## Subfolders
 
-- description: My project — architecture, APIs, and data model
-  path: my-project/my-project-toc.md
+- description: My Project — architecture, APIs, and data model
+  path: my-project-project/my-project-project-toc.md
 ```
 
 Run it on the subfolder to see its documents:
 
 ```bash
-bin/show_toc.sh context-db/my-project/
+bin/show_toc.sh context-db/my-project-project/
 ```
 
 ```
@@ -108,7 +108,7 @@ The bootstrapping pattern is simple: **point your agent to
 `context-db-instructions.md` and let that file do the rest.** Don't restate the
 context-db rules in your agent config — just reference the instructions file.
 
-Add a context-db section to `AGENTS.md` (or `.cursorrules`, `AGENTS.md`, etc.):
+Add a context-db section to `AGENTS.md` (or `.cursorrules`, etc.):
 
 ```markdown
 ## context-db

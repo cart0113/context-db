@@ -27,7 +27,8 @@ subfolder and file, and fetches only what's relevant to the current task.
 bin/show_toc.sh       # On-demand TOC generator (prints to stdout)
 hooks/pre-commit      # Git hook for formatting
 context-db/           # This project's own context knowledge database
-templates/            # Tool-specific bootstrap templates
+bootstrap/            # Ready-to-copy files for new projects
+templates/            # Tool-specific instruction templates
 example/              # Example project structure
 docs/                 # GitHub Pages documentation
 ```

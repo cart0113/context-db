@@ -14,13 +14,13 @@ your-project/
 ├── bin/show_toc.sh                  ← TOC generator (prints to stdout)
 └── context-db/
     ├── context-db-instructions.md   ← reading/writing rules
-    ├── my-project/
-    │   ├── my-project.md            ← folder description (frontmatter)
+    ├── my-project-project/          ← main project context
+    │   ├── my-project-project.md    ← folder description (frontmatter)
     │   ├── architecture.md          ← context document
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md
-    └── coding-standards/            ← symlinked from another repo
+    └── coding-standards/            ← ancillary (symlinked from another repo)
         └── coding-standards.md
 ```
 
@@ -42,13 +42,15 @@ grows. And built-in tools like grep answer "find something matching this query"
 A TOC answers "here's what exists," giving the agent a map of available
 knowledge in a few hundred tokens before it decides what to pull in.
 
-1. Every folder has a **description file** (`<folder>.md`) with YAML frontmatter
+1. The main project folder is named `<project>-project/` and holds core project
+   knowledge. Ancillary folders (coding standards, etc.) sit alongside it.
+2. Every folder has a **description file** (`<folder>.md`) with YAML frontmatter
    containing a one-line `description`.
-2. Every document has a `description` in its frontmatter — this is what appears
+3. Every document has a `description` in its frontmatter — this is what appears
    in the TOC.
-3. The agent runs `bin/show_toc.sh <folder>` to get a TOC listing descriptions
+4. The agent runs `bin/show_toc.sh <folder>` to get a TOC listing descriptions
    and paths, printed to stdout.
-4. The agent reads TOCs top-down, deciding at each level what to fetch and what
+5. The agent reads TOCs top-down, deciding at each level what to fetch and what
    to skip based on descriptions alone.
 
 The agent is also expected to **write back** — when it discovers something

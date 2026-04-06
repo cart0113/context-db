@@ -1,107 +1,34 @@
 ---
-description:
-  How to navigate and maintain this project's context knowledge database
+description: How to read, write, and maintain this project's context-db
 ---
 
-## context-db
+`context-db/` is this project's knowledge database — hierarchical Markdown with
+on-demand TOCs via [context-db](https://github.com/cart0113/context-db).
 
-`context-db/` is this project's **context knowledge database** — hierarchical
-Markdown files with on-demand tables of contents, managed by
-[context-db](https://github.com/cart0113/context-db).
+## Reading
 
-### Structure
+Run `bin/show_toc.sh context-db/` for the TOC. Each entry has a description and
+path. `-toc.md` paths are subfolders — run `show_toc.sh` on them to go deeper.
+Other paths are documents — read if relevant. Only fetch what you need.
 
-Example structure below. All folder and file names are abstract placeholders —
-name yours to match your content:
+## Writing — store what you learn
 
-```
-context-db/
-├── context-db-instructions.md      ← you are here
-├── my-project/
-│   ├── my-project.md               ← folder description
-│   ├── topic-a/
-│   │   ├── topic-a.md              ← folder description
-│   │   ├── document-1.md           ← document (frontmatter + body)
-│   │   └── document-2.md
-│   └── topic-b/
-│       ├── topic-b.md
-│       └── ...
-└── standards/
-    ├── standards.md
-    └── ...
-```
+**This is a living knowledge base, not a snapshot.** When you discover
+architecture decisions, non-obvious patterns, constraints, or gotchas during a
+session — store them here. Think of it like persistent memory: if you figured
+something out the hard way, a future agent shouldn't have to.
 
-Every `.md` file has YAML frontmatter with a `description` — a one-line summary
-of what it covers. Every folder with a description file appears in the TOC when
-`bin/show_toc.sh` is run on the parent.
+Every `.md` file requires YAML frontmatter with `description` — the one-line
+summary shown in the TOC. This is how agents decide what to read without opening
+files.
 
-The `description` is the only thing shown in the TOC. It is how an agent decides
-whether to read a file without opening it. Write descriptions that make this
-decision easy.
+**Documents** have frontmatter + body. **Folder descriptions**
+(`<foldername>.md`) have frontmatter only — they register the folder in the TOC.
 
-### Reading
+## Frontmatter must stay current
 
-Run `bin/show_toc.sh context-db/` to see the top-level table of contents. Each
-TOC entry has a description and a path:
+After ANY change — new file, edit, rename, delete — ensure every affected file's
+`description` accurately reflects its content. Stale descriptions actively
+mislead future agents. This is the most important maintenance rule.
 
-- Path ending in `-toc.md` → subfolder. Run `bin/show_toc.sh` on that subfolder
-  to go deeper.
-- Any other path → document. Read it if the description is relevant to your
-  task.
-
-Only fetch what you need. Use descriptions to skip irrelevant branches entirely.
-
-### Writing
-
-There are two kinds of `.md` files in the context tree:
-
-**Documents** — frontmatter plus a markdown body. When you create or edit a
-document, keep its `description` accurate so future reads are correctly
-filtered.
-
-```yaml
----
-description: What this covers and why you'd read it
----
-# Title
-
-(content)
-```
-
-**Folder descriptions** — `<foldername>.md` with frontmatter only, no body.
-These register the folder as a context node so it appears in the parent TOC.
-
-```yaml
----
-description: What this folder covers
----
-```
-
-### Maintaining the context knowledge database
-
-The context knowledge database is a living knowledge base, not a snapshot. It
-should reflect the current state of the project. Stale context is worse than
-missing context — an agent will act on outdated information with confidence.
-
-**Suggest updates** when you discover something a future agent would need to
-work safely on this codebase — architecture decisions, non-obvious patterns,
-constraints, gotchas, data model relationships. The heuristic: if you had to
-figure it out the hard way, it belongs in the context knowledge database. Ask
-before writing.
-
-**Flag stale content** when you read a context document that contradicts the
-current code, describes something that no longer exists, or would lead an agent
-to a wrong decision. Remove or correct it.
-
-**Suggest reorganization** when a document covers multiple distinct topics or a
-folder's TOC has grown past a quick scan. Moving content into a subfolder
-automatically creates a new TOC node — a new level of progressive disclosure.
-This isn't tidying; it directly improves how well a future agent can filter what
-it reads.
-
-**After any change** to context files:
-
-1. Make sure the `description` in its frontmatter still matches the content.
-2. If you created a new folder, add the `<foldername>.md` description file.
-3. If a document was deleted or moved, update any references to it in other
-   documents.
+Optional: `status: draft | stable | deprecated` (default: `stable`).
