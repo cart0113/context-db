@@ -37,18 +37,7 @@ docs/                 # GitHub Pages documentation
 This is a **bash** project. The core script (`bin/show_toc.sh`) targets bash
 3.2+.
 
-## context-db — IMPORTANT: Read AND Write
+## context-db
 
-Read `context-db/context-db-instructions.md` for the project knowledge database.
-
-**You are expected to update the context-db when you learn something
-important.** When you discover architecture decisions, non-obvious patterns,
-constraints, gotchas, data model relationships, or anything a future agent would
-need to work safely on this codebase — add it to the context-db. If you had to
-figure it out the hard way, it belongs there.
-
-**CRITICAL: Always maintain frontmatter.** Every file and folder description in
-context-db has YAML frontmatter with a `description` field. When you create or
-modify any context-db content, you MUST ensure the `description` accurately
-reflects the current content. Stale descriptions mislead future agents. See
-`context-db-instructions.md` for the full rules.
+Read `context-db/context-db-instructions.md` — it contains all rules for
+reading, writing, and maintaining the project knowledge database.
