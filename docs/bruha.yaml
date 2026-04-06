@@ -1,3 +1,6 @@
+site_name: context-db
+site_description: Structured knowledge for LLM agents
+home_path: overview/overview
 light_theme: parchment
 dark_theme: near-midnight
 theme_controls: dark_toggle
