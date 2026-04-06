@@ -1,5 +1,5 @@
 ---
-description: Discover and maintain project context via context-db TOC files
+description: Discover and maintain project context via context-db
 alwaysApply: true
 ---
 
@@ -7,10 +7,12 @@ alwaysApply: true
 
 ## Reading
 
-Read `context-db/context-db-toc.md` to start. Each entry has a description and a path.
-Use descriptions to decide relevance — skip what you don't need.
+Run `bin/show_toc.sh context-db/` to see the top-level table of contents. Each
+entry has a description and a path. Use descriptions to decide relevance — skip
+what you don't need.
 
-- If the path ends in `-toc.md`, it's a subfolder — read that TOC and repeat.
+- If the path ends in `-toc.md`, it's a subfolder — run `bin/show_toc.sh` on
+  that subfolder to go deeper.
 - Otherwise, read the document.
 
 ## IMPORTANT: Writing Back to the Context-DB
@@ -32,4 +34,5 @@ When creating or updating context documents:
   concise summary possible.
 - **Fix stale content.** If a context document contradicts the current code,
   correct it or remove it.
-- Run `bin/build_toc.sh` to regenerate TOC files after changes.
+- TOC files are generated on the fly by `bin/show_toc.sh` — you do not need to
+  regenerate anything after adding or editing documents.

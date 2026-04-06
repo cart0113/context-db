@@ -15,17 +15,18 @@ If ~/.context.md doesn't exist, notify the user.
 ## Project Overview
 
 **context-db** is a portable standard for hierarchically organizing project
-knowledge as Markdown files, with auto-generated tables of contents for
-progressive disclosure.
+knowledge as Markdown files, with on-demand tables of contents for progressive
+disclosure.
 
-An LLM reads a lightweight `-toc.md` index, sees one-line descriptions of every
+An agent runs `bin/show_toc.sh` on a folder, sees one-line descriptions of every
 subfolder and file, and fetches only what's relevant to the current task.
 
 ## Code Structure
 
 ```
-bin/build_toc.sh      # TOC generator script
-hooks/pre-commit      # Git hook for auto-rebuild
+bin/show_toc.sh       # On-demand TOC generator (prints to stdout)
+bin/build_toc.sh      # Static TOC file generator (legacy, optional)
+hooks/pre-commit      # Git hook for formatting
 context-db/           # This project's own context knowledge database
 templates/            # Tool-specific bootstrap templates
 example/              # Example project structure
@@ -34,8 +35,8 @@ docs/                 # GitHub Pages documentation
 
 ## Language
 
-This is a **bash** project. The core script (`bin/build_toc.sh`) targets bash
-3.2+.
+This is a **bash** project. The core scripts (`bin/show_toc.sh`,
+`bin/build_toc.sh`) target bash 3.2+.
 
 ## context-db — IMPORTANT: Read AND Write
 

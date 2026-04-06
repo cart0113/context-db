@@ -1,30 +1,27 @@
 # context-db
 
 A portable standard for organizing project knowledge as Markdown files, with
-auto-generated tables of contents for progressive disclosure.
+on-demand tables of contents for progressive disclosure.
 
-An LLM agent reads a lightweight TOC listing descriptions and paths, then
-fetches only the documents relevant to its current task. Nested folders produce
-nested TOCs, scaling from a handful of files to hundreds.
+An LLM agent runs `bin/show_toc.sh` on a folder to see descriptions and paths,
+then fetches only the documents relevant to its current task. Nested folders
+produce nested TOCs, scaling from a handful of files to hundreds.
 
 ```
 your-project/
 ├── AGENTS.md                        ← bootstrap: points agent here
+├── bin/show_toc.sh                  ← TOC generator (prints to stdout)
 └── context-db/
     ├── context-db-instructions.md   ← reading/writing rules
-    ├── context-db-toc.md            ← generated index
     ├── my-project/
     │   ├── my-project.md            ← folder description
-    │   ├── my-project-toc.md        ← generated index
     │   ├── architecture.md          ← context document
     │   └── data-model/
     │       ├── data-model.md
-    │       ├── data-model-toc.md
     │       └── entities.md
     └── shared/                      ← symlinked from another repo
         └── coding-standards/
-            ├── coding-standards.md
-            └── coding-standards-toc.md
+            └── coding-standards.md
 ```
 
 ## How it works
@@ -32,9 +29,9 @@ your-project/
 1. Every folder has a description file (`<folder>.md`) with YAML frontmatter
    containing a one-line `description`.
 2. Every document has a `description` in its frontmatter — this is what appears
-   in the parent TOC.
-3. `build_toc.sh` walks the tree and generates `-toc.md` files listing
-   descriptions and paths.
+   in the TOC.
+3. The agent runs `bin/show_toc.sh <folder>` to get a TOC listing descriptions
+   and paths, printed to stdout.
 4. The agent reads TOCs top-down, deciding at each level what to fetch.
 
 ## Why
@@ -55,10 +52,12 @@ tokens before it decides what to pull in.
 ## Key properties
 
 - **Zero dependencies** — bash 3.2+ and awk, pre-installed on macOS and Linux.
+- **No generated files** — TOCs are produced on demand by `show_toc.sh`, nothing
+  to commit or keep in sync.
 - **Portable** — self-describing folders can be symlinked and composed across
   projects.
 - **Tool-agnostic** — works with Claude Code, Codex, Cursor, or any tool that
-  reads Markdown.
+  can run shell commands.
 - **Progressive disclosure** — agents load what they need, not everything at
   once.
 
