@@ -1,8 +1,8 @@
 ## Files
 
-- description: Why show_toc.sh and build_toc.sh are pure bash rather than Python or another language
+- description: (no description)
   path: bash-over-python.md
-- description: Why static -toc.md files were replaced with show_toc.sh that generates TOC on stdout — solves the cross-project symlink problem
+- description: (no description)
   path: dynamic-toc-generation.md
 - description: Why frontmatter is the standard format and fenced YAML blocks are a supported fallback
   path: fenced-yaml-format.md

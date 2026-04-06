@@ -48,6 +48,7 @@
   var tabsEl = null;
   var navEl = null;
   var folderData = [];
+  var headerSectionEl = null;
 
   function getCurrentPath() {
     return (window.location.hash || '#/').split('?')[0];
@@ -97,7 +98,7 @@
     if (!inp) return;
     var setter = Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
-      'value'
+      'value',
     ).set;
     setter.call(inp, query);
     inp.dispatchEvent(new Event('input', { bubbles: true }));
@@ -136,6 +137,10 @@
       (nameEl2 ? nameEl2.textContent.trim() : 'bruha') +
       '</span>';
     mobileHeader.appendChild(headerBrand);
+
+    headerSectionEl = document.createElement('span');
+    headerSectionEl.className = 'mobile-header-section';
+    mobileHeader.appendChild(headerSectionEl);
 
     document.body.appendChild(mobileHeader);
 
@@ -292,7 +297,7 @@
         for (var j = 0; j < all.length; j++) {
           all[j].classList.toggle(
             'mobile-swatch-active',
-            all[j].getAttribute('data-theme') === id
+            all[j].getAttribute('data-theme') === id,
           );
         }
       });
@@ -412,7 +417,7 @@
 
     /* Re-attach folder collapse handlers on cloned DOM */
     var headers = navEl.querySelectorAll(
-      'li.ext-folder > p, li.ext-folder > strong'
+      'li.ext-folder > p, li.ext-folder > strong',
     );
     for (var h = 0; h < headers.length; h++) {
       headers[h].addEventListener('click', function () {
@@ -426,7 +431,18 @@
       allLinks[k].addEventListener('click', closeDrawer);
     }
 
-    activateTab(findActiveIndex());
+    var activeIdx = findActiveIndex();
+    activateTab(activeIdx);
+
+    if (headerSectionEl) {
+      if (folderData.length > 1) {
+        headerSectionEl.textContent = folderData[activeIdx].label;
+        headerSectionEl.style.display = '';
+      } else {
+        headerSectionEl.textContent = '';
+        headerSectionEl.style.display = 'none';
+      }
+    }
   }
 
   /* ---- Docsify plugin entry point ---- */

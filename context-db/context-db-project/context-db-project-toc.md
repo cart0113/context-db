@@ -5,9 +5,9 @@
 
 ## Files
 
-- description: Research landscape on context engineering for LLM coding agents — how tools handle context, structured vs unstructured evidence, and implications for context-db
+- description: (no description)
   path: context-engineering-research.md
-- description: Share context-db folders across projects — committed for the team, symlinked for yourself, or pulled via git-sync/submodule
+- description: (no description)
   path: cross-project-sharing.md
-- description: What context-db is, why it was built, and the core design principles
+- description: (no description)
   path: overview.md

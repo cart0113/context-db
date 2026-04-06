@@ -16,6 +16,21 @@
   var cfg = window.__docsifyExtConfig || {};
   var TOP_NAV_OFFSET = 75;
 
+  function updateNavHeight(iconSize) {
+    var navHeight = iconSize + 16;
+    var offset = navHeight + 17;
+    document.documentElement.style.setProperty(
+      '--t-top-nav-height',
+      navHeight + 'px',
+    );
+    document.documentElement.style.setProperty(
+      '--t-top-icon-size',
+      iconSize + 'px',
+    );
+    TOP_NAV_OFFSET = offset;
+    if (window.$docsify) window.$docsify.topMargin = offset;
+  }
+
   function getCurrentPath() {
     return (window.location.hash || '#/').split('?')[0];
   }
@@ -31,7 +46,7 @@
     for (var i = 0; i < folderData.length; i++) {
       for (var j = 0; j < folderData[i].links.length; j++) {
         var href = (folderData[i].links[j].getAttribute('href') || '').split(
-          '?'
+          '?',
         )[0];
         if (href === path) return i;
       }
@@ -72,7 +87,7 @@
         if (folderData[j].label === label) {
           folderData[j].li = li;
           folderData[j].links = Array.prototype.slice.call(
-            li.querySelectorAll('ul a')
+            li.querySelectorAll('ul a'),
           );
           break;
         }
@@ -204,7 +219,7 @@
     if (!sidebarInput) return;
     var nativeSetter = Object.getOwnPropertyDescriptor(
       HTMLInputElement.prototype,
-      'value'
+      'value',
     ).set;
     nativeSetter.call(sidebarInput, query);
     sidebarInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -257,8 +272,6 @@
       });
     }
 
-    if (folderData.length === 0) return;
-
     /* Build the top bar */
     topNavEl = document.createElement('div');
     topNavEl.className = 'ext-top-nav';
@@ -266,45 +279,50 @@
     /* --- Left: icon + title --- */
     var brand = document.createElement('a');
     brand.className = 'ext-top-brand';
-    brand.href = '#/overview/overview';
+    var nameLink = document.querySelector('.app-name-link');
+    brand.href = nameLink ? nameLink.getAttribute('href') : '#/';
 
     if (cfg.site_icon) {
       var icon = document.createElement('img');
       icon.src = cfg.site_icon;
       icon.alt = '';
       icon.className = 'ext-top-brand-icon';
+      icon.onload = function () {
+        var size = Math.max(icon.offsetWidth, icon.offsetHeight);
+        if (size > 42) updateNavHeight(size);
+      };
       brand.appendChild(icon);
     }
 
     var title = document.createElement('span');
     title.className = 'ext-top-brand-title';
-    title.textContent = document.querySelector('.app-name-link')
-      ? document.querySelector('.app-name-link').textContent.trim()
-      : 'bruha';
+    title.textContent = nameLink ? nameLink.textContent.trim() : 'bruha';
     brand.appendChild(title);
     topNavEl.appendChild(brand);
 
-    /* --- Center: nav tabs --- */
-    var tabs = document.createElement('div');
-    tabs.className = 'ext-top-tabs';
+    /* --- Center: nav tabs (only when there are folders) --- */
+    if (folderData.length > 0) {
+      var tabs = document.createElement('div');
+      tabs.className = 'ext-top-tabs';
 
-    for (var j = 0; j < folderData.length; j++) {
-      var btn = document.createElement('button');
-      btn.textContent = folderData[j].label;
-      folderData[j].button = btn;
+      for (var j = 0; j < folderData.length; j++) {
+        var btn = document.createElement('button');
+        btn.textContent = folderData[j].label;
+        folderData[j].button = btn;
 
-      (function (idx) {
-        btn.addEventListener('click', function () {
-          activateFolder(idx);
-          var href = folderData[idx].firstHref;
-          if (href) window.location.hash = href;
-        });
-      })(j);
+        (function (idx) {
+          btn.addEventListener('click', function () {
+            activateFolder(idx);
+            var href = folderData[idx].firstHref;
+            if (href) window.location.hash = href;
+          });
+        })(j);
 
-      tabs.appendChild(btn);
+        tabs.appendChild(btn);
+      }
+
+      topNavEl.appendChild(tabs);
     }
-
-    topNavEl.appendChild(tabs);
 
     /* --- Spacer --- */
     var spacer = document.createElement('div');
@@ -320,7 +338,7 @@
     if (search) topNavEl.appendChild(search);
 
     document.body.appendChild(topNavEl);
-    activateFolder(findActiveIndex());
+    if (folderData.length > 0) activateFolder(findActiveIndex());
   }
 
   function applyFolderState() {
