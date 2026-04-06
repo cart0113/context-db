@@ -1,3 +1,4 @@
 ---
-description: Shared coding standards — naming, error handling, and testing conventions
+description:
+  Shared coding standards — naming, error handling, and testing conventions
 ---
