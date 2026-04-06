@@ -1,20 +1,21 @@
 ---
-description: Why files are named after their parent folder rather than using fixed names
+description:
+  Why files are named after their parent folder rather than using fixed names
 ---
 
 # Naming Convention
 
-Files are named `<folder>.md` and `<folder>_toc.md` rather than fixed names like
-`CONTEXT.yml` and `CONTEXT_TOC.md`.
+Each folder's description file is named `<folder>.md` (or
+`<folder>-instructions.md`) rather than a fixed name like `CONTEXT.md`.
 
 ## Rationale
 
-- **Self-describing.** `CODING.md` tells you exactly what it describes. `CONTEXT.md`
-  in a `CODING/` directory does not.
-- **No collision.** If you have `CONTEXT/CODING/` and `CONTEXT/DATABASE/`, the files
-  are `CODING.md` / `CODING_toc.md` and `DATABASE.md` / `DATABASE_toc.md`. All unique
-  names, easy to search for.
-- **Generalizes beyond CONTEXT/.** The convention works for any directory, not just
-  ones named `CONTEXT`. A `docs/API/` directory could use `API.md` + `API_toc.md`.
-- **Script simplicity.** The build script computes `foldername=$(basename "$dir")` and
-  knows exactly which files to read and write. No special-casing.
+- **Self-describing.** `CODING.md` tells you exactly what it describes.
+  `CONTEXT.md` in a `CODING/` directory does not.
+- **No collision.** If you have `context-db/coding/` and `context-db/database/`,
+  the description files are `coding.md` and `database.md`. All unique names,
+  easy to search for.
+- **Generalizes beyond context-db/.** The convention works for any directory. A
+  `docs/api/` directory uses `api.md`.
+- **Script simplicity.** `show_toc.sh` computes `foldername=$(basename "$dir")`
+  and knows exactly which description file to look for. No special-casing.

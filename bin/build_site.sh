@@ -2,9 +2,8 @@
 #
 # build_site.sh — Generate a Docsify site from a context-db directory.
 #
-# Takes a context node (directory with a _toc.md) and produces a browsable
-# Docsify site: sidebar from the TOC structure, content with YAML frontmatter
-# stripped, and an index.html template.
+# Uses show_toc.sh to generate TOC content dynamically — no static -toc.md
+# files required.
 #
 # Usage:
 #   bin/build_site.sh <source_dir> <output_dir>
@@ -25,7 +24,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 EMBED=false
 TEMPLATE=""
 
-# ── Parsing ───────────────────────────────────────────────────────────────────
+# ── Parsing ──────────────────���────────────────────��───────────────────────────
 
 strip_frontmatter() {
     awk '
@@ -38,19 +37,27 @@ strip_frontmatter() {
 read_desc() {
     awk '
         /^---$/ { fc++; next }
+        fc == 1 && found && /^[[:space:]]/ {
+            sub(/^[[:space:]]+/, "")
+            if (val != "") val = val " "
+            val = val $0
+            next
+        }
+        fc == 1 && found { gsub(/^["'"'"']|["'"'"']$/, "", val); print val; exit }
         fc == 1 && /^description:/ {
             sub(/^description:[[:space:]]*/, "")
-            gsub(/^["'"'"']|["'"'"']$/, "")
-            print; exit
+            if ($0 != "") { gsub(/^["'"'"']|["'"'"']$/, ""); print; exit }
+            found = 1; val = ""
         }
-        fc >= 2 { exit }
+        fc >= 2 { if (found) { gsub(/^["'"'"']|["'"'"']$/, "", val); print val }; exit }
     ' "$1"
 }
 
 find_desc_file() {
     local dir="$1" name
-    name=$(basename "$dir")
+    name=$(basename "$(cd "$dir" && pwd -P)")
     [ -f "$dir/${name}.md" ] && { echo "$dir/${name}.md"; return 0; }
+    [ -f "$dir/${name}-instructions.md" ] && { echo "$dir/${name}-instructions.md"; return 0; }
     local f
     for f in CONTEXT.md SKILL.md AGENT.md AGENTS.md; do
         [ -f "$dir/$f" ] && { echo "$dir/$f"; return 0; }
@@ -58,16 +65,23 @@ find_desc_file() {
     return 1
 }
 
+gen_toc() {
+    "${SCRIPT_DIR}/show_toc.sh" "$1"
+}
+
 # ── Sidebar generation ────────────────────────────────────────────────────────
 
 build_sidebar() {
-    local toc_file="$1"
+    local src_dir="$1"
     local src_base="$2"
     local prefix="$3"
     local indent="$4"
 
     local pad=""
     for ((i=0; i<indent; i++)); do pad="  ${pad}"; done
+
+    local toc_content
+    toc_content=$(gen_toc "$src_dir")
 
     local desc="" path=""
     while IFS= read -r line || [ -n "$line" ]; do
@@ -78,12 +92,12 @@ build_sidebar() {
             desc="${line#- description: }"
         elif [[ "$line" == "  path: "* ]]; then
             path="${line#  path: }"
-            if [[ "$path" == *_toc.md ]]; then
+            if [[ "$path" == *-toc.md ]]; then
                 local folder="${path%/*}"
                 echo "${pad}- [${desc}](${prefix}${folder}/)"
-                local sub_toc="${src_base}/${prefix}${path}"
-                if [ -f "$sub_toc" ]; then
-                    build_sidebar "$sub_toc" "$src_base" "${prefix}${folder}/" $((indent+1))
+                local sub_dir="${src_base}/${prefix}${folder}"
+                if [ -d "$sub_dir" ]; then
+                    build_sidebar "$sub_dir" "$src_base" "${prefix}${folder}/" $((indent+1))
                 fi
             else
                 echo "${pad}- [${desc}](${prefix}${path})"
@@ -91,14 +105,17 @@ build_sidebar() {
             desc=""
             path=""
         fi
-    done < "$toc_file"
+    done <<< "$toc_content"
 }
 
-# ── Content copy ──────────────────────────────────────────────────────────────
+# ── Content copy ───────────��───────────────────────────���──────────────────────
 
 build_readme() {
-    local toc_file="$1"
+    local src_dir="$1"
     local title="$2"
+
+    local toc_content
+    toc_content=$(gen_toc "$src_dir")
 
     echo "# ${title}"
     echo ""
@@ -112,7 +129,7 @@ build_readme() {
             desc="${line#- description: }"
         elif [[ "$line" == "  path: "* ]]; then
             path="${line#  path: }"
-            if [[ "$path" == *_toc.md ]]; then
+            if [[ "$path" == *-toc.md ]]; then
                 local folder="${path%/*}"
                 echo "- **[${desc}](${folder}/)**"
             else
@@ -121,37 +138,36 @@ build_readme() {
             desc=""
             path=""
         fi
-    done < "$toc_file"
+    done <<< "$toc_content"
 }
 
 copy_content() {
-    local toc_file="$1"
+    local src_dir="$1"
     local src_base="$2"
     local out_base="$3"
     local prefix="$4"
+
+    local toc_content
+    toc_content=$(gen_toc "$src_dir")
 
     local path=""
     while IFS= read -r line || [ -n "$line" ]; do
         [[ "$line" != "  path: "* ]] && continue
         path="${line#  path: }"
 
-        if [[ "$path" == *_toc.md ]]; then
+        if [[ "$path" == *-toc.md ]]; then
             local folder="${path%/*}"
             local folder_src="${src_base}/${prefix}${folder}"
             local folder_out="${out_base}/${prefix}${folder}"
             mkdir -p "$folder_out"
 
-            # Generate subfolder README from its TOC
-            local sub_toc="${src_base}/${prefix}${path}"
-            if [ -f "$sub_toc" ]; then
-                local sub_desc=""
-                local sub_desc_file
-                sub_desc_file=$(find_desc_file "$folder_src" 2>/dev/null) && \
-                    sub_desc=$(read_desc "$sub_desc_file")
-                [ -z "$sub_desc" ] && sub_desc="$folder"
-                build_readme "$sub_toc" "$sub_desc" > "${folder_out}/README.md"
-                copy_content "$sub_toc" "$src_base" "$out_base" "${prefix}${folder}/"
-            fi
+            local sub_desc=""
+            local sub_desc_file
+            sub_desc_file=$(find_desc_file "$folder_src" 2>/dev/null) && \
+                sub_desc=$(read_desc "$sub_desc_file")
+            [ -z "$sub_desc" ] && sub_desc="$folder"
+            build_readme "$folder_src" "$sub_desc" > "${folder_out}/README.md"
+            copy_content "$folder_src" "$src_base" "$out_base" "${prefix}${folder}/"
         else
             local src_file="${src_base}/${prefix}${path}"
             local out_file="${out_base}/${prefix}${path}"
@@ -161,10 +177,10 @@ copy_content() {
             fi
         fi
         path=""
-    done < "$toc_file"
+    done <<< "$toc_content"
 }
 
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Main ──────────��──────────────────────────���──────────────────────────────��─
 
 main() {
     while [ $# -gt 0 ]; do
@@ -183,20 +199,18 @@ main() {
     local src_dir="${1%/}"
     local out_dir="${2%/}"
 
-    local foldername
-    foldername=$(basename "$(cd "$src_dir" && pwd)")
-    local toc_file="${src_dir}/${foldername}_toc.md"
-
-    if [ ! -f "$toc_file" ]; then
-        echo "Error: No TOC file at $toc_file" >&2
-        echo "Run bin/build_toc.sh first." >&2
+    # Verify source is a context-db folder
+    find_desc_file "$src_dir" >/dev/null 2>&1 || {
+        echo "Error: '$src_dir' is not a context-db folder (no description file found)" >&2
         exit 1
-    fi
+    }
 
     # Root description
     local desc_file root_desc=""
     desc_file=$(find_desc_file "$src_dir" 2>/dev/null) && \
         root_desc=$(read_desc "$desc_file")
+    local foldername
+    foldername=$(basename "$(cd "$src_dir" && pwd)")
     [ -z "$root_desc" ] && root_desc="$foldername"
 
     echo "context-db: building site from $src_dir → $out_dir"
@@ -207,16 +221,16 @@ main() {
     {
         $EMBED && echo "- [← Back](/)"
         echo "- **${root_desc}**"
-        build_sidebar "$toc_file" "$src_dir" "" 1
+        build_sidebar "$src_dir" "$src_dir" "" 1
     } > "${out_dir}/_sidebar.md"
     echo "  Built: _sidebar.md"
 
     # Root README
-    build_readme "$toc_file" "$root_desc" > "${out_dir}/README.md"
+    build_readme "$src_dir" "$root_desc" > "${out_dir}/README.md"
     echo "  Built: README.md"
 
     # Content files (frontmatter stripped)
-    copy_content "$toc_file" "$src_dir" "$out_dir" ""
+    copy_content "$src_dir" "$src_dir" "$out_dir" ""
     echo "  Copied content files"
 
     # index.html and .nojekyll (standalone only)

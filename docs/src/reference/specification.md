@@ -8,11 +8,20 @@ A folder is a **context node** if it contains any of these files:
 - `<folder_name>-instructions.md`
 - `CONTEXT.md`, `SKILL.md`, `AGENT.md`, or `AGENTS.md`
 
-The file has YAML frontmatter with a single `description` key. No body content.
+The file has YAML frontmatter with a `description` key. No body content.
 
 ```yaml
 ---
 description: Acme Payments — architecture, APIs, and data model
+---
+```
+
+Descriptions can span multiple lines using YAML block scalar syntax:
+
+```yaml
+---
+description:
+  Acme Payments — architecture, APIs, data model, and deployment constraints
 ---
 ```
 
@@ -73,6 +82,16 @@ Symlinked folders appear in the TOC when `show_toc.sh` is run on the parent. The
 script resolves symlinks to find the real folder name for description file
 lookup, so symlinks can be named freely.
 
+To keep a symlink private (visible only to you), add it to `.gitignore`:
+
+```gitignore
+context-db/my-private-link
+```
+
+Because `show_toc.sh` generates the TOC on the fly, private symlinks appear in
+your TOC automatically without affecting anyone else's working tree. See the
+[Cross-Project Sharing](../guide/cross-project-sharing.md) guide for patterns.
+
 ## Skipping
 
 Underscore-prefixed (`_drafts/`) and dot-prefixed (`.hidden/`) names are always
@@ -116,19 +135,6 @@ bin/show_toc.sh context-db/my-project/data-model/  # Deeper
 - Resolves symlinks for description file lookup but follows them for reading
 - Skips underscore-prefixed and dot-prefixed names
 - Requires bash 3.2+, awk (standard on macOS and Linux)
-
-## build_toc.sh (legacy)
-
-Generates static `<folder>-toc.md` files on disk. Retained for projects that
-need files on disk (static site generation, non-agent consumers). For agent
-navigation, `show_toc.sh` is preferred — it avoids committing generated files
-and handles cross-project symlinks cleanly.
-
-```bash
-bin/build_toc.sh                    # Rebuild changed TOC files
-bin/build_toc.sh context-db/        # Build one directory tree
-bin/build_toc.sh --build-all        # Rebuild all TOC files unconditionally
-```
 
 ## build_site.sh
 

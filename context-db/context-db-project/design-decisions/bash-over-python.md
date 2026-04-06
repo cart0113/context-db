@@ -1,7 +1,5 @@
 ---
-description:
-  Why show_toc.sh and build_toc.sh are pure bash rather than Python or another
-  language
+description: Why show_toc.sh is pure bash rather than Python or another language
 ---
 
 # Bash Over Python

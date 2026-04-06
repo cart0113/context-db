@@ -15,7 +15,7 @@ stdout.
 Static `-toc.md` files broke down with cross-project sharing:
 
 1. You symlink external context into `context-db/` and `.gitignore` the symlink
-2. `build_toc.sh` regenerates the parent TOC to include the symlinked folder
+2. The parent TOC gets regenerated to include the symlinked folder
 3. Now the committed TOC either includes entries only you have (broken for
    others) or excludes entries you have (your agent misses them)
 
@@ -72,5 +72,4 @@ A script that returns text on stdout is the simplest possible interface.
 - Folder structure, naming convention, `<foldername>.md` description files
 - YAML frontmatter with `description` and `status` fields
 - Documents are still plain markdown — agents read them directly
-- `build_toc.sh` still available for projects that need static files on disk
-  (e.g., static site generation)
+- Static TOC generation was removed — `show_toc.sh` covers all use cases
