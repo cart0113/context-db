@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 #
-# pre-commit — Format staged files.
+# pre-commit — Format staged files and rebuild context-db TOC files.
 #
 # Runs:
-#   1. prettier on staged md/js/ts/json/css/yaml files
-#   2. ruff on staged python files
+#   1. bin/build_toc.sh (if present) to rebuild context-db TOC files
+#   2. prettier on staged md/js/ts/json/css/yaml files
+#   3. ruff on staged python files
 #
 # Install:
 #   cp hooks/pre-commit .git/hooks/pre-commit
@@ -15,12 +16,23 @@ set -eo pipefail
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
 
-# ── 1. Prettier on staged web/markdown files ────────────────────────────────
+# ── 1. Rebuild context-db TOC files ─────────────────────────────────────────
+
+BUILD_TOC="${REPO_ROOT}/bin/build_toc.sh"
+if [ -x "$BUILD_TOC" ]; then
+    "$BUILD_TOC" context-db/ 2>/dev/null || true
+    while IFS= read -r -d '' toc; do
+        git add "$toc" 2>/dev/null || true
+    done < <(find . -name "*-toc.md" -not -path "*/.git/*" -print0)
+fi
+
+# ── 2. Prettier on staged web/markdown files ────────────────────────────────
 
 PRETTIER="./node_modules/.bin/prettier"
 if [ -x "$PRETTIER" ]; then
     PRETTIER_FILES=$(git diff --cached --name-only --diff-filter=ACM \
         | grep -E '\.(md|js|ts|jsx|tsx|json|css|html|yaml|yml)$' \
+        | grep -v -- '-toc\.md$' \
         || true)
 
     if [ -n "$PRETTIER_FILES" ]; then
@@ -32,7 +44,7 @@ if [ -x "$PRETTIER" ]; then
     fi
 fi
 
-# ── 2. Ruff on staged Python files ──────────────────────────────────────────
+# ── 3. Ruff on staged Python files ──────────────────────────────────────────
 
 RUFF="$(command -v ruff-main 2>/dev/null || true)"
 if [ -n "$RUFF" ]; then
@@ -48,4 +60,13 @@ if [ -n "$RUFF" ]; then
             git add "$file" 2>/dev/null || true
         done
     fi
+fi
+
+# ── Cache-bust docs/index.html ──────────────────────────────────────────────
+
+DOCS_DIR="${REPO_ROOT}/docs"
+if [ -f "${DOCS_DIR}/index.html" ] && git diff --cached --name-only | grep -qE '^docs/'; then
+    STAMP=$(date +%Y%m%d%H%M%S)
+    sed -i '' "s/?v=[0-9a-zA-Z]*/?v=${STAMP}/g" "${DOCS_DIR}/index.html"
+    git add "${DOCS_DIR}/index.html"
 fi
