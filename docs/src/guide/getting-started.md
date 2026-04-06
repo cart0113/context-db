@@ -4,7 +4,8 @@
 
 Copy `bin/show_toc.sh` into your project's `bin/` directory and make it
 executable. Copy `context-db-instructions.md` into your `context-db/` folder —
-this file tells agents how to read and write context documents.
+this is the single source of truth that tells agents how to read, write, and
+maintain context documents.
 
 ```
 your-project/
@@ -17,6 +18,13 @@ your-project/
 ```bash
 chmod +x bin/show_toc.sh
 ```
+
+> [!important] `context-db-instructions.md` is the file you copy into each
+> project. It contains all the rules — reading via `show_toc.sh`, writing back
+> discoveries, and maintaining YAML frontmatter. Your `AGENTS.md` and
+> tool-specific config files should point to it rather than restating the rules.
+> Re-copy this file periodically from the context-db repo to stay current with
+> the latest instructions.
 
 ## 2. Create a project subfolder
 
@@ -96,24 +104,31 @@ bin/show_toc.sh context-db/my-project/
 
 ## 5. Bootstrap your agent
 
-Point your agent's entry file to the knowledge database. Add a context-db
-section to `AGENTS.md` (or `.cursorrules`, `AGENTS.md`, etc.):
+The bootstrapping pattern is simple: **point your agent to
+`context-db-instructions.md` and let that file do the rest.** Don't restate the
+context-db rules in your agent config — just reference the instructions file.
+
+Add a context-db section to `AGENTS.md` (or `.cursorrules`, `AGENTS.md`, etc.):
 
 ```markdown
 ## context-db
 
-Read `context-db/context-db-instructions.md` for the project knowledge database.
+Read `context-db/context-db-instructions.md` — it contains all rules for
+reading, writing, and maintaining the project knowledge database.
 ```
 
-The `templates/` directory has pre-formatted bootstrap text for Claude Code,
-Codex, and Cursor — each tailored to that tool's conventions.
-
-For Claude Code, you can also add a `.claude/rules/context-db.md` file:
+For Claude Code, also add `.claude/rules/context-db.md` so the instructions load
+automatically at session start:
 
 ```markdown
 This project uses context-db. Read `context-db/context-db-instructions.md` for
 how to navigate the project knowledge database.
 ```
+
+> [!tip] The `templates/` directory has pre-formatted bootstrap text for Claude
+> Code, Codex, and Cursor — each tailored to that tool's conventions. These are
+> standalone copies of `context-db-instructions.md` formatted for tools that
+> don't support `.claude/rules/`.
 
 ## 6. Optional: pre-commit hook
 
