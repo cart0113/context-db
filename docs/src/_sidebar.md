@@ -1,7 +1,7 @@
 - **Overview**
   - [context-db](overview/overview.md)
 - **Guide**
-  - [Getting Started](guide/getting-started.md)
   - [Cross-Project Sharing](guide/cross-project-sharing.md)
+  - [Getting Started](guide/getting-started.md)
 - **Reference**
   - [Reference](reference/specification.md)
