@@ -29,6 +29,10 @@ is a more natural choice. Skills are instructions on how to do something and
 define discrete tools. `context-db` is more for free-form, general project
 knowledge and context.
 
+The `bin/show_toc.sh` script allows `context-db` to get the best part of the
+skills system (progressive disclosure) and mimics the vendor-specific tooling
+that supports the skills system.
+
 `context-db` is also similar to the trend of using
 [Obsidian](https://obsidian.md/) vaults, but more minimal and designed for agent
 consumption rather than human browsing.
@@ -79,6 +83,13 @@ Here:
    browsing of the knowledge database.
 5. Descriptions in YAML frontmatter let the agent skip irrelevant branches.
 6. When the agent learns something important, it writes it back to `context-db`.
+
+## Private or Public
+
+The system is designed so that folders (either physical or via symlink) can be
+private (e.g. added to `.gitignore`). The `show_toc.sh` script runs dynamically
+as agents navigate the database. This way, you can easily add agent behavior and
+instructions that are local to your session.
 
 ## Structure
 
