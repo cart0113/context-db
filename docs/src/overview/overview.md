@@ -25,9 +25,25 @@ The goal of `context-db` was to create a lighter weight system than the
 An emerging trend is to use the skills format for ALL project knowledge —
 repurposing a system originally designed to teach agents about discrete how-to
 behaviors. Often this is an awkward fit and the wiki/book format of `context-db`
-is a more natural choice (more like how Obsidian vaults work). Skills are
-instructions on how to do something and define discrete tools. `context-db` is
-more for free-form, general project knowledge and context.
+is a more natural choice. Skills are instructions on how to do something and
+define discrete tools. `context-db` is more for free-form, general project
+knowledge and context.
+
+The format draws from existing markdown knowledge-base systems:
+
+- [Obsidian](https://obsidian.md/) vaults — markdown files with YAML frontmatter
+  organized in folder hierarchies. `context-db` borrows the
+  frontmatter-as-metadata pattern and hierarchical folder structure, but
+  replaces Obsidian's wiki-links and graph view with on-demand TOCs designed for
+  agent consumption.
+- [Dendron](https://www.dendron.so/) — hierarchical note-taking in VS Code with
+  dot-delimited naming and schema-driven metadata. `context-db` takes a similar
+  stance that hierarchy matters for discovery, but uses folders instead of
+  dot-naming and keeps the schema minimal (just `description`).
+- [Architecture Decision Records](https://adr.github.io/) (ADRs) — structured
+  markdown documents capturing design decisions with status tracking.
+  `context-db` supports a similar pattern through its `status` field and is a
+  natural place to store ADRs alongside other project context.
 
 ## Folder structure
 
