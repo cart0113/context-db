@@ -1,5 +1,3 @@
-# AGENTS.md
-
 This project uses context-db. Run `bin/show_toc.sh` on folders inside
 `context-db/` to see available context. Start with:
 
