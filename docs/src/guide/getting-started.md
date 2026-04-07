@@ -28,7 +28,8 @@ description: Acme Payments — architecture, APIs, and data model
 ```
 
 Add context documents alongside it. Each has `description` frontmatter and
-markdown content.
+markdown content. Keep folders to 5–10 items — if one grows beyond that, split
+it into subfolders.
 
 ## 3. Point your agent at the instructions
 
