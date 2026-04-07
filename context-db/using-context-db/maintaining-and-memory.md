@@ -1,32 +1,22 @@
 ---
-description:
-  Folder size rules, description maintenance, and post-session update checklist
+description: Folder size rules, description upkeep, and post-session checklist
 ---
 
-## Folder rule — 5 to 10 items per folder
+## 5–10 items per folder
 
-The system depends on agents navigating the tree without reading everything.
-Each level must be small enough to scan at a glance.
-
-- **5–10 items per folder.** No exceptions.
-- When a folder exceeds this, split into subfolders with meaningful hierarchy.
-- On any update, reconsider whether the file still belongs and whether the
-  folder has grown too large.
-
-The folder tree is a decision tree: each node should halve the search space.
+Each folder must contain 5–10 items. When a folder exceeds this, split into
+subfolders. The folder tree is a decision tree — each level should halve the
+search space.
 
 ## Keep descriptions current
 
-After ANY change — new file, edit, rename, delete — ensure every affected file's
-`description` accurately reflects its content. Stale descriptions actively
-mislead future agents. This is the most important maintenance rule.
+After any change — new file, edit, rename, delete — rewrite every affected
+`description` to match current content. Stale descriptions mislead future
+agents.
 
-## Update checklist
+## Post-session checklist
 
-After every session where you touched the codebase or learned something new:
-
-1. **Capture** — Create or update documents with new knowledge.
-2. **Summarize** — Rewrite every affected `description` to be accurate.
-3. **Reorganize** — Check folder sizes; split or merge to stay at 5–10 items.
-4. **Verify** — Run `show_toc.sh` on affected folders. Does the TOC make sense
-   to a cold reader in two hops? If not, fix it.
+1. **Capture** — create or update documents with new knowledge.
+2. **Summarize** — rewrite affected descriptions.
+3. **Reorganize** — split or merge folders to stay at 5–10 items.
+4. **Verify** — run `show_toc.sh` on affected folders.
