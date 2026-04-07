@@ -29,6 +29,18 @@ is a more natural choice. Skills are instructions on how to do something and
 define discrete tools. `context-db` is more for free-form, general project
 knowledge and context.
 
+There is also a practical scaling problem with skills. Anthropic's
+[skill best practices](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices)
+note each skill costs ~100 tokens of metadata at startup and that the
+description budget scales at 1% of the context window. If you have hundreds of
+knowledge documents organized as skills, selection accuracy drops and context
+fills up.
+
+`context-db` sidesteps this — each TOC should be by convention 5–10 items, so
+the knowledge base scales to hundreds of documents while any given navigation
+step stays small. The amount an agent reads is logarithmic relative to the total
+size of the database.
+
 The `bin/show_toc.sh` script allows `context-db` to get the best part of the
 skills system (progressive disclosure) and mimics the vendor-specific tooling
 that supports the skills system.
