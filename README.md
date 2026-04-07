@@ -1,99 +1,67 @@
 # context-db
 
 Hierarchical Markdown knowledge base with on-demand tables of contents for LLM
-agents.
+agents. Agents run `bin/show_toc.sh` on a folder, see one-line descriptions of
+every subfolder and file, and fetch only what's relevant. Agents write back what
+they learn — architecture decisions, gotchas, non-obvious patterns — so future
+agents don't rediscover the same knowledge.
 
-## How it works
+## Features
 
-```
-your-project/
-├── AGENTS.md                         ← "read context-db/context-db-instructions.md"
-├── bin/show_toc.sh                   ← TOC generator (prints to stdout)
-└── context-db/
-    ├── context-db-instructions.md   ← teaches the agent to navigate the tree
-    ├── my-project/
-    │   ├── my-project.md            ← folder description (frontmatter only)
-    │   ├── architecture.md          ← document (frontmatter + body)
-    │   └── data-model/
-    │       ├── data-model.md
-    │       └── entities.md
-    └── coding-standards/            ← can be a symlink to shared context
-        ├── coding-standards.md
-        └── naming-conventions.md
-```
+- **On-demand TOCs from filesystem** -- `bin/show_toc.sh` generates tables of
+  contents on the fly from YAML frontmatter. No static files to commit or keep
+  in sync.
+- **Progressive disclosure** -- agents browse TOCs top-down, reading
+  descriptions to decide what to fetch. Scales from a handful of files to
+  hundreds without flooding context.
+- **Two-way knowledge** -- agents read context and write it back. The knowledge
+  base stays current as the codebase evolves.
+- **Cross-project sharing** -- symlink folders from other repos into
+  `context-db/` and they appear in the TOC automatically. Private symlinks via
+  `.gitignore`, shared via submodule or git-sync.
+- **Zero dependencies** -- bash 3.2+ and awk, pre-installed on macOS and Linux.
+- **Tool-agnostic** -- works with Claude Code, Codex, Cursor, or any tool that
+  can run shell commands and read stdout.
+- **Copy-based install** -- copy `templates/bin/` and `templates/context-db/`
+  into your project. A sample `AGENTS.md` and `SKILLS.md` are also provided.
 
-`AGENTS.md` bootstraps the agent into `context-db/`. The instructions file
-teaches navigation. The agent runs `bin/show_toc.sh` on folders, uses
-descriptions to decide relevance, and only fetches what it needs.
+## How It Works
 
-## Quick start
+1. `AGENTS.md` points the agent to `context-db/context-db-instructions.md`
+2. The instructions file teaches navigation and maintenance rules
+3. The agent runs `bin/show_toc.sh context-db/` to browse the knowledge tree
+4. Descriptions in YAML frontmatter let the agent skip irrelevant branches
 
-1. Create `context-db/` and copy `context-db-instructions.md` into it
-2. Copy `bin/show_toc.sh` into your project's `bin/` directory
-3. Add your project subfolder with a `<foldername>.md` description file
-4. Add context documents with `description:` frontmatter
-5. Point `AGENTS.md` to read `context-db/context-db-instructions.md`
-
-## Cross-project sharing
-
-Symlink a published knowledge folder into `context-db/` and `show_toc.sh` picks
-it up automatically:
-
-```
-context-db/
-├── my-project/
-│   ├── my-project.md
-│   └── architecture.md
-└── coding-standards/ → /shared/coding-standards   ← symlink
-    ├── coding-standards.md
-    └── naming-conventions.md
-```
-
-Add symlinked folders to `.gitignore` for private-only context, or commit them
-for the whole team. See the cross-project sharing docs for git-sync and git
-submodule patterns.
-
-## File format
-
-Every `.md` file has YAML frontmatter with a `description` key. This is the only
-thing shown in the TOC — it's how the agent decides whether to read a file.
-
-**Folder description** (`my-project.md`) — frontmatter only, registers the
-folder:
-
-```yaml
----
-description: My project — architecture and data model
----
-```
-
-**Document** (`architecture.md`) — frontmatter plus content:
-
-```yaml
----
-description: System components, data flow, and service boundaries
----
-# Architecture
-
-(content)
-```
-
-## Rules
-
-1. A folder is a context node if it contains `<folder_name>.md`,
-   `<folder_name>-instructions.md`, or one of `AGENTS.md`, `CONTEXT.md`,
-   `SKILL.md`, `AGENTS.md`
-2. `bin/show_toc.sh <folder>` generates a TOC on stdout for that folder
-3. Underscore-prefixed and dot-prefixed names are skipped
-4. Symlinked folders appear in the TOC and are followed for reading
-
-## Usage
+## Quick Start
 
 ```bash
-bin/show_toc.sh context-db/                     # top-level TOC
-bin/show_toc.sh context-db/my-project/          # subfolder TOC
-bin/show_toc.sh context-db/my-project/data-model/  # deeper
+cp -r templates/bin your-project/bin
+cp -r templates/context-db your-project/context-db
+chmod +x your-project/bin/show_toc.sh
 ```
+
+Then create your project folder and point `AGENTS.md` at the instructions file.
+See the
+[Getting Started](https://cart0113.github.io/context-db/#/src/guide/getting-started)
+guide.
+
+## Structure
+
+```
+templates/              Copy these into your project
+  bin/show_toc.sh       TOC generator
+  context-db/           Instructions file
+  AGENTS.md             Sample agent config section
+  skills/context-db/    Sample SKILLS.md for Claude Code
+bin/show_toc.sh         Canonical TOC generator
+context-db/             This project's own knowledge database
+example/                Example project structure
+docs/                   GitHub Pages documentation
+```
+
+## Documentation
+
+Full docs: https://cart0113.github.io/context-db/
 
 ## License
 

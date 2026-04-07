@@ -6,37 +6,31 @@ repository.
 ## CRITICAL: Read Global User Context First
 
 **BEFORE PROCEEDING, read `~/.context.md` and follow all advice there.** That
-file contains my general coding preferences, style guidelines, and critical
-instructions that apply to ALL projects. The instructions in ~/.context.md
-override any conflicting defaults.
+file contains general coding preferences, style guidelines, and critical
+instructions that apply to ALL projects.
 
 If ~/.context.md doesn't exist, notify the user.
 
 ## Project Overview
 
-**context-db** is a portable standard for hierarchically organizing project
-knowledge as Markdown files, with on-demand tables of contents for progressive
-disclosure.
-
-An agent runs `bin/show_toc.sh` on a folder, sees one-line descriptions of every
-subfolder and file, and fetches only what's relevant to the current task.
+**context-db** — hierarchical Markdown knowledge base with on-demand TOCs for
+LLM agents. Agents run `bin/show_toc.sh`, browse descriptions, fetch what's
+relevant, and write back what they learn.
 
 ## Code Structure
 
 ```
-bin/show_toc.sh       # On-demand TOC generator (prints to stdout)
-hooks/pre-commit      # Git hook for formatting
-context-db/           # This project's own context knowledge database
-bootstrap/            # Ready-to-copy files for new projects
-templates/            # Tool-specific instruction templates
-example/              # Example project structure
-docs/                 # GitHub Pages documentation
+bin/show_toc.sh       On-demand TOC generator (bash 3.2+)
+context-db/           This project's own knowledge database
+templates/            Ready-to-copy files for new projects
+example/              Example project structure
+docs/                 GitHub Pages documentation (bruha)
+hooks/pre-commit      Git hook for formatting
 ```
 
 ## Language
 
-This is a **bash** project. The core script (`bin/show_toc.sh`) targets bash
-3.2+.
+Bash project. The core script (`bin/show_toc.sh`) targets bash 3.2+.
 
 ## context-db
 
