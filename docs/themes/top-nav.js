@@ -299,7 +299,7 @@
     title.textContent = nameLink ? nameLink.textContent.trim() : 'bruha';
     brand.appendChild(title);
 
-    if (cfg.hamburger_menu) {
+    if (cfg.hamburger_sidebar_toggle) {
       var hamburger = document.createElement('button');
       hamburger.className = 'ext-top-hamburger';
       hamburger.title = 'Toggle sidebar';
@@ -319,16 +319,6 @@
           );
         } catch (_) {}
       });
-      /* Restore saved state */
-      try {
-        if (
-          localStorage.getItem(
-            window.location.pathname + ':sidebar-collapsed',
-          ) === 'true'
-        ) {
-          document.documentElement.classList.add('ext-sidebar-collapsed');
-        }
-      } catch (_) {}
       brand.appendChild(hamburger);
     }
 
