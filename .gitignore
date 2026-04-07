@@ -7,4 +7,9 @@ __pycache__/
 
 node_modules/
 
+context-db/coding-standards/general-coding-standards
+context-db/writing-standards
 context-db/using-bruha
+context-db/agent-behavior
+context-db/local-repos-to-update/
+bin/sync-to-repos.sh
