@@ -7,7 +7,7 @@ skills, rules, or other instructions, agents are pointed to a
 `context-db-instructions.md` file and can:
 
 - Learn how to use the `bin/show_toc.sh` bash script to dynamically auto
-  generate folder table of contents to support progressive discovery.
+  generate folder table of contents to support progressive disclosure.
 - Learn how to maintain the `context-db` knowledge database so context and
   knowledge can be built up over time.
 
