@@ -29,9 +29,9 @@ is a more natural choice. Skills are instructions on how to do something and
 define discrete tools. `context-db` is more for free-form, general project
 knowledge and context.
 
-Similar in spirit to [Obsidian](https://obsidian.md/) vaults,
-[Dendron](https://www.dendron.so/), and [ADRs](https://adr.github.io/) — but
-more minimal and designed for agent consumption rather than human browsing.
+`context-db` is also similar to the trend of using
+[Obsidian](https://obsidian.md/) vaults, but more minimal and designed for agent
+consumption rather than human browsing.
 
 ## Folder structure
 
