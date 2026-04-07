@@ -1,118 +1,90 @@
 # context-db
 
-`context-db` is a portable standard for organizing project knowledge as Markdown
-files. Inspired by the `SKILLS.md` standard, documents and folders contain YAML
-frontmatter with brief content summaries. Then, through `AGENTS.md` files,
-skills, rules, or other instructions, agents are pointed to a
-`context-db-instructions.md` file and can:
+A portable standard for organizing project knowledge as hierarchical Markdown so
+LLM agents can discover and fetch only what they need.
 
-- Learn how to use the `bin/show_toc.sh` bash script to dynamically auto
-  generate folder table of contents to support progressive disclosure.
-- Learn how to maintain the `context-db` knowledge database so context and
-  knowledge can be built up over time.
+Every `.md` file has YAML frontmatter with a `description` field. A
+`show_toc.sh` script reads the frontmatter and generates a table of contents for
+any folder. Agents browse the TOC, read only relevant files, and can write
+knowledge back over time.
 
-The goal of `context-db` was to create a lighter weight system than the
-`SKILLS.md` system that is:
+## Why context-db
 
-- _Hierarchical_. By organizing content into nested folders and files, the
-  system further supports progressive disclosure as an agent reads in the tables
-  of contents of one folder at a time.
-- _Lightweight_. `context-db` folders and files are just context/knowledge md
-  files with summaries. For project context, structure, and knowledge this is
-  often a more natural fit and you do not need all the additional features that
-  skills provide (service script, etc.).
+- **Hierarchical.** Nested folders support progressive disclosure — agents read
+  one TOC at a time and go deeper only when needed.
+- **Lightweight.** Plain Markdown with frontmatter. No special tooling, no
+  service scripts, no vendor lock-in.
+- **Scales.** Each TOC stays small (5–10 items by convention), so the knowledge
+  base can grow to hundreds of documents while any navigation step stays cheap.
+  The amount an agent reads is logarithmic relative to the total size.
 
-An emerging trend is to use the skills format for ALL project knowledge —
-repurposing a system originally designed to teach agents about discrete how-to
-behaviors. Often this is an awkward fit and the wiki/book format of `context-db`
-is a more natural choice. Skills are instructions on how to do something and
-define discrete tools. `context-db` is more for free-form, general project
-knowledge and context.
-
-There is also a practical scaling problem with skills. One
-[Reddit user](https://www.reddit.com/r/ClaudeCode/comments/1p8wipb/how_many_claude_skills_are_too_many/)
-mapped out 250 skills and had to consolidate down to 22 to get reliable
-selection. Claude recently capped skills at 200. If you have hundreds of
-knowledge documents organized as skills, selection degrades and context fills
-up.
-
-`context-db` sidesteps this — each TOC should be by convention 5–10 items and
-this is reinforced in the `context-db-instructions.md` for agents that are
-building/maintaining the database, so the knowledge base can scale to hundreds
-or thousands of documents if needed while any given navigation step stays small.
-The amount an agent reads is logarithmic relative to the total size of the
-database.
-
-The `bin/show_toc.sh` script allows `context-db` to get the best part of the
-skills system (progressive disclosure) and mimics the vendor-specific tooling
-that supports the skills system.
-
-`context-db` is also similar to the trend of using
-[Obsidian](https://obsidian.md/) vaults, but more minimal and designed for agent
-consumption rather than human browsing.
-
-## Folder structure
-
-A typical layout might look like:
+## Folder Structure
 
 ```
 your-project/
-├── AGENTS.md                          ← tells agent -> read context-db-instructions.md
+├── AGENTS.md                          ← tells agent to use context-db first
 ├── bin/show_toc.sh                    ← dynamic TOC generator
 └── context-db/
-    ├── context-db-instructions.md     ← reading/writing rules
+    ├── using-context-db/              ← how to read/write context-db
     ├── <project-name>-project/        ← main project context
     │   ├── <project-name>-project.md  ← folder description (frontmatter only)
     │   ├── architecture.md            ← document (frontmatter + body)
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md
-    ├── coding-standards/              ← ancillary (symlinked from another repo)
-    │   ├── coding-standards.md
-    │   ├── general-coding-standards.md
-    │   ├── python-coding-standards.md
-    │   └── javascript-coding-standards.md
-    └── writing-standards/             ← ancillary (symlinked from another repo)
-        ├── writing-standards.md
-        └── first-person-voice.md
+    ├── coding-standards/              ← ancillary (can be symlinked)
+    └── writing-standards/             ← ancillary (can be symlinked)
 ```
 
-Here:
+Every folder has a `<folder-name>.md` file containing only YAML frontmatter —
+this is the folder's description shown in the TOC.
 
-- By convention, the main project folder is called `<project-name>-project/` and
-  is the entry point into your main project knowledge files.
-- In parallel, you may have other common context you routinely want included
-  (coding standards, notes on how to use documentation tools, etc.).
-- Every folder must have a `<folder-name>.md` file in it which only contains
-  YAML frontmatter with a summary of what is in the folder.
+## Integration Paths
 
-## How It Works
+There are three ways to wire context-db into a project. Each one tells the agent
+where `show_toc.sh` lives and to run it before starting work.
 
-1. Copy the `context-db/context-db-instructions.md` and `bin/show_toc.sh` into
-   your project (both are in `templates/`).
-2. Set up an `AGENTS.md`, skill, rule, or some way to point an agent to the
-   `context-db/context-db-instructions.md`.
-3. Build up your `context-db` knowledge database over time.
-4. The agent runs `bin/show_toc.sh context-db/` to start the progressive
-   browsing of the knowledge database.
-5. Descriptions in YAML frontmatter let the agent skip irrelevant branches.
-6. When the agent learns something important, it writes it back to `context-db`.
+**AGENTS.md** — Put an `AGENTS.md` in the project root. The script lives at
+`bin/show_toc.sh`. Simplest option, works with any agent that reads `AGENTS.md`.
+See `templates/AGENTS.md`.
+
+**Rule** — Add a `.claude/rules/context-db.md` file. Loaded automatically by
+Claude Code without needing AGENTS.md. The script lives at `bin/show_toc.sh`.
+See `templates/rules/context-db.md`.
+
+**Skill** — Add a `context-db` skill under `.claude/skills/`. The script lives
+at `${CLAUDE_SKILL_DIR}/scripts/show_toc.sh` (bundled with the skill). Most
+self-contained option — no `bin/` directory needed. See
+`templates/skills/context-db/`.
+
+Pick whichever fits your project. You can combine them (e.g., AGENTS.md for
+general agents + skill for Claude Code).
+
+## Getting Started
+
+1. Copy one of the integration templates above into your project.
+2. Copy `templates/bin/show_toc.sh` to `bin/show_toc.sh` (unless using the skill
+   path, which bundles its own copy).
+3. Copy `templates/context-db/using-context-db/` to
+   `context-db/using-context-db/` — this teaches agents how context-db works.
+4. Create your first knowledge folder (e.g. `context-db/<project>-project/`).
+5. Build up your knowledge base over time.
 
 ## Private or Public
 
-The system is designed so that folders (either physical or via symlink) can be
-private (e.g. added to `.gitignore`). The `show_toc.sh` script runs dynamically
-as agents navigate the database. This way, you can easily add agent behavior and
-instructions that are local to your session.
+Folders can be private (added to `.gitignore`). The `show_toc.sh` script runs
+dynamically, so private folders appear in the TOC for local sessions but never
+get committed.
 
-## Structure
+## Repo Structure
 
 ```
 templates/              Copy these into your project
-  bin/show_toc.sh       TOC generator
-  context-db/           Instructions file
-  AGENTS.md             Sample agent config section
-  skills/context-db/    Sample SKILLS.md for Claude Code
+  AGENTS.md             AGENTS.md integration template
+  rules/context-db.md   Rule integration template
+  skills/context-db/    Skill integration template
+  bin/show_toc.sh       TOC generator script
+  context-db/           using-context-db docs to copy
 bin/show_toc.sh         Canonical TOC generator
 context-db/             This project's own knowledge database
 example/                Example project structure
