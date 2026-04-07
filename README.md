@@ -1,9 +1,10 @@
 # context-db
 
-A portable standard for organizing project knowledge as Markdown files. Inspired
-by the `SKILLS.md` standard, documents and folders contain YAML frontmatter with
-brief content summaries. Then, through AGENTS.md files, skills, rules, or other
-instructions, agents are pointed to a `context-db-instructions.md` file and can:
+`context-db` is a portable standard for organizing project knowledge as Markdown
+files. Inspired by the `SKILLS.md` standard, documents and folders contain YAML
+frontmatter with brief content summaries. Then, through AGENTS.md files, skills,
+rules, or other instructions, agents are pointed to a
+`context-db-instructions.md` file and can:
 
 - Learn how to use the `bin/show_toc.sh` bash script to dynamically auto
   generate folder table of contents to support progressive discovery.
@@ -28,11 +29,13 @@ is a more natural choice. Skills are instructions on how to do something and
 define discrete tools. `context-db` is more for free-form, general project
 knowledge and context.
 
-Similar in spirit to [Obsidian](https://obsidian.md/) vaults,
-[Dendron](https://www.dendron.so/), and [ADRs](https://adr.github.io/) — but
-more minimal and designed for agent consumption rather than human browsing.
+`context-db` is also similar to the trend of using
+[Obsidian](https://obsidian.md/) vaults, but more minimal and designed for agent
+consumption rather than human browsing.
 
 ## Folder structure
+
+A typical layout might look like:
 
 ```
 your-project/
@@ -55,6 +58,15 @@ your-project/
         ├── writing-standards.md
         └── first-person-voice.md
 ```
+
+Here:
+
+- By convention, the main project folder is called `<project-name>-project/` and
+  is the entry point into your main project knowledge files.
+- In parallel, you may have other common context you routinely want included
+  (coding standards, notes on how to use documentation tools, etc.).
+- Every folder must have a `<folder-name>.md` file in it which only contains
+  YAML frontmatter with a summary of what is in the folder.
 
 ## How It Works
 
