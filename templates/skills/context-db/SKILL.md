@@ -4,8 +4,19 @@ description: Navigate and update the project's context-db knowledge base
 allowed-tools: Bash Read
 ---
 
-This project uses context-db. Run `show_toc.sh` on folders inside `context-db/`
-to see available context. Start with:
+**Before starting any task**, use context-db to understand what project
+knowledge is available to you. This is your first step in every conversation.
+
+Run:
+
+```
+${CLAUDE_SKILL_DIR}/scripts/show_toc.sh context-db/
+```
+
+This shows all knowledge domains in the project. Read topics relevant to your
+task before writing any code or making suggestions.
+
+To learn how context-db works:
 
 ```
 ${CLAUDE_SKILL_DIR}/scripts/show_toc.sh context-db/using-context-db/
