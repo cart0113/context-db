@@ -7,22 +7,26 @@ instructions, agents are pointed to a `context-db-instructions.md` file and can:
 
 - Learn how to use the `bin/show_toc.sh` bash script to dynamically auto
   generate folder table of contents to support progressive discovery.
-- Learn how to maintain the context-db knowledge database so context and
+- Learn how to maintain the `context-db` knowledge database so context and
   knowledge can be built up over time.
 
-The goal of context-db was to create a lighter weight system than the
+The goal of `context-db` was to create a lighter weight system than the
 `SKILLS.md` system that is:
 
 - _Hierarchical_. By organizing content into nested folders and files, the
   system further supports progressive disclosure as an agent reads in the tables
   of contents of one folder at a time.
-- _Lightweight_. context-db folders and files are just context/knowledge md
+- _Lightweight_. `context-db` folders and files are just context/knowledge md
   files with summaries. For project context, structure, and knowledge this is
   often a more natural fit and you do not need all the additional features that
   skills provide (service script, etc.).
 
-Overall, trying to fit all project context/knowledge into skills is often an
-awkward fit and the wiki/book format of context-db is a more natural choice.
+An emerging trend is to use the skills format for ALL project knowledge —
+repurposing a system originally designed to teach agents about discrete how-to
+behaviors. Often this is an awkward fit and the wiki/book format of `context-db`
+is a more natural choice (more like how Obsidian vaults work). Skills are
+instructions on how to do something and define discrete tools. `context-db` is
+more for free-form, general project knowledge and context.
 
 ## Folder structure
 
@@ -54,11 +58,11 @@ your-project/
    your project (both are in `templates/`).
 2. Set up an `AGENTS.md`, skill, rule, or some way to point an agent to the
    `context-db/context-db-instructions.md`.
-3. Build up your context-db knowledge database over time.
+3. Build up your `context-db` knowledge database over time.
 4. The agent runs `bin/show_toc.sh context-db/` to start the progressive
    browsing of the knowledge database.
 5. Descriptions in YAML frontmatter let the agent skip irrelevant branches.
-6. When the agent learns something important, it writes it back to context-db.
+6. When the agent learns something important, it writes it back to `context-db`.
 
 ## Structure
 
