@@ -1,3 +1,3 @@
-- guide
 - overview
+- guide
 - reference
