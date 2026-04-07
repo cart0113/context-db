@@ -2,8 +2,8 @@
 
 `context-db` is a portable standard for organizing project knowledge as Markdown
 files. Inspired by the `SKILLS.md` standard, documents and folders contain YAML
-frontmatter with brief content summaries. Then, through AGENTS.md files, skills,
-rules, or other instructions, agents are pointed to a
+frontmatter with brief content summaries. Then, through `AGENTS.md` files,
+skills, rules, or other instructions, agents are pointed to a
 `context-db-instructions.md` file and can:
 
 - Learn how to use the `bin/show_toc.sh` bash script to dynamically auto
@@ -37,7 +37,7 @@ knowledge documents organized as skills, selection degrades and context fills
 up.
 
 `context-db` sidesteps this — each TOC should be by convention 5–10 items and
-this is reinforced in the `context-db-instructions.md` for agents that
+this is reinforced in the `context-db-instructions.md` for agents that are
 building/maintaining the database, so the knowledge base can scale to hundreds
 or thousands of documents if needed while any given navigation step stays small.
 The amount an agent reads is logarithmic relative to the total size of the
