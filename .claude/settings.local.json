@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find /Users/ajcarter/workspace -maxdepth 3 -name index.html -path */docs/*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "WebSearch"
     ]
   }
 }
