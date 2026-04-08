@@ -22,7 +22,7 @@ can write knowledge back over time.
 
 ```
 your-project/
-├── .claude/
+├── .claude/                               ← Claude Code; .cursor/ for Cursor, .agents/ for Codex
 │   ├── rules/context-db.md               ← rule: load the skill every conversation
 │   └── skills/context-db/                ← skill: instructions + TOC script
 │       ├── SKILL.md
