@@ -28,7 +28,7 @@ description:
 ## Context documents
 
 Individual `.md` files with YAML frontmatter and content. The `description`
-appears in the parent's TOC when `show_toc.sh` is run.
+appears in the parent's TOC when `context-db-generate-toc.sh` is run.
 
 ```yaml
 ---
@@ -55,31 +55,34 @@ status: deprecated
 ---
 ```
 
-When `status` is not `stable`, `show_toc.sh` appends it to the TOC entry so
-agents see it without opening the file.
+When `status` is not `stable`, `context-db-generate-toc.sh` appends it to the
+TOC entry so agents see it without opening the file.
 
 ## Directory structure
 
 ```
 your-project/
-├── bin/show_toc.sh                      ← TOC generator
+├── .claude/
+│   ├── rules/context-db.md                        ← rule: load the skill
+│   └── skills/context-db/                         ← skill: instructions + script
+│       ├── SKILL.md
+│       └── scripts/context-db-generate-toc.sh
 └── context-db/
-    ├── context-db-instructions.md       ← reading/writing rules
-    ├── project-name-project/            ← main project context
-    │   ├── project-name-project.md      ← folder description
-    │   ├── architecture.md              ← context document
-    │   └── data-model/                  ← nested subfolder
+    ├── project-name-project/                      ← main project context
+    │   ├── project-name-project.md                ← folder description
+    │   ├── architecture.md                        ← context document
+    │   └── data-model/                            ← nested subfolder
     │       ├── data-model.md
     │       └── entities.md
-    └── coding-standards/                ← ancillary (symlinked)
+    └── coding-standards/                          ← ancillary (symlinked)
         └── coding-standards.md
 ```
 
 ## Symlinks
 
-Symlinked folders appear in the TOC when `show_toc.sh` is run on the parent. The
-script resolves symlinks to find the real folder name for description file
-lookup, so symlinks can be named freely.
+Symlinked folders appear in the TOC when `context-db-generate-toc.sh` is run on
+the parent. The script resolves symlinks to find the real folder name for
+description file lookup, so symlinks can be named freely.
 
 To keep a symlink private (visible only to you), add it to `.gitignore`:
 
@@ -87,9 +90,10 @@ To keep a symlink private (visible only to you), add it to `.gitignore`:
 context-db/my-private-link
 ```
 
-Because `show_toc.sh` generates the TOC on the fly, private symlinks appear in
-your TOC automatically without affecting anyone else's working tree. See the
-[Cross-Project Sharing](../guide/cross-project-sharing.md) guide for patterns.
+Because `context-db-generate-toc.sh` generates the TOC on the fly, private
+symlinks appear in your TOC automatically without affecting anyone else's
+working tree. See the [Cross-Project Sharing](../guide/cross-project-sharing.md)
+guide for patterns.
 
 ## Skipping
 
@@ -98,14 +102,14 @@ skipped.
 
 ## TOC format
 
-`show_toc.sh` prints the TOC to stdout in this format:
+`context-db-generate-toc.sh` prints the TOC to stdout in this format:
 
 <!-- prettier-ignore -->
 ```markdown
 ## Subfolders
 
 - description: Database schema, entities, and relationships
-  path: data-model/data-model-toc.md
+  path: data-model/
 
 ## Files
 
@@ -118,22 +122,22 @@ skipped.
 Each entry has `description:` on the first line and `path:` on the second.
 Sections only appear when there are entries. An empty folder produces no output.
 
-## show_toc.sh
+## context-db-generate-toc.sh
 
 Generates a TOC for a context-db folder and prints it to stdout.
 
 ```bash
-bin/show_toc.sh context-db/                     # Top-level TOC
-bin/show_toc.sh context-db/my-project/          # Subfolder TOC
-bin/show_toc.sh context-db/my-project/data-model/  # Deeper
+.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/
+.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/my-project/
+.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/my-project/data-model/
 ```
 
-- Takes a single directory argument
-- Finds the description file for that directory
-- Lists subfolders (that are context nodes) and files with their descriptions
-- Resolves symlinks for description file lookup but follows them for reading
-- Skips underscore-prefixed and dot-prefixed names
-- Requires bash 3.2+, awk (standard on macOS and Linux)
+- Takes a single directory argument.
+- Finds the description file for that directory.
+- Lists subfolders (that are context nodes) and files with their descriptions.
+- Resolves symlinks for description file lookup but follows them for reading.
+- Skips underscore-prefixed and dot-prefixed names.
+- Requires bash 3.2+, awk (standard on macOS and Linux).
 
 ## build_site.sh
 

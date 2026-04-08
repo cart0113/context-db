@@ -1,8 +1,8 @@
 # Cross-Project Sharing
 
 Symlink folders from other repos into your `context-db/` directory.
-`show_toc.sh` generates the TOC on the fly, so symlinked folders appear
-automatically.
+`context-db-generate-toc.sh` generates the TOC on the fly, so symlinked folders
+appear automatically.
 
 **Private** — symlink + `.gitignore`. Only your agent sees it.
 

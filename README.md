@@ -28,7 +28,6 @@ your-project/
 │       ├── SKILL.md
 │       └── scripts/context-db-generate-toc.sh
 └── context-db/
-    ├── using-context-db/                  ← how to read/write context-db
     ├── <project-name>-project/            ← main project context
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
     │   ├── architecture.md                ← document (frontmatter + body)
@@ -54,11 +53,18 @@ The **rule** (`.claude/rules/context-db.md`) tells the agent that this project
 uses context-db and to load the skill at the start of every conversation. Rules
 load automatically — no user action needed.
 
-The core requirement is bootstrapping the agent so it understands the system and
-knows how to call the script. An `AGENTS.md` or a rule with inline instructions
-would also work. The skill+rule split tested better because the rule fires
-automatically and the skill keeps detailed instructions out of context until
-needed.
+The skill+rule split tested better because the rule fires automatically and the
+skill keeps detailed instructions out of context until needed. But anything that
+bootstraps the agent works. Alternative approaches:
+
+- **`AGENTS.md` or `CLAUDE.md`** — paste the SKILL.md content (or a summary)
+  directly. Works with any agent framework.
+- **Rule with inline instructions** — put the SKILL.md content into a rule file
+  instead of referencing the skill. Simpler, but loads the full text every
+  conversation.
+- **Just the script** — place `context-db-generate-toc.sh` somewhere accessible
+  (e.g. `bin/`) and tell the agent where it is and how to use it via whatever
+  instruction mechanism you have.
 
 ## Getting Started
 
@@ -80,7 +86,6 @@ but never get committed.
 templates/                     Copy these into your project
   rules/context-db.md          Rule template
   skills/context-db/           Skill template (instructions + TOC script)
-  context-db/                  using-context-db docs to copy
 context-db/                    This project's own knowledge database
 example/                       Example project structure
 docs/                          GitHub Pages documentation
