@@ -33,6 +33,14 @@ Each file has content unique to its audience:
 - **Context-db overview** — core design principles section, "what it is not"
   section targeted at agents.
 
+## Folder Structure Convention
+
+`writing-docs/` always lives inside the main project folder (e.g.,
+`context-db/context-db-project/writing-docs/`), never parallel to it. Folders
+parallel to the project folder are reserved for project-agnostic content —
+symlinked standards like `coding-standards/`, `writing-standards/`, and
+`agent-behavior/`.
+
 ## Process
 
 There is no automated sync. After changing any of the three files:

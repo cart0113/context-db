@@ -28,15 +28,21 @@ your-project/
 │       ├── SKILL.md
 │       └── scripts/context-db-generate-toc.sh
 └── context-db/
-    ├── <project-name>-project/            ← main project context
+    ├── <project-name>-project/            ← project-specific knowledge
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
     │   ├── architecture.md                ← document (frontmatter + body)
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md
-    ├── coding-standards/                  ← ancillary (can be symlinked)
-    └── writing-standards/                 ← ancillary (can be symlinked)
+    ├── coding-standards/                  ← project-agnostic (often symlinked)
+    └── writing-standards/                 ← project-agnostic (often symlinked)
 ```
+
+The `<project-name>-project/` folder holds all knowledge specific to this
+project — architecture, data models, domain context, design decisions. Folders
+parallel to it (like `coding-standards/`, `writing-standards/`) are
+project-agnostic and are often symlinked from a personal or team standards repo
+so the same knowledge can be shared across every project that uses context-db.
 
 Every folder has a `<folder-name>.md` file containing only YAML frontmatter —
 this is the folder's description shown in the TOC.
@@ -86,10 +92,34 @@ but never get committed.
 templates/                     Copy these into your project
   rules/context-db.md          Rule template
   skills/context-db/           Skill template (instructions + TOC script)
+  skills/context-db-reindex/   Reindex skill template
+  skills/context-db-audit/     Audit skill template
 context-db/                    This project's own knowledge database
 example/                       Example project structure
 docs/                          GitHub Pages documentation
 ```
+
+## Maintenance Skills
+
+Two optional skills help keep the knowledge base healthy over time:
+
+**`/context-db-reindex`** — Re-reads every file, rewrites all `description`
+fields in frontmatter to match current content, and creates any missing
+`<folder-name>.md` descriptor files. Works bottom-up so parent folder
+descriptions reflect their children. Mostly automated — asks only when a file's
+purpose is genuinely ambiguous. Accepts an optional folder path to scope the
+reindex.
+
+**`/context-db-audit`** — Cross-references the knowledge base against project
+code, docs, and git history. Runs five phases: structural health (enforces 5–10
+items per folder for logarithmic progressive disclosure), content freshness (git
+diff), coverage gaps (scans for undocumented subsystems), documentation drift
+(compares context-db against docs/), and description quality. Interactive by
+default — explains findings and asks before acting on anything ambiguous, but
+fixes clearly wrong things directly. Accepts an optional folder path.
+
+Both skills live in `templates/skills/` and can be wired into any project the
+same way as the core `context-db` skill.
 
 ## Documentation
 

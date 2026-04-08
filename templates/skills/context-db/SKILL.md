@@ -31,7 +31,7 @@ Skip it and you'll waste tokens guessing at things that are already documented.
 Run the TOC script on the root folder:
 
 ```
-${CLAUDE_SKILL_DIR}/scripts/context-db-generate-toc.sh context-db/
+.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/
 ```
 
 The output lists every subfolder and file with a one-line description. Subfolder
@@ -61,6 +61,19 @@ Two file types:
 
 Descriptions must be accurate, complete summaries — not titles. An agent must be
 able to judge relevance without opening the file.
+
+### Where to put new content
+
+The `<project-name>-project/` folder is for knowledge **specific to this
+project** — architecture, data models, domain context, design decisions. When
+writing about this project, put it here (or in a subfolder of it).
+
+Folders parallel to `<project-name>-project/` (like `coding-standards/`,
+`writing-standards/`) contain **project-agnostic** knowledge — standards and
+conventions that apply across many projects. These are often symlinked from a
+shared standards repo. You will rarely need to create or edit these folders. If
+you do, only put content there that applies universally, not content specific to
+the project you're working in.
 
 ## How to maintain it
 

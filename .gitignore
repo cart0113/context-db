@@ -8,6 +8,7 @@ __pycache__/
 .claude
 node_modules/
 
+context-db/context-db-project/overview.md
 context-db/coding-standards/general-coding-standards
 context-db/writing-standards
 context-db/using-bruha
