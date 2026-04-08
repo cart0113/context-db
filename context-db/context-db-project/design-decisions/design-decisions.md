@@ -1,3 +1,5 @@
 ---
-description: Key design decisions — why bash, why this file format, why not YAML
+description:
+  Design decisions — bash tooling, YAML frontmatter format, dynamic TOC
+  generation, naming conventions, symlink boundaries, optional metadata fields
 ---
