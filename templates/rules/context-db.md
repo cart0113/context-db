@@ -1,7 +1,13 @@
 This project uses `context-db/` — a hierarchical Markdown knowledge base
-containing project context, standards, conventions, and design decisions. It is
-the primary way you learn how this project works.
+containing all project context, standards, conventions, and design decisions.
 
-At the start of every conversation, load the `context-db` skill and run the TOC
-script. Read topics relevant to the user's request before writing code or making
-suggestions.
+At the start of every conversation, before doing anything else:
+
+1. Read `.claude/skills/context-db/SKILL.md` to learn how context-db works.
+2. Load the `context-db` skill with `/context-db`.
+3. Run the TOC script shown in SKILL.md on `context-db/` to see all topics.
+4. Read topics relevant to the user's request.
+
+Do not write code, answer questions, or make suggestions until these steps are
+complete. The context-db is the primary way you learn how this project works —
+skipping it means you are working blind.
