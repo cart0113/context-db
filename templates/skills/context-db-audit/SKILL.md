@@ -22,6 +22,29 @@ If `$ARGUMENTS` is provided, treat it as the folder to audit (e.g.
 
 If no argument is provided, audit the entire `context-db/` directory.
 
+## External symlinks — do NOT follow
+
+context-db folders often contain symlinks to shared standards from other repos.
+**Never follow, read, edit, or audit files that resolve outside this project.**
+They are owned by another repo and must not be modified here. Symlinks that
+resolve within this project are fine.
+
+Use the listing script (not Glob) to discover files — it filters out external
+symlinks automatically:
+
+```
+.claude/skills/context-db-audit/scripts/context-db-list-files.sh <target-path>
+```
+
+## Audience
+
+The primary audience for context-db is LLM agents, though it should be useful
+for humans too. Every description and every document must help an agentic system
+get up to speed on the project using the smallest context window possible. Every
+word costs tokens. When evaluating content freshness, coverage gaps, and
+description quality, judge everything through this lens — include what an agent
+cannot infer from the code, omit what it can.
+
 ## Audit phases
 
 Work through these phases in order. Be conversational — explain what you're

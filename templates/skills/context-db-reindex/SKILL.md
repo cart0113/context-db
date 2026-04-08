@@ -23,14 +23,23 @@ recursively.
 
 If no argument is provided, reindex the entire `context-db/` directory.
 
-## Symlinks — do NOT follow
+## Audience
+
+The primary audience for context-db is LLM agents, though it should be useful
+for humans too. Every description and every document you write must help an
+agentic system get up to speed on the project using the smallest context window
+possible. Every word costs tokens. Write for maximum signal density — include
+what an agent cannot infer from the code, omit what it can.
+
+## External symlinks — do NOT follow
 
 context-db folders often contain symlinks to shared standards from other repos.
-**Never follow, read, edit, or reindex symlinked files or directories.** They
-are owned by another repo and must not be modified here.
+**Never follow, read, edit, or reindex files that resolve outside this
+project.** They are owned by another repo and must not be modified here.
+Symlinks that resolve within this project are fine.
 
-Use the listing script (not Glob) to discover files — it skips symlinks
-automatically:
+Use the listing script (not Glob) to discover files — it filters out external
+symlinks automatically:
 
 ```
 .claude/skills/context-db-reindex/scripts/context-db-list-files.sh <target-path>
