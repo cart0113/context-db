@@ -137,5 +137,5 @@ particularly good, say so. The audit isn't just about finding problems.
 After all changes, run the TOC script on affected folders to confirm the output:
 
 ```
-.claude/skills/context-db/scripts/context-db-generate-toc.sh <folder>
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh <folder>
 ```

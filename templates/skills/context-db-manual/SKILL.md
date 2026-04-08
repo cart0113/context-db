@@ -1,5 +1,5 @@
 ---
-name: context-db
+name: context-db-manual
 description:
   'How to use context-db, a markdown knowledge base containing all project
   context, standards, and knowledge.'
@@ -31,7 +31,7 @@ Skip it and you'll waste tokens guessing at things that are already documented.
 Run the TOC script on the root folder:
 
 ```
-.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
 
 The output lists every subfolder and file with a one-line description. Subfolder

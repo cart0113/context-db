@@ -23,11 +23,24 @@ recursively.
 
 If no argument is provided, reindex the entire `context-db/` directory.
 
+## Symlinks — do NOT follow
+
+context-db folders often contain symlinks to shared standards from other repos.
+**Never follow, read, edit, or reindex symlinked files or directories.** They
+are owned by another repo and must not be modified here.
+
+Use the listing script (not Glob) to discover files — it skips symlinks
+automatically:
+
+```
+.claude/skills/context-db-reindex/scripts/context-db-list-files.sh <target-path>
+```
+
 ## Steps
 
 ### 1. Discover all folders and files
 
-Use Glob to find every `.md` file under the target path. Build a map of:
+Run the listing script on the target path. Build a map of:
 
 - Every folder that contains `.md` files
 - Every `.md` file and its current `description` frontmatter
@@ -72,7 +85,7 @@ After all files are updated, revisit each `<folder-name>.md`:
 Run the TOC script on each affected folder to confirm the output looks correct:
 
 ```
-.claude/skills/context-db/scripts/context-db-generate-toc.sh <folder>
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh <folder>
 ```
 
 ## How to write descriptions
