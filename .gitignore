@@ -5,6 +5,7 @@ __pycache__/
 .env
 *.tmp
 
+.claude
 node_modules/
 
 context-db/coding-standards/general-coding-standards
