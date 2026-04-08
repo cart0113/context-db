@@ -62,7 +62,7 @@ TOC entry so agents see it without opening the file.
 
 ```
 your-project/
-├── .claude/
+├── .claude/                                       ← Claude Code; .cursor/ for Cursor, .agents/ for Codex
 │   ├── rules/context-db.md                        ← rule: load the skill
 │   └── skills/context-db/                         ← skill: instructions + script
 │       ├── SKILL.md
