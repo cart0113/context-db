@@ -22,11 +22,19 @@ can write knowledge back over time.
 
 ```
 your-project/
-├── .claude/                              ← or .cursor/ or .agents/ for Codex, etc.
-│   ├── rules/context-db.md               ← rule: load the skill every conversation
-│   └── skills/context-db/                ← skill: instructions + TOC script
-│       ├── SKILL.md
-│       └── scripts/context-db-generate-toc.sh
+├── .claude/
+│   ├── hooks/
+│   │   └── session-start-context-db.sh    ← hook: ensures skill loads every session
+│   ├── rules/context-db.md                ← rule: load the skill every conversation
+│   ├── settings.local.json                ← wires up the SessionStart hook
+│   └── skills/
+│       ├── context-db-manual/             ← skill: instructions + TOC script
+│       │   ├── SKILL.md
+│       │   └── scripts/context-db-generate-toc.sh
+│       ├── context-db-reindex/            ← skill: reindex descriptions
+│       │   └── SKILL.md
+│       └── context-db-audit/              ← skill: audit knowledge base health
+│           └── SKILL.md
 └── context-db/
     ├── <project-name>-project/            ← project-specific knowledge
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
@@ -47,13 +55,41 @@ so the same knowledge can be shared across every project that uses context-db.
 Every folder has a `<folder-name>.md` file containing only YAML frontmatter —
 this is the folder's description shown in the TOC.
 
+## SessionStart Hook
+
+The rule tells the agent to load the skill, but rules alone aren't always
+reliable — the agent can skip or deprioritize them. The `SessionStart` hook
+(`templates/hooks/session-start-context-db.sh`) solves this by injecting a
+mandatory instruction into the conversation context before the first turn,
+ensuring `/context-db-manual` is loaded every time Claude Code starts up.
+
+Wire it up in `.claude/settings.local.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start-context-db.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 ## Wiring It In
 
-Two pieces: a **skill** and a **rule**.
+Two pieces: a **skill** and a **rule** (plus the optional hook above).
 
-The **skill** (`.claude/skills/context-db/`) contains the full instructions for
-reading, writing, and maintaining context-db. It bundles the TOC script. When
-loaded, the agent gets everything it needs.
+The **skill** (`.claude/skills/context-db-manual/`) contains the full
+instructions for reading, writing, and maintaining context-db. It bundles the
+TOC script. When loaded, the agent gets everything it needs.
 
 The **rule** (`.claude/rules/context-db.md`) tells the agent that this project
 uses context-db and to load the skill at the start of every conversation. Rules
@@ -74,11 +110,13 @@ bootstraps the agent works. Alternative approaches:
 
 ## Getting Started
 
-1. Copy `templates/skills/context-db/` into `.claude/skills/context-db/` (or
-   symlink it).
+1. Copy `templates/skills/context-db-manual/` into
+   `.claude/skills/context-db-manual/` (or symlink it).
 2. Copy `templates/rules/context-db.md` into `.claude/rules/context-db.md` (or
    symlink it).
-3. Create `context-db/` in your project and start adding knowledge.
+3. Copy `templates/hooks/session-start-context-db.sh` into `.claude/hooks/` and
+   wire it up in `.claude/settings.local.json` (see SessionStart Hook above).
+4. Create `context-db/` in your project and start adding knowledge.
 
 ## Private or Public
 
@@ -89,14 +127,15 @@ but never get committed.
 ## Repo Structure
 
 ```
-templates/                     Copy these into your project
-  rules/context-db.md          Rule template
-  skills/context-db/           Skill template (instructions + TOC script)
-  skills/context-db-reindex/   Reindex skill template
-  skills/context-db-audit/     Audit skill template
-context-db/                    This project's own knowledge database
-example/                       Example project structure
-docs/                          GitHub Pages documentation
+templates/                           Copy these into your project
+  rules/context-db.md                Rule template
+  hooks/session-start-context-db.sh  SessionStart hook template
+  skills/context-db-manual/          Skill template (instructions + TOC script)
+  skills/context-db-reindex/         Reindex skill template
+  skills/context-db-audit/           Audit skill template
+context-db/                          This project's own knowledge database
+example/                             Example project structure
+docs/                                GitHub Pages documentation
 ```
 
 ## Maintenance Skills
@@ -119,7 +158,7 @@ default — explains findings and asks before acting on anything ambiguous, but
 fixes clearly wrong things directly. Accepts an optional folder path.
 
 Both skills live in `templates/skills/` and can be wired into any project the
-same way as the core `context-db` skill.
+same way as the core `context-db-manual` skill.
 
 ## Documentation
 

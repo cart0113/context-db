@@ -62,11 +62,19 @@ TOC entry so agents see it without opening the file.
 
 ```
 your-project/
-├── .claude/                                       ← Claude Code; .cursor/ for Cursor, .agents/ for Codex
+├── .claude/
+│   ├── hooks/
+│   │   └── session-start-context-db.sh            ← hook: ensures skill loads every session
 │   ├── rules/context-db.md                        ← rule: load the skill
-│   └── skills/context-db/                         ← skill: instructions + script
-│       ├── SKILL.md
-│       └── scripts/context-db-generate-toc.sh
+│   ├── settings.local.json                        ← wires up the SessionStart hook
+│   └── skills/
+│       ├── context-db-manual/                     ← skill: instructions + script
+│       │   ├── SKILL.md
+│       │   └── scripts/context-db-generate-toc.sh
+│       ├── context-db-reindex/                    ← skill: reindex descriptions
+│       │   └── SKILL.md
+│       └── context-db-audit/                      ← skill: audit knowledge base health
+│           └── SKILL.md
 └── context-db/
     ├── project-name-project/                      ← main project context
     │   ├── project-name-project.md                ← folder description
@@ -127,9 +135,9 @@ Sections only appear when there are entries. An empty folder produces no output.
 Generates a TOC for a context-db folder and prints it to stdout.
 
 ```bash
-.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/
-.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/my-project/
-.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/my-project/data-model/
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/my-project/
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/my-project/data-model/
 ```
 
 - Takes a single directory argument.

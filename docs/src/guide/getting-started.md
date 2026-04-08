@@ -2,22 +2,53 @@
 
 ## 1. Copy the skill and rule
 
-Copy `templates/skills/context-db/` and `templates/rules/context-db.md` into
-your project's `.claude/` directory (or symlink them):
+Copy (or symlink) the skill, rule, and hook into your project's `.claude/`
+directory:
 
 ```bash
 # Copy
-cp -r templates/skills/context-db your-project/.claude/skills/context-db
+cp -r templates/skills/context-db-manual your-project/.claude/skills/context-db-manual
 cp templates/rules/context-db.md your-project/.claude/rules/context-db.md
+cp templates/hooks/session-start-context-db.sh your-project/.claude/hooks/session-start-context-db.sh
 
 # Or symlink
-ln -s /path/to/context-db-repo/templates/skills/context-db your-project/.claude/skills/context-db
+ln -s /path/to/context-db-repo/templates/skills/context-db-manual your-project/.claude/skills/context-db-manual
 ln -s /path/to/context-db-repo/templates/rules/context-db.md your-project/.claude/rules/context-db.md
+ln -s /path/to/context-db-repo/templates/hooks/session-start-context-db.sh your-project/.claude/hooks/session-start-context-db.sh
+```
+
+Optionally copy the maintenance skills too:
+
+```bash
+cp -r templates/skills/context-db-reindex your-project/.claude/skills/context-db-reindex
+cp -r templates/skills/context-db-audit your-project/.claude/skills/context-db-audit
+```
+
+Wire up the SessionStart hook in `.claude/settings.local.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/session-start-context-db.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
 ```
 
 The **rule** fires automatically every conversation and tells the agent to load
-the skill. The **skill** (`SKILL.md`) contains all instructions for reading,
-writing, and maintaining `context-db`. It bundles the TOC script.
+the skill. The **hook** reinforces this — rules alone aren't always reliable, so
+the hook injects a mandatory instruction before the first turn. The **skill**
+(`SKILL.md`) contains all instructions for reading, writing, and maintaining
+`context-db`. It bundles the TOC script.
 
 ### Alternative bootstrap methods
 
@@ -57,7 +88,7 @@ grows beyond that.
 ## 3. Verify
 
 ```bash
-.claude/skills/context-db/scripts/context-db-generate-toc.sh context-db/
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
 
 ## Next steps
