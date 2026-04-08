@@ -1,3 +1,9 @@
+---
+description:
+  What context-db is — a portable standard for organizing project knowledge as
+  hierarchical Markdown so LLM agents can discover and fetch only what they need
+---
+
 # context-db
 
 A portable standard for organizing project knowledge as hierarchical Markdown so

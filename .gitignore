@@ -12,5 +12,7 @@ context-db/coding-standards/general-coding-standards
 context-db/writing-standards
 context-db/using-bruha
 context-db/agent-behavior
+context-db/context-db-project/overview.md
+context-db/using-context-db
 context-db/local-repos-to-update/
 bin/sync-to-repos.sh
