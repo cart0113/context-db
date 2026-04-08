@@ -179,7 +179,7 @@ tool output), rolling compression, tool-based retrieval over pre-loading,
 
 1. **Agent-navigable TOCs are the right pattern.** Letting the agent decide what
    to read based on descriptions is better than dumping everything. This is what
-   `show_toc.sh` + description-based filtering does.
+   `context-db-generate-toc.sh` + description-based filtering does.
 
 2. **Descriptions are the critical mechanism.** The ETH Zurich study says agents
    waste tokens on irrelevant pre-loaded structure. context-db's

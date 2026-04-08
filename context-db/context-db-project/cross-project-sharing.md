@@ -13,13 +13,13 @@ across projects at three levels of visibility, and mix them freely.
 ## How It Works
 
 Every approach ends the same way: a folder appears inside your `context-db/`
-directory, and `bin/show_toc.sh` picks it up automatically. The difference is
-how that folder gets there and who else sees it.
+directory, and `context-db-generate-toc.sh` picks it up automatically. The
+difference is how that folder gets there and who else sees it.
 
-Because `show_toc.sh` generates the TOC on the fly, there are no static files to
-get out of sync. If you symlink in a private folder and `.gitignore` it, your
-agent sees it in the TOC but nothing changes in git. Other users' agents see
-only their own folders.
+Because `context-db-generate-toc.sh` generates the TOC on the fly, there are no
+static files to get out of sync. If you symlink in a private folder and
+`.gitignore` it, your agent sees it in the TOC but nothing changes in git. Other
+users' agents see only their own folders.
 
 ## Committed Folders (Whole Team)
 
@@ -49,9 +49,10 @@ ln -s ~/workspace/OTHER_PROJECT/context-db/coding-standards coding-standards
 context-db/coding-standards
 ```
 
-Your agent runs `bin/show_toc.sh context-db/` and sees `coding-standards/` in
-the TOC. A teammate's agent does the same and doesn't — because the symlink
-isn't there for them. No broken references, no dirty working tree.
+Your agent runs `context-db-generate-toc.sh context-db/` and sees
+`coding-standards/` in the TOC. A teammate's agent does the same and doesn't —
+because the symlink isn't there for them. No broken references, no dirty working
+tree.
 
 **Best for:** Personal reference context. Quick access to another project's
 knowledge without any setup for the team.
@@ -134,5 +135,5 @@ context-db/
   personal-notes/          # symlink + .gitignore — just for you
 ```
 
-`bin/show_toc.sh context-db/` shows all three. Each teammate sees committed
-folders plus whatever they've symlinked in locally.
+`context-db-generate-toc.sh context-db/` shows all three. Each teammate sees
+committed folders plus whatever they've symlinked in locally.

@@ -1,5 +1,7 @@
 ---
-description: Why show_toc.sh is pure bash rather than Python or another language
+description:
+  Why context-db-generate-toc.sh is pure bash rather than Python or another
+  language
 ---
 
 # Bash Over Python

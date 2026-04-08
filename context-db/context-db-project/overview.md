@@ -21,8 +21,8 @@ content.
 
 The fix is smaller documents organized in folders. But then agents need a way to
 discover what exists without loading everything. context-db solves this with
-`bin/show_toc.sh` — an on-demand TOC generator that shows the agent what
-knowledge is available in a given folder, so it can fetch selectively.
+`context-db-generate-toc.sh` — an on-demand TOC generator that shows the agent
+what knowledge is available in a given folder, so it can fetch selectively.
 
 ## Core Design Principles
 
@@ -36,8 +36,8 @@ knowledge is available in a given folder, so it can fetch selectively.
    before committing tokens.
 
 3. **TOCs are derived.** The agent maintains content and descriptions. The
-   indexes are generated on demand by `bin/show_toc.sh` — no files to commit or
-   keep in sync.
+   indexes are generated on demand by `context-db-generate-toc.sh` — no files to
+   commit or keep in sync.
 
 ## What It Is Not
 

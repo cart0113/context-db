@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 #
-# show_toc.sh — Print the table of contents for any folder to stdout.
+# context-db-generate-toc.sh — Print the table of contents for any folder to stdout.
 #
 # Scans a directory for Markdown files with YAML frontmatter `description`
 # fields and prints them as a TOC. No gate checks — works on any folder.
 #
 # Usage:
-#   show_toc.sh context-db/                     Top-level TOC
-#   show_toc.sh context-db/some-folder/         Subfolder TOC
+#   context-db-generate-toc.sh context-db/                     Top-level TOC
+#   context-db-generate-toc.sh context-db/some-folder/         Subfolder TOC
 #
 # Subfolders are listed if they contain <folder-name>.md with frontmatter.
 # Files are listed if they have a `description` in their frontmatter.

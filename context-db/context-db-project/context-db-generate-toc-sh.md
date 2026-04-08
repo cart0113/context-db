@@ -1,12 +1,12 @@
 ---
 description:
-  How show_toc.sh works — awk-based frontmatter parsing, multi-line description
+  How context-db-generate-toc.sh works — awk-based frontmatter parsing, multi-line description
   handling, and known edge cases
 ---
 
-# show_toc.sh
+# context-db-generate-toc.sh
 
-`bin/show_toc.sh` is the core script. It generates TOCs on the fly by reading
+`context-db-generate-toc.sh` is the core script. It generates TOCs on the fly by reading
 YAML frontmatter from `.md` files and printing description/path pairs to stdout.
 
 ## Frontmatter parsing

@@ -1,14 +1,14 @@
 ---
 description:
-  Why static -toc.md files were replaced with show_toc.sh that generates TOC on
-  stdout — solves the cross-project symlink problem
+  Why static -toc.md files were replaced with context-db-generate-toc.sh that
+  generates TOC on stdout — solves the cross-project symlink problem
 ---
 
 # Dynamic TOC Generation
 
-Static, committed `-toc.md` files were replaced with `bin/show_toc.sh`, a script
-that generates the TOC for any context-db folder on the fly and prints it to
-stdout.
+Static, committed `-toc.md` files were replaced with
+`context-db-generate-toc.sh`, a script that generates the TOC for any context-db
+folder on the fly and prints it to stdout.
 
 ## Problem
 
@@ -23,23 +23,23 @@ There is no clean way to have a committed file reflect per-user symlinks.
 
 ## Solution
 
-`bin/show_toc.sh` takes a context-db folder path and prints the TOC to stdout.
-No files written, nothing to commit.
+`context-db-generate-toc.sh` takes a context-db folder path and prints the TOC
+to stdout. No files written, nothing to commit.
 
 ```bash
-bin/show_toc.sh context-db/
+bin/context-db-generate-toc.sh context-db/
 # Prints the TOC for the root context-db folder
 
-bin/show_toc.sh context-db/my-project/
+bin/context-db-generate-toc.sh context-db/my-project/
 # Prints the TOC for that subfolder
 ```
 
 ### Agent Interaction
 
-The agent runs `bin/show_toc.sh context-db/` as its entry point, then
-recursively calls it on subfolders as it navigates deeper — the same browsing
-pattern as reading static files, but with a shell command instead of a file
-read.
+The agent runs `bin/context-db-generate-toc.sh context-db/` as its entry point,
+then recursively calls it on subfolders as it navigates deeper — the same
+browsing pattern as reading static files, but with a shell command instead of a
+file read.
 
 The output format is the same `## Subfolders` / `## Files` structure with
 `description:` / `path:` entries that the old static files used.
@@ -58,18 +58,19 @@ A script that returns text on stdout is the simplest possible interface.
 
 ## What Changed
 
-| Aspect                 | Before (static)       | After (dynamic)            |
-| ---------------------- | --------------------- | -------------------------- |
-| TOC retrieval          | Read `-toc.md` file   | Run `show_toc.sh <dir>`    |
-| TOC storage            | Committed files       | None — generated on demand |
-| Cross-project symlinks | TOC mismatch problem  | Just works                 |
-| Pre-commit hook        | Regenerated TOC files | Not needed for TOCs        |
-| Agent instructions     | "read this file"      | "run this command"         |
-| Output format          | Same                  | Same                       |
+| Aspect                 | Before (static)       | After (dynamic)                        |
+| ---------------------- | --------------------- | -------------------------------------- |
+| TOC retrieval          | Read `-toc.md` file   | Run `context-db-generate-toc.sh <dir>` |
+| TOC storage            | Committed files       | None — generated on demand             |
+| Cross-project symlinks | TOC mismatch problem  | Just works                             |
+| Pre-commit hook        | Regenerated TOC files | Not needed for TOCs                    |
+| Agent instructions     | "read this file"      | "run this command"                     |
+| Output format          | Same                  | Same                                   |
 
 ## What Stayed the Same
 
 - Folder structure, naming convention, `<foldername>.md` description files
 - YAML frontmatter with `description` and `status` fields
 - Documents are still plain markdown — agents read them directly
-- Static TOC generation was removed — `show_toc.sh` covers all use cases
+- Static TOC generation was removed — `context-db-generate-toc.sh` covers all
+  use cases

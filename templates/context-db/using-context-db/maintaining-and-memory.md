@@ -19,4 +19,4 @@ agents.
 1. **Capture** — create or update documents with new knowledge.
 2. **Summarize** — rewrite affected descriptions.
 3. **Reorganize** — split or merge folders to stay at 5–10 items.
-4. **Verify** — run `show_toc.sh` on affected folders.
+4. **Verify** — run `context-db-generate-toc.sh` on affected folders.

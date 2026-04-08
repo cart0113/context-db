@@ -1,20 +1,21 @@
 ---
 description:
-  Why show_toc.sh resolves symlinks for description lookup but treats them as
-  read-only boundaries
+  Why context-db-generate-toc.sh resolves symlinks for description lookup but
+  treats them as read-only boundaries
 ---
 
 # Symlink Handling
 
-`show_toc.sh` follows symlinked directories to read their content and include
-them in the parent's TOC output, but treats them as boundaries owned by another
-project.
+`context-db-generate-toc.sh` follows symlinked directories to read their content
+and include them in the parent's TOC output, but treats them as boundaries owned
+by another project.
 
 ## Behavior
 
 - Symlinked subdirectories appear as entries in the parent TOC (description is
   read using the **real** folder name, not the symlink name)
-- The agent can run `show_toc.sh` on symlinked directories to see their contents
+- The agent can run `context-db-generate-toc.sh` on symlinked directories to see
+  their contents
 - The script never writes anything — it only prints to stdout
 
 ## Real Folder Name Resolution
@@ -36,9 +37,9 @@ without committing the content:
 3. Add the symlinks to `.gitignore`
 4. Your agent sees them in the TOC; other users' agents don't
 
-Because `show_toc.sh` generates TOCs on the fly, there are no static files that
-would get out of sync — the symlinked folders simply appear for whoever has
-them.
+Because `context-db-generate-toc.sh` generates TOCs on the fly, there are no
+static files that would get out of sync — the symlinked folders simply appear
+for whoever has them.
 
 See `cross-project-sharing.md` for the full pattern with git-sync, submodules,
 and local symlinks.

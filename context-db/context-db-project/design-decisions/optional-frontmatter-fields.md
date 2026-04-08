@@ -35,7 +35,7 @@ they add maintenance burden that outweighs the benefit.
 (`stat`) and git history (`git log --follow --diff-filter=A`). Putting
 timestamps in frontmatter means they drift — LLMs are unreliable with timestamps
 and humans forget to update them. If timestamps are needed in the TOC,
-`show_toc.sh` can compute them at runtime from the filesystem.
+`context-db-generate-toc.sh` can compute them at runtime from the filesystem.
 
 **`last-reviewed`** — The only non-derivable timestamp (when a human last
 verified accuracy against the codebase). But an unmaintained `last-reviewed`
