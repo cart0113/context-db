@@ -12,8 +12,10 @@ allowed-tools: Read Write Edit Glob Grep Bash
 ## What this does
 
 Perform a thorough audit of the context-db knowledge base by cross-referencing
-it against the actual project — code, docs, git history, and any other sources
-of truth. Identify problems and fix or flag them.
+it against **all** project sources of truth — code, markdown documentation
+(`*.md` anywhere in the project), user-facing docs, README files, inline
+comments, git history, and configuration. The goal is an integrated knowledge
+base: context-db should capture what matters from every source, not just code.
 
 ## Target
 
@@ -45,10 +47,34 @@ word costs tokens. When evaluating content freshness, coverage gaps, and
 description quality, judge everything through this lens — include what an agent
 cannot infer from the code, omit what it can.
 
+## Before you start — ask the user
+
+Before doing any audit work, ask the user how they want to run this:
+
+> I can run this audit at different levels of involvement:
+>
+> 1. **Guided** — I report each phase's findings and wait for your input before
+>    moving on. You steer what gets fixed.
+> 2. **Autonomous** — I run all phases, fix what's clearly wrong, and give you a
+>    summary at the end with questions on anything ambiguous.
+>
+> Which do you prefer?
+
+**Wait for their answer.** Do not proceed until they respond.
+
+- If they choose **Guided**: after each phase, present your findings, then
+  **stop and wait** for the user to respond before starting the next phase.
+- If they choose **Autonomous**: run all phases back-to-back, fix clear issues,
+  and collect ambiguous questions for a single summary at the end.
+
 ## Audit phases
 
 Work through these phases in order. Be conversational — explain what you're
 finding as you go. Ask the user for input on anything that isn't clearly wrong.
+
+**IMPORTANT — pacing:** In Guided mode, each phase ends with a summary and
+questions. You MUST wait for the user's response before starting the next phase.
+Do not ask a question and then answer it yourself in the same turn.
 
 ### Phase 1: Structural health
 
@@ -74,6 +100,8 @@ Check for:
 Report findings for this phase and ask the user if they want you to fix
 structural issues before continuing.
 
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
+
 ### Phase 2: Content freshness
 
 Use git to find what has changed in the project and whether context-db reflects
@@ -97,14 +125,20 @@ Flag documents that appear stale. For clearly outdated content (references to
 deleted files, removed features, old patterns), fix it directly and tell the
 user what you changed. For ambiguous cases, describe what looks off and ask.
 
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
+
 ### Phase 3: Coverage gaps
 
-Scan the project for important topics that context-db doesn't cover:
+Scan **all** project sources — code, docs, and configuration — for important
+topics that context-db doesn't cover. context-db should integrate knowledge from
+every source, not just mirror one.
 
-1. **Code patterns** — look at the project structure, key directories, and
+1. **All markdown files** — find every `*.md` file in the project (outside
+   `context-db/` itself). README files, `docs/` directories, contributing
+   guides, changelogs, ADRs, design docs — read them all. These often contain
+   gotchas, design rationale, and setup instructions that belong in context-db.
+2. **Code patterns** — look at the project structure, key directories, and
    important files. Are there major subsystems or conventions not documented?
-2. **Documentation directories** — find `docs/`, `README.md`, and any other
-   documentation sources. Compare their content against context-db.
 3. **Configuration** — check for non-obvious config files, CI/CD setup, deploy
    scripts, or infrastructure that would be useful context.
 4. **Recent additions** — use git log to find recently added files or
@@ -114,10 +148,12 @@ For each gap found, describe what's missing and ask the user whether to create a
 new entry. Do not create entries without asking — the user knows what's
 important.
 
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
+
 ### Phase 4: Documentation drift
 
-Compare context-db against other documentation sources in the project (`docs/`,
-README files, wiki references, etc.):
+Compare context-db against **every** documentation source discovered in Phase 3
+(all `*.md` files, `docs/` directories, README files, wiki references, etc.):
 
 - If context-db and docs **agree**, no action needed.
 - If context-db and docs **disagree**, determine which is more likely correct by
@@ -127,6 +163,8 @@ README files, wiki references, etc.):
   without explicit permission.
 - If docs are correct but context-db is stale, propose the update and ask before
   making changes.
+
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
 
 ### Phase 5: Content value — is this earning its tokens?
 
@@ -166,6 +204,8 @@ For each document, ask: "Could an agent figure this out by reading the code?"
 A good test: if you removed a document entirely, would the agent make a mistake
 it wouldn't otherwise make? If not, the document isn't earning its tokens.
 
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
+
 ### Phase 6: Description quality
 
 After content is resolved, do a quick pass on all descriptions:
@@ -176,6 +216,8 @@ After content is resolved, do a quick pass on all descriptions:
 
 For clearly bad descriptions, fix them and tell the user. For borderline cases,
 propose alternatives and ask.
+
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
 
 ### Phase 7: Cross-references
 
