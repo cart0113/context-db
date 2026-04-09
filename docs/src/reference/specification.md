@@ -73,7 +73,7 @@ your-project/
 │       │   └── scripts/context-db-generate-toc.sh
 │       ├── context-db-reindex/                    ← skill: reindex descriptions
 │       │   └── SKILL.md
-│       └── context-db-audit/                      ← skill: audit knowledge base health
+│       └── context-db-full-audit/                      ← skill: full audit (reindex + audit)
 │           └── SKILL.md
 └── context-db/
     ├── project-name-project/                      ← main project context

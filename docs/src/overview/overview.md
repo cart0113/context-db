@@ -39,7 +39,7 @@ your-project/
 │       │   └── scripts/context-db-generate-toc.sh
 │       ├── context-db-reindex/            ← skill: reindex descriptions
 │       │   └── SKILL.md
-│       └── context-db-audit/              ← skill: audit knowledge base health
+│       └── context-db-full-audit/              ← skill: full audit (reindex + audit)
 │           └── SKILL.md
 └── context-db/
     ├── <project-name>-project/            ← project-specific knowledge
@@ -138,7 +138,7 @@ templates/                           Copy these into your project
   hooks/session-start-context-db.sh  SessionStart hook template
   skills/context-db-manual/          Skill template (instructions + TOC script)
   skills/context-db-reindex/         Reindex skill template
-  skills/context-db-audit/           Audit skill template
+  skills/context-db-full-audit/           Full audit skill template
 context-db/                          This project's own knowledge database
 example/                             Example project structure
 docs/                                GitHub Pages documentation
@@ -155,12 +155,11 @@ descriptions reflect their children. Mostly automated — asks only when a file'
 purpose is genuinely ambiguous. Accepts an optional folder path to scope the
 reindex.
 
-**`/context-db-audit`** — Cross-references the knowledge base against project
-code, docs, and git history. Checks structural health, content freshness,
-coverage gaps, documentation drift, description quality, and cross-references
-between documents. Interactive by default — explains findings and asks before
-acting on anything ambiguous, but fixes clearly wrong things directly. Accepts
-an optional folder path.
+**`/context-db-full-audit`** — Full audit: reindexes all descriptions, then
+audits the knowledge base against project code, docs, and git history. Checks
+structural health, content freshness, coverage gaps, documentation drift,
+content value, description quality, and cross-references. Interactive by
+default. Accepts an optional folder path.
 
 Both skills live in `templates/skills/` and can be wired into any project the
 same way as the core `context-db-manual` skill.

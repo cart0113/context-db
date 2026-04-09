@@ -69,7 +69,7 @@ Optionally copy the maintenance skills:
 
 ```bash
 cp -r templates/skills/context-db-reindex your-project/.claude/skills/context-db-reindex
-cp -r templates/skills/context-db-audit your-project/.claude/skills/context-db-audit
+cp -r templates/skills/context-db-full-audit your-project/.claude/skills/context-db-full-audit
 ```
 
 ### Cursor

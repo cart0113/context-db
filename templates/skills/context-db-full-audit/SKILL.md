@@ -1,21 +1,23 @@
 ---
-name: context-db-audit
+name: context-db-full-audit
 description: >-
-  Audit context-db against project code, docs, and git history — find stale
-  entries, missing topics, structural problems, and doc/context-db drift.
-  TRIGGER when: user asks to review or audit the knowledge base, or after major
-  project changes.
+  Full audit — reindex all descriptions, then audit against project code, docs,
+  and git history for stale entries, missing topics, structural problems,
+  cross-references, and doc drift. TRIGGER when: user asks to review or audit
+  the knowledge base, or after major project changes.
 argument-hint: '[folder-path]'
 allowed-tools: Read Write Edit Glob Grep Bash
 ---
 
 ## What this does
 
-Perform a thorough audit of the context-db knowledge base by cross-referencing
-it against **all** project sources of truth — code, markdown documentation
-(`*.md` anywhere in the project), user-facing docs, README files, inline
-comments, git history, and configuration. The goal is an integrated knowledge
-base: context-db should capture what matters from every source, not just code.
+Full audit: reindex all descriptions, then audit the knowledge base against
+**all** project sources of truth — code, markdown documentation, user-facing
+docs, README files, git history, and configuration.
+
+**This skill includes a reindex.** Before starting, read the reindex
+instructions at `templates/skills/context-db-reindex/SKILL.md` — that defines
+how Phase 0 works.
 
 ## Target
 
@@ -35,7 +37,7 @@ Use the listing script (not Glob) to discover files — it filters out external
 symlinks automatically:
 
 ```
-.claude/skills/context-db-audit/scripts/context-db-list-files.sh <target-path>
+.claude/skills/context-db-full-audit/scripts/context-db-list-files.sh <target-path>
 ```
 
 ## Audience
@@ -75,6 +77,14 @@ finding as you go. Ask the user for input on anything that isn't clearly wrong.
 **IMPORTANT — pacing:** In Guided mode, each phase ends with a summary and
 questions. You MUST wait for the user's response before starting the next phase.
 Do not ask a question and then answer it yourself in the same turn.
+
+### Phase 0: Reindex
+
+Read `templates/skills/context-db-reindex/SKILL.md` and follow its steps to
+reindex all descriptions in the target path. This ensures descriptions are
+accurate before the audit evaluates them.
+
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
 
 ### Phase 1: Structural health
 
