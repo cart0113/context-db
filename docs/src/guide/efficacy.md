@@ -124,6 +124,26 @@ The "without" agent only wired it through `APIRoute.__init__()` and the OpenAPI
 generator — technically correct for the prompt, but the feature wouldn't be
 accessible from the API developers actually use.
 
+### FastAPI: add `on_dependency_resolved` callback
+
+|       | With context-db | Without | Delta |
+| ----- | --------------- | ------- | ----- |
+| Cost  | $0.56           | $0.45   | +25%  |
+| Time  | 119.5s          | 120.6s  | ~same |
+| Turns | 25              | 22      | +3    |
+
+The task: add a callback to `solve_dependencies()` that fires after each
+dependency resolves, passing the callable, resolved value, and whether it came
+from cache. Both agents found the right place in the recursive resolution loop,
+tracked `from_cache` correctly, and threaded the callback through from
+`get_request_handler()`.
+
+The same sync/async bug appeared again. The "with" agent used the `isawaitable`
+check; the "without" agent used bare `await`. This pattern repeated across all
+three FastAPI tests — the `context-db` agent consistently matched existing
+codebase conventions while the "without" agent consistently introduced the same
+class of bug.
+
 ## What makes context-db effective
 
 The research says verbose context hurts. My experiments confirm it. But slim,
