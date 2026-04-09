@@ -156,12 +156,11 @@ purpose is genuinely ambiguous. Accepts an optional folder path to scope the
 reindex.
 
 **`/context-db-audit`** — Cross-references the knowledge base against project
-code, docs, and git history. Runs five phases: structural health (enforces 5–10
-items per folder for logarithmic progressive disclosure), content freshness (git
-diff), coverage gaps (scans for undocumented subsystems), documentation drift
-(compares context-db against docs/), and description quality. Interactive by
-default — explains findings and asks before acting on anything ambiguous, but
-fixes clearly wrong things directly. Accepts an optional folder path.
+code, docs, and git history. Checks structural health, content freshness,
+coverage gaps, documentation drift, description quality, and cross-references
+between documents. Interactive by default — explains findings and asks before
+acting on anything ambiguous, but fixes clearly wrong things directly. Accepts
+an optional folder path.
 
 Both skills live in `templates/skills/` and can be wired into any project the
 same way as the core `context-db-manual` skill.

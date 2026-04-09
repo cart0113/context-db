@@ -8,10 +8,14 @@ allowed-tools: Bash Read
 
 ## What context-db is
 
-`context-db/` is a hierarchical Markdown knowledge base in the project repo. It
-contains what you can't learn from reading the code alone — why decisions were
-made, gotchas that will bite you, cross-file patterns, and checklists for common
-tasks.
+`context-db/` is the project's persistent knowledge base — a hierarchical
+Markdown store of everything that can't be learned from reading the code alone.
+Gotchas, design decisions, cross-file patterns, and checklists live here.
+
+**context-db is the project's memory.** If you learned something this session
+that the next session would need — a gotcha, a decision, a pattern — write it to
+context-db. It's checked into the repo and available to every agent, on every
+platform, in every future session.
 
 Every `.md` file has YAML frontmatter with a `description` field. A script
 generates a table of contents from those descriptions.
@@ -77,6 +81,17 @@ Two file types:
 Descriptions must be accurate summaries — not titles. A reader must be able to
 judge relevance without opening the file.
 
+### Cross-references
+
+When a document relates to something in a different folder, add a "See also"
+link at the bottom of the body.
+
+```markdown
+See also:
+
+- [Related topic](../other-folder/file.md)
+```
+
 ### Where to put new content
 
 The `<project-name>-project/` folder is for project-specific knowledge. Parallel
@@ -89,9 +104,11 @@ symlinked from a shared repo.
 
 **Keep descriptions current.** After any change, rewrite affected descriptions.
 
-**Post-session checklist:**
+**Before ending a session**, save what you learned:
 
-1. Capture — create or update documents with new knowledge.
+1. Capture — write new knowledge to context-db. If the next session would need
+   it, it belongs here.
 2. Summarize — rewrite affected descriptions.
-3. Reorganize — split or merge folders to stay at 5–10 items.
-4. Verify — run `context-db-generate-toc.sh` on affected folders.
+3. Cross-reference — add "See also" links if the topic spans folders.
+4. Reorganize — split or merge folders to stay at 5–10 items.
+5. Verify — run `context-db-generate-toc.sh` on affected folders.

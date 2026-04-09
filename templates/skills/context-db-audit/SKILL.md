@@ -177,6 +177,16 @@ After content is resolved, do a quick pass on all descriptions:
 For clearly bad descriptions, fix them and tell the user. For borderline cases,
 propose alternatives and ask.
 
+### Phase 7: Cross-references
+
+Check "See also" links at the bottom of document bodies.
+
+- **Broken links.** Fix references to files that no longer exist.
+- **Missing links.** Look for documents in different folders that cover related
+  topics but don't reference each other. Suggest cross-references where an agent
+  navigating one branch would genuinely benefit from knowing about a document in
+  another branch. Don't add links just to have them.
+
 ## Interaction style
 
 **Be chatty.** This is a collaborative review, not a silent batch job. Explain
