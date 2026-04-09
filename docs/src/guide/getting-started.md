@@ -1,30 +1,42 @@
 # Getting Started
 
-## 1. Copy the skill and rule
+## 1. Create your context-db
 
-Copy (or symlink) the skill, rule, and hook into your project's `.claude/`
-directory:
+Create a `context-db/` directory with a `<project-name>-project/` subfolder. Add
+a description file (frontmatter only, no body):
+
+```
+context-db/
+└── acme-payments-project/
+    └── acme-payments-project.md
+```
+
+```yaml
+---
+description: Acme Payments — architecture, APIs, and data model
+---
+```
+
+Add context documents alongside it. Each has `description` frontmatter and
+Markdown content. Keep folders to 5–10 items — split into subfolders when one
+grows beyond that.
+
+## 2. Bootstrap — tell the agent about context-db
+
+The context-db is just markdown files and a bash TOC script. Any agent that can
+read files and run shell commands can use it. The bootstrap is how you get the
+agent to read `context-db/` at the start of a conversation.
+
+### Claude Code (recommended: SessionStart hook)
+
+Copy the hook and skill into your project:
 
 ```bash
-# Copy
 cp -r templates/skills/context-db-manual your-project/.claude/skills/context-db-manual
-cp templates/rules/context-db.md your-project/.claude/rules/context-db.md
 cp templates/hooks/session-start-context-db.sh your-project/.claude/hooks/session-start-context-db.sh
-
-# Or symlink
-ln -s /path/to/context-db-repo/templates/skills/context-db-manual your-project/.claude/skills/context-db-manual
-ln -s /path/to/context-db-repo/templates/rules/context-db.md your-project/.claude/rules/context-db.md
-ln -s /path/to/context-db-repo/templates/hooks/session-start-context-db.sh your-project/.claude/hooks/session-start-context-db.sh
 ```
 
-Optionally copy the maintenance skills too:
-
-```bash
-cp -r templates/skills/context-db-reindex your-project/.claude/skills/context-db-reindex
-cp -r templates/skills/context-db-audit your-project/.claude/skills/context-db-audit
-```
-
-Wire up the SessionStart hook in `.claude/settings.local.json`:
+Wire up the hook in `.claude/settings.local.json`:
 
 ```json
 {
@@ -44,46 +56,49 @@ Wire up the SessionStart hook in `.claude/settings.local.json`:
 }
 ```
 
-The **rule** fires automatically every conversation and tells the agent to load
-the skill. The **hook** reinforces this — rules alone aren't always reliable, so
-the hook injects a mandatory instruction before the first turn. The **skill**
-(`SKILL.md`) contains all instructions for reading, writing, and maintaining
-`context-db`. It bundles the TOC script.
+The hook fires before the first turn and tells the agent to read the SKILL.md
+and run the TOC script. In practice this is the most reliable bootstrap — the
+agent sees it before anything else.
 
-### Alternative bootstrap methods
+**Alternative: rule file.** Copy `templates/rules/context-db.md` into
+`.claude/rules/`. Rules fire every conversation and give the same instruction.
+You can use a rule instead of the hook, or both if you want to be very sure. The
+hook alone is usually sufficient.
 
-The skill+rule split is the recommended approach, but anything that gets the
-instructions and script to the agent works:
+Optionally copy the maintenance skills:
 
-- **`AGENTS.md` or `CLAUDE.md`** — paste the SKILL.md content (or a summary)
-  directly. Works with any agent framework.
-- **Rule with inline instructions** — put the SKILL.md content into a rule file
-  instead of referencing the skill. Simpler, but loads the full text every
-  conversation.
-- **Just the script** — place `context-db-generate-toc.sh` somewhere accessible
-  (e.g. `bin/`) and tell the agent where it is via whatever instruction
-  mechanism you have.
-
-## 2. Create your project folder
-
-The main project folder is named `<project>-project/`. Create it with a
-description file (frontmatter only, no body):
-
-```
-context-db/
-└── acme-payments-project/
-    └── acme-payments-project.md
+```bash
+cp -r templates/skills/context-db-reindex your-project/.claude/skills/context-db-reindex
+cp -r templates/skills/context-db-audit your-project/.claude/skills/context-db-audit
 ```
 
-```yaml
----
-description: Acme Payments — architecture, APIs, and data model
----
+### Cursor
+
+Add the instructions to `.cursorrules` or `.cursor/rules/context-db.md`:
+
+```
+This project uses context-db/ — a hierarchical Markdown knowledge base.
+Run this script to see available topics:
+
+  .claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
+
+Read topics relevant to the task, then read the code.
 ```
 
-Add context documents alongside it. Each has `description` frontmatter and
-Markdown content. Keep folders to 5–10 items — split into subfolders when one
-grows beyond that.
+The TOC script is just bash — works in any terminal.
+
+### GitHub Copilot
+
+Add the same instructions to `.github/copilot-instructions.md`.
+
+### Any agent (AGENTS.md / CLAUDE.md / GEMINI.md)
+
+Paste the SKILL.md content (or a summary) into whatever instruction file your
+agent reads. The key things the agent needs to know:
+
+1. `context-db/` exists and contains project knowledge.
+2. Run the TOC script to see topics.
+3. Read only what's relevant, then read the code.
 
 ## 3. Verify
 
