@@ -128,9 +128,47 @@ README files, wiki references, etc.):
 - If docs are correct but context-db is stale, propose the update and ask before
   making changes.
 
-### Phase 5: Description quality
+### Phase 5: Content value — is this earning its tokens?
 
-After content and structure are resolved, do a quick pass on all descriptions:
+The most common context-db failure is **restating what the code already says**.
+Every line of context-db costs tokens to read. Verbose context-db is worse than
+no context-db — an agent wastes turns reading summaries when it could read the
+source directly in less time.
+
+For each document, ask: "Could an agent figure this out by reading the code?"
+
+**Delete or rewrite** content that falls into these categories:
+
+- **Code summaries.** "The Shape base class has `x`, `y`, `width`, `height`
+  properties." → The agent reads `base.py` in one turn and gets more detail.
+- **Module layouts.** ASCII tree diagrams of the source directory. → `ls` is
+  faster and always current.
+- **Property lists and API signatures.** → These belong in docstrings.
+- **Step-by-step explanations of how a function works.** → The agent reads the
+  function.
+
+**Keep and strengthen** content in these categories:
+
+- **Gotchas.** "Custom constructor params must be set BEFORE
+  `super().__init__()` because super calls `draw()`." → You can't learn this
+  from reading `draw()` alone. It only bites you when you subclass.
+- **Cross-file checklists.** "Adding a new shape? 1. Create class in
+  `shapes/`. 2. Add renderer to SVG backend. 3. Add isinstance dispatch. 4.
+  Export from `__init__.py`." → Each file makes sense on its own, but knowing
+  _which files must change together_ is the hard part.
+- **Why, not what.** "SVG backend draws fill and stroke as separate elements
+  because SVG strokes are centered on the boundary, causing alpha compositing
+  artifacts with semi-transparent fills." → The code shows the separation; only
+  context-db explains why it exists.
+- **Architecture at the highest level.** One paragraph on how major pieces
+  connect. Not a module-by-module walkthrough.
+
+A good test: if you removed a document entirely, would the agent make a mistake
+it wouldn't otherwise make? If not, the document isn't earning its tokens.
+
+### Phase 6: Description quality
+
+After content is resolved, do a quick pass on all descriptions:
 
 - Are they concise but complete enough for an agent to judge relevance?
 - Do they front-load the key concept?

@@ -8,23 +8,13 @@ allowed-tools: Bash Read
 
 ## What context-db is
 
-`context-db/` is a hierarchical Markdown knowledge base that lives in the
-project repo. It contains everything you need to understand this project —
-architecture, conventions, standards, domain context, design decisions, user
-preferences. Think of it as the project's long-term memory.
+`context-db/` is a hierarchical Markdown knowledge base in the project repo. It
+contains what you can't learn from reading the code alone — why decisions were
+made, gotchas that will bite you, cross-file patterns, and checklists for common
+tasks.
 
-Every `.md` file has YAML frontmatter with a `description` field. A script reads
-those descriptions and generates a table of contents for any folder. You browse
-the TOC, read only what's relevant, and move on.
-
-## Why this matters
-
-You are starting a conversation with no prior context. The knowledge base exists
-so you don't have to rediscover what the team already knows. Reading it first
-means you write code that fits the project's patterns, follow the right
-conventions, and avoid repeating past mistakes.
-
-Skip it and you'll waste tokens guessing at things that are already documented.
+Every `.md` file has YAML frontmatter with a `description` field. A script
+generates a table of contents from those descriptions.
 
 ## How to read it
 
@@ -34,12 +24,40 @@ Run the TOC script on the root folder:
 .claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
 
-The output lists every subfolder and file with a one-line description. Subfolder
-paths end with `/` — run the script on them to go deeper. Only open files whose
-descriptions are relevant to your task.
+Read topics relevant to the user's request. Skip what you don't need.
 
-**Do this at the start of every conversation.** Read topics relevant to the
-user's request before writing code or making suggestions.
+**Context-db orients you. The code is the truth.** Use context-db to understand
+the big picture, learn gotchas, and find the right files. Then read the actual
+source before making changes. Context-db can be incomplete or stale — always
+verify against the code.
+
+## What belongs in context-db
+
+Write only what an agent cannot get from reading the code:
+
+- **Gotchas.** Things that look right but break. Past bugs. Non-obvious ordering
+  requirements.
+- **Cross-file checklists.** "Adding a new X? Touch these 5 files in this
+  order." The code shows how each file works, but not which files must change
+  together.
+- **Why, not what.** Why a decision was made. Why this pattern instead of the
+  obvious one. The code shows _what_; context-db explains _why_.
+- **Architecture at the highest level.** How the major pieces connect. One
+  paragraph, not a module-by-module walkthrough.
+
+## What does NOT belong in context-db
+
+Every line of context-db costs tokens to read. Verbose context-db is worse than
+no context-db — the agent wastes turns reading summaries of code it could read
+directly in less time.
+
+- **Code summaries.** Never restate what a class or function does. Reading a
+  200-line source file is faster and more complete than reading prose about it.
+- **Property lists, API signatures, parameter docs.** These belong in
+  docstrings.
+- **Module layouts.** `ls` and `grep` are faster than a markdown tree diagram.
+- **Anything the code already makes obvious.** If you have to ask "could an
+  agent figure this out by reading the file?" the answer is almost always yes.
 
 ## How to write to it
 
@@ -51,37 +69,25 @@ description: One-line summary shown in the TOC
 ---
 ```
 
-Optional: `status: draft | stable | deprecated` (default: `stable`).
-
 Two file types:
 
 - **Documents** — frontmatter + body content.
 - **Folder descriptions** (`<folder-name>.md`) — frontmatter only, no body.
-  Registers the folder in the parent TOC.
 
-Descriptions must be accurate, complete summaries — not titles. An agent must be
-able to judge relevance without opening the file.
+Descriptions must be accurate summaries — not titles. A reader must be able to
+judge relevance without opening the file.
 
 ### Where to put new content
 
-The `<project-name>-project/` folder is for knowledge **specific to this
-project** — architecture, data models, domain context, design decisions. When
-writing about this project, put it here (or in a subfolder of it).
-
-Folders parallel to `<project-name>-project/` (like `coding-standards/`,
-`writing-standards/`) contain **project-agnostic** knowledge — standards and
-conventions that apply across many projects. These are often symlinked from a
-shared standards repo. You will rarely need to create or edit these folders. If
-you do, only put content there that applies universally, not content specific to
-the project you're working in.
+The `<project-name>-project/` folder is for project-specific knowledge. Parallel
+folders (like `coding-standards/`) contain project-agnostic standards, often
+symlinked from a shared repo.
 
 ## How to maintain it
 
-**5–10 items per folder.** When a folder exceeds this, split into subfolders.
-The tree is a decision tree — each level should halve the search space.
+**5–10 items per folder.** Split into subfolders when a folder exceeds this.
 
-**Keep descriptions current.** After any change, rewrite every affected
-`description` to match current content.
+**Keep descriptions current.** After any change, rewrite affected descriptions.
 
 **Post-session checklist:**
 
