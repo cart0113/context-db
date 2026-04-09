@@ -1,23 +1,19 @@
 ---
 name: context-db-full-audit
 description: >-
-  Full audit — reindex all descriptions, then audit against project code, docs,
-  and git history for stale entries, missing topics, structural problems,
-  cross-references, and doc drift. TRIGGER when: user asks to review or audit
-  the knowledge base, or after major project changes.
+  Full audit — audit against project code, docs, and git history for stale
+  entries, missing topics, structural problems, cross-references, and doc drift,
+  then reindex all descriptions. TRIGGER when: user asks to review or audit the
+  knowledge base, or after major project changes.
 argument-hint: '[folder-path]'
 allowed-tools: Read Write Edit Glob Grep Bash
 ---
 
 ## What this does
 
-Full audit: reindex all descriptions, then audit the knowledge base against
-**all** project sources of truth — code, markdown documentation, user-facing
-docs, README files, git history, and configuration.
-
-**This skill includes a reindex.** Before starting, read the reindex
-instructions at `templates/skills/context-db-reindex/SKILL.md` — that defines
-how Phase 0 works.
+Audit the knowledge base against **all** project sources of truth — code, docs,
+README files, git history, and configuration — then reindex descriptions to
+match.
 
 ## Target
 
@@ -82,101 +78,54 @@ finding as you go.
 questions. You MUST wait for the user's response before starting the next phase.
 Do not ask a question and then answer it yourself in the same turn.
 
-### Phase 0: Reindex
-
-Read `templates/skills/context-db-reindex/SKILL.md` and follow its steps to
-reindex all descriptions in the target path. This ensures descriptions are
-accurate before the audit evaluates them.
-
-**Guided mode: STOP here.** Wait for the user's response before proceeding.
-
 ### Phase 1: Structural health
 
-Check the tree structure for violations of logarithmic progressive disclosure.
+Enforce logarithmic progressive disclosure — each folder level should halve the
+search space so agents navigate a decision tree, not scan a flat list.
 
-**The rule:** each folder level should halve the search space. 5–10 items per
-folder is the target. Too many items at one level forces agents to scan a long
-list instead of navigating a decision tree.
+**Target: 5–10 items per folder.** This is the core structural invariant.
+Actively restructure to achieve it — create subfolders, merge sparse folders,
+flatten deep nesting. The goal is a tree where an agent reaches any document in
+3–4 decisions.
 
-Check for:
-
-- **Too many items:** Any folder with more than 10 children (files + subfolders)
-  needs splitting. Propose a reorganization and ask the user before making
-  changes.
-- **Too few items:** A subfolder with only 1–2 files may not justify its own
-  level. Propose merging upward.
-- **Depth problems:** More than 3–4 levels deep is a smell. The tree should be
-  wide and shallow, not narrow and deep.
-- **Missing folder descriptors:** Every folder needs `<folder-name>.md`. Flag
-  any that are missing.
+- **Too many items (>10 children):** Split into subfolders that give agents a
+  meaningful branching decision at each level. Propose the reorganization and
+  ask before making changes.
+- **Too few items (1–2 files):** Merge upward into the parent folder.
+- **Too deep (>3–4 levels):** Flatten. Wide and shallow beats narrow and deep.
+- **Missing folder descriptors:** Every folder needs `<folder-name>.md`.
 - **Orphaned files:** Files that don't fit the theme of their parent folder.
-
-Report findings for this phase and ask the user if they want you to fix
-structural issues before continuing.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
 ### Phase 2: Content freshness
 
-Use git to find what has changed in the project and whether context-db reflects
-those changes.
+Use git log and git diff to find recent project changes, then check whether
+context-db reflects them. For each document, verify that referenced files,
+functions, patterns, and tools still exist and haven't been renamed or removed.
 
-```bash
-# If git is available, check recent changes
-git log --oneline --since="2 weeks ago" --name-only 2>/dev/null
-git diff --name-only HEAD~20 2>/dev/null
-```
-
-For each context-db document:
-
-1. Read the document fully.
-2. Check whether the topics it covers still match the current state of the code
-   or project.
-3. Look for references to files, functions, patterns, or tools that may have
-   been renamed, removed, or changed.
-
-Flag documents that appear stale. For clearly outdated content (references to
-deleted files, removed features, old patterns), fix it directly and tell the
-user what you changed. For ambiguous cases, describe what looks off and ask.
+Fix clearly outdated content directly. For ambiguous staleness, describe what
+looks off and ask.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
 ### Phase 3: Coverage gaps
 
-Scan **all** project sources — code, docs, and configuration — for important
-topics that context-db doesn't cover. context-db should integrate knowledge from
-every source, not just mirror one.
+Scan all project sources — markdown docs, READMEs, code, config, CI/CD, and
+recent git additions — for important topics context-db doesn't cover. Look for
+gotchas, design rationale, and cross-cutting concerns that an agent couldn't
+infer from any single file.
 
-1. **All markdown files** — find every `*.md` file in the project (outside
-   `context-db/` itself). README files, `docs/` directories, contributing
-   guides, changelogs, ADRs, design docs — read them all. These often contain
-   gotchas, design rationale, and setup instructions that belong in context-db.
-2. **Code patterns** — look at the project structure, key directories, and
-   important files. Are there major subsystems or conventions not documented?
-3. **Configuration** — check for non-obvious config files, CI/CD setup, deploy
-   scripts, or infrastructure that would be useful context.
-4. **Recent additions** — use git log to find recently added files or
-   directories that may need context-db entries.
-
-For each gap found, describe what's missing and ask the user whether to create a
-new entry. Do not create entries without asking — the user knows what's
-important.
+Describe each gap and ask the user whether to create a new entry.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
 ### Phase 4: Documentation drift
 
-Compare context-db against **every** documentation source discovered in Phase 3
-(all `*.md` files, `docs/` directories, README files, wiki references, etc.):
-
-- If context-db and docs **agree**, no action needed.
-- If context-db and docs **disagree**, determine which is more likely correct by
-  checking the code. Report the discrepancy with your assessment.
-- If context-db is correct but docs are stale, point this out — the user may
-  want to update the docs to match. Do not modify files outside context-db
-  without explicit permission.
-- If docs are correct but context-db is stale, propose the update and ask before
-  making changes.
+Compare context-db against documentation sources found in Phase 3. Where they
+disagree, check the code to determine which is correct. Report discrepancies
+with your assessment. Do not modify files outside context-db without explicit
+permission.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
@@ -220,20 +169,7 @@ it wouldn't otherwise make? If not, the document isn't earning its tokens.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
-### Phase 6: Description quality
-
-After content is resolved, do a quick pass on all descriptions:
-
-- Are they concise but complete enough for an agent to judge relevance?
-- Do they front-load the key concept?
-- Are any just titles or filler?
-
-For clearly bad descriptions, fix them and tell the user. For borderline cases,
-propose alternatives and ask.
-
-**Guided mode: STOP here.** Wait for the user's response before proceeding.
-
-### Phase 7: Cross-references
+### Phase 6: Cross-references
 
 Check "See also" links at the bottom of document bodies. Cross-references can
 point to anything in the project — other context-db docs, source code, docs
@@ -243,6 +179,14 @@ pages, config files.
 - **Missing links.** Suggest cross-references where an agent would genuinely
   benefit from a pointer to related code, docs, or context-db documents. Don't
   add links just to have them.
+
+**Guided mode: STOP here.** Wait for the user's response before proceeding.
+
+### Phase 7: Reindex
+
+Read `templates/skills/context-db-reindex/SKILL.md` and follow its steps to
+reindex all descriptions in the target path. This ensures descriptions reflect
+all content changes made during the audit.
 
 ## Interaction style
 
