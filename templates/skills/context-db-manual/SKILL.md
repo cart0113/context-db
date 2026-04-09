@@ -30,10 +30,15 @@ Run the TOC script on the root folder:
 
 Read topics relevant to the user's request. Skip what you don't need.
 
-**Context-db orients you. The code is the truth.** Use context-db to understand
-the big picture, learn gotchas, and find the right files. Then read the actual
-source before making changes. Context-db can be incomplete or stale — always
-verify against the code.
+**Context-db is a hint, not truth.** Use it to understand the big picture, learn
+gotchas, and find the right files — but the code is always the source of truth.
+Context-db can be stale, incomplete, or wrong. Always read the actual source
+before making changes. Never skip code reading because context-db "already
+explained" what you need.
+
+Before acting on context-db claims: if it names a file, check the file exists.
+If it names a function or flag, grep for it. If it describes architecture, read
+the actual modules. If context-db conflicts with the code, trust the code.
 
 ## What belongs in context-db
 
