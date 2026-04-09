@@ -2,10 +2,9 @@ This project uses `context-db/` — a hierarchical Markdown knowledge base that
 documents how this project works: architecture, design decisions, gotchas,
 checklists, and conventions.
 
-**Context-db is a hint, not truth.** It accelerates your work by pointing you to
-the right files, explaining non-obvious decisions, and flagging pitfalls. But it
-can be stale, incomplete, or wrong. The code is always the source of truth.
-Never skip reading code because context-db "already explained" what you need.
+**Context-db is a hint, not truth.** It can be stale, incomplete, or wrong. The
+code is always the source of truth. Never skip reading code because context-db
+"already explained" what you need.
 
 ## Workflow — follow this order
 
@@ -21,15 +20,12 @@ Never skip reading code because context-db "already explained" what you need.
 Both steps are required. Context-db without code leads to stale assumptions.
 Code without context-db leads to blind exploration and missed gotchas.
 
-Skip topics that are clearly irrelevant. But when in doubt, read the topic — it
-is faster than grepping the entire codebase.
-
 **Do NOT delegate context-db reading to a subagent.** Read topics yourself in
 the main conversation so the knowledge informs all subsequent decisions.
 
 ## Verify before acting
 
-Context-db claims can go stale. Before acting on what it says:
+Before acting on context-db claims:
 
 - If it names a file path, check the file exists.
 - If it names a function, flag, or config key, grep for it.
