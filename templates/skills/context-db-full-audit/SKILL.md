@@ -15,6 +15,13 @@ Audit the knowledge base against **all** project sources of truth — code, docs
 README files, git history, and configuration — then reindex descriptions to
 match.
 
+## Mission
+
+Build a knowledge base that lets an agent produce correct code changes on the
+first try with the minimum context window. Every audit decision — what to add,
+cut, restructure, or rewrite — is measured against this: does it help an agent
+get to the right answer faster, or is it noise?
+
 ## Target
 
 If `$ARGUMENTS` is provided, treat it as the folder to audit (e.g.
