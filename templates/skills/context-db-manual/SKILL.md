@@ -25,6 +25,16 @@ Run the TOC script, then read relevant topics:
 Skip topics that are clearly irrelevant. When in doubt, read the topic — it's
 faster than grepping the entire codebase.
 
+**Context-db is a hint, not truth.** It can be stale, incomplete, or wrong.
+Always read the actual source before making changes. Never skip code reading
+because context-db "already explained" what you need.
+
+Before acting on context-db claims: if it names a file, check the file exists.
+If it names a function or flag, grep for it. If it describes architecture, read
+the actual modules. If it provides a checklist, use it as a starting point —
+then trace the full integration chain in the code to check for steps the
+checklist missed. If context-db conflicts with the code, trust the code.
+
 ## What belongs in context-db
 
 Write only what an agent cannot get from reading the code:

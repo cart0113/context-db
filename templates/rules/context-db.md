@@ -30,5 +30,7 @@ Before acting on context-db claims:
 - If it names a file path, check the file exists.
 - If it names a function, flag, or config key, grep for it.
 - If it describes architecture or data flow, read the actual modules.
+- If it provides a checklist, use it as a starting point — then trace the full
+  integration chain in the code to check for steps the checklist missed.
 - If context-db conflicts with the code, **trust the code** and flag the
   discrepancy to the user.

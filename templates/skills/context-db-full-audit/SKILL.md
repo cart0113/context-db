@@ -100,7 +100,9 @@ flatten deep nesting. The goal is a tree where an agent reaches any document in
   ask before making changes.
 - **Too few items (1–2 files):** Merge upward into the parent folder.
 - **Too deep (>3–4 levels):** Flatten. Wide and shallow beats narrow and deep.
-- **Missing folder descriptors:** Every folder needs `<folder-name>.md`.
+- **Missing folder descriptors:** Every subfolder needs `<folder-name>.md`.
+  Exception: do not create `context-db/context-db.md` — the root folder does not
+  need a descriptor.
 - **Orphaned files:** Files that don't fit the theme of their parent folder.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.

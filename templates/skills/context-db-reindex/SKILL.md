@@ -56,7 +56,11 @@ Run the listing script on the target path. Build a map of:
 
 ### 2. Ensure folder descriptors exist
 
-For every folder, check whether `<folder-name>.md` exists inside that folder
+**Exception:** Do not create a descriptor for the root `context-db/` folder
+itself. `context-db/context-db.md` serves no purpose — no agent reads it, and
+the rules file already explains what context-db is.
+
+For every subfolder, check whether `<folder-name>.md` exists inside that folder
 (e.g. `coding-standards/coding-standards.md`). If it does not exist:
 
 1. Read all files in the folder to understand its contents.
