@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 #
-# pre-commit — Format staged files.
+# pre-commit — Format staged files and run TOC script tests.
 #
 # Runs:
 #   1. prettier on staged md/js/ts/json/css/yaml files
 #   2. ruff on staged python files
 #   3. cache-bust docs/index.html if docs changed
+#   4. TOC script tests if the script or tests changed
 #
 # Install:
 #   cp hooks/pre-commit .git/hooks/pre-commit
@@ -58,4 +59,18 @@ if [ -f "${DOCS_DIR}/index.html" ] && git diff --cached --name-only | grep -qE '
     STAMP=$(date +%Y%m%d%H%M%S)
     sed -i '' "s/?v=[0-9a-zA-Z]*/?v=${STAMP}/g" "${DOCS_DIR}/index.html"
     git add "${DOCS_DIR}/index.html"
+fi
+
+# ── 4. TOC script tests (if script or tests changed) ───────────────────────
+
+TOC_FILES=$(git diff --cached --name-only \
+    | grep -E '(context-db-generate-toc\.sh|tests/test_toc_script\.py)' \
+    || true)
+
+if [ -n "$TOC_FILES" ]; then
+    echo "Running TOC script tests..."
+    python3 -m unittest tests.test_toc_script 2>&1 || {
+        echo "TOC script tests failed — fix before committing."
+        exit 1
+    }
 fi

@@ -42,6 +42,8 @@ read_field() {
         fc == 1 && found { gsub(/^["'"'"']|["'"'"']$/, "", val); print val; done=1; exit }
         fc == 1 && $0 ~ "^" key ":" {
             sub("^" key ":[[:space:]]*", "")
+            # Treat YAML block scalar indicators (>, >-, >+, |, |-, |+, >2, etc.) as empty value
+            if ($0 ~ /^[>|][-+0-9]*[[:space:]]*$/) $0 = ""
             if ($0 != "") { gsub(/^["'"'"']|["'"'"']$/, ""); print; done=1; exit }
             found = 1; val = ""
         }
@@ -60,6 +62,7 @@ read_field() {
         in_b && found { gsub(/^["'"'"']|["'"'"']$/, "", val); print val; done=1; exit }
         in_b && $0 ~ "^" key ":" {
             sub("^" key ":[[:space:]]*", "")
+            if ($0 ~ /^[>|][-+0-9]*[[:space:]]*$/) $0 = ""
             if ($0 != "") { gsub(/^["'"'"']|["'"'"']$/, ""); print; done=1; exit }
             found = 1; val = ""
         }
