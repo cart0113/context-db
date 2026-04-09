@@ -55,24 +55,28 @@ Before doing any audit work, ask the user how they want to run this:
 
 > I can run this audit at different levels of involvement:
 >
-> 1. **Guided** — I report each phase's findings and wait for your input before
->    moving on. You steer what gets fixed.
-> 2. **Autonomous** — I run all phases, fix what's clearly wrong, and give you a
+> 1. **Guided** — I stop after each phase, report findings, and wait for your
+>    input before moving on.
+> 2. **Review** — I run all phases and report what I found, but don't change
+>    anything without your approval.
+> 3. **Autonomous** — I run all phases, fix what's clearly wrong, and give you a
 >    summary at the end with questions on anything ambiguous.
 >
 > Which do you prefer?
 
 **Wait for their answer.** Do not proceed until they respond.
 
-- If they choose **Guided**: after each phase, present your findings, then
-  **stop and wait** for the user to respond before starting the next phase.
-- If they choose **Autonomous**: run all phases back-to-back, fix clear issues,
-  and collect ambiguous questions for a single summary at the end.
+- **Guided**: after each phase, present findings, then **stop and wait** for the
+  user to respond before starting the next phase.
+- **Review**: run all phases back-to-back, report everything found, but make no
+  changes. Present proposed fixes for the user to approve.
+- **Autonomous**: run all phases back-to-back, fix clear issues, collect
+  ambiguous questions for a single summary at the end.
 
 ## Audit phases
 
 Work through these phases in order. Be conversational — explain what you're
-finding as you go. Ask the user for input on anything that isn't clearly wrong.
+finding as you go.
 
 **IMPORTANT — pacing:** In Guided mode, each phase ends with a summary and
 questions. You MUST wait for the user's response before starting the next phase.
