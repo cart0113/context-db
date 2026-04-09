@@ -242,8 +242,9 @@ entries, removing content, resolving disagreements between sources.
 "Overview" for a file about auth tokens, a reference to a file that no longer
 exists, a folder with 15 items that obviously needs splitting.
 
-**Point out wins too.** If a section is well-organized or a description is
-particularly good, say so. The audit isn't just about finding problems.
+**If something is fine, say so and move on.** Don't rewrite things that are
+already good. The audit should report what it found, not change things for the
+sake of changing them.
 
 ## Verify
 

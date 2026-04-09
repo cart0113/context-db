@@ -75,8 +75,9 @@ For each `.md` file (including newly created folder descriptors):
 1. Read the full file content.
 2. Evaluate whether the current `description` accurately and completely
    summarizes what the file contains.
-3. If the description is missing, inaccurate, incomplete, or could be improved —
-   rewrite it using the Edit tool.
+3. If the description is missing, inaccurate, or incomplete — rewrite it using
+   the Edit tool. If the description already reflects the content, leave it
+   alone.
 
 ### 4. Reindex folder descriptors based on children
 
