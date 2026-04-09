@@ -1,3 +1,2 @@
 - getting-started
 - cross-project-sharing
-- efficacy

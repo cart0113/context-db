@@ -132,6 +132,30 @@ through to the same default handler.
 Not a bug, but unnecessary code. The checklist guided the "with" agent to the
 minimal correct set.
 
+### Add a `ToolBlocked` hook event
+
+Add a hook that fires when the policy engine denies a tool call. Includes tool
+name, denial reason, and the policy rule name. Must fire from the policy path,
+not the tool execution path.
+
+| | With context-db | Without | Delta |
+| --- | --- | --- | --- |
+| Cost | $1.35 | $1.29 | +5% |
+| Time | 280s | 202s | +39% |
+| Turns | 38 | 33 | +5 |
+
+Both agents modified the same 4 files and placed the hook in the correct
+location — the `PolicyDecision.DENY` block in `scheduler.ts`. Both produced
+functionally equivalent code. The context-db checklist pointed to `scheduler.ts`
+for policy-related hooks, but the "without" agent found the same location by
+reading the code. No quality difference on this one.
+
+This result is honest: the gemini-cli codebase is well-structured enough that
+the hook patterns are discoverable without context-db. The "without" agent paid
+less overhead because it didn't read context-db files first. Context-db helped
+more on od-do (bespoke conventions) and FastAPI (huge files, non-obvious
+sync/async patterns) than on gemini-cli.
+
 ## What verbose context-db looks like (and why it fails)
 
 My first attempt at od-do `context-db` was 671 lines across 13 files — code
