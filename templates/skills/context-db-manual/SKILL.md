@@ -97,9 +97,15 @@ See also:
 
 ### Where to put new content
 
-The `<project-name>-project/` folder is for project-specific knowledge. Parallel
-folders (like `coding-standards/`) contain project-agnostic standards, often
-symlinked from a shared repo.
+**Most content goes in `<project-name>-project/`.** This is the default home for
+project-specific knowledge — design decisions, gotchas, architecture, research,
+checklists. When adding a new topic, put it here unless it clearly belongs
+elsewhere.
+
+Parallel top-level folders (like `coding-standards/`, `writing-standards/`)
+contain project-agnostic standards, often symlinked from a shared repo. These
+are the exception, not the rule — do not create new top-level folders for
+project-specific content.
 
 ## How to maintain it
 

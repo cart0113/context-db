@@ -17,4 +17,4 @@ context-db/using-context-db
 context-db/local-repos-to-update/
 bin/sync-to-repos.sh
 
-context-db/competitive-landscape/
+context-db/context-db-project/context-db-theory/graphify.md
