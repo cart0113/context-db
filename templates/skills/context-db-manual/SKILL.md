@@ -83,13 +83,16 @@ judge relevance without opening the file.
 
 ### Cross-references
 
-When a document relates to something in a different folder, add a "See also"
-link at the bottom of the body.
+When a document relates to other project files — other context-db documents,
+source code, docs pages, config files — add a "See also" link at the bottom of
+the body.
 
 ```markdown
 See also:
 
-- [Related topic](../other-folder/file.md)
+- [Related context-db topic](../other-folder/file.md)
+- [Implementation](../../src/auth/tokens.ts)
+- [User-facing docs](../../docs/src/guide/authentication.md)
 ```
 
 ### Where to put new content

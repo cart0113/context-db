@@ -235,13 +235,14 @@ propose alternatives and ask.
 
 ### Phase 7: Cross-references
 
-Check "See also" links at the bottom of document bodies.
+Check "See also" links at the bottom of document bodies. Cross-references can
+point to anything in the project — other context-db docs, source code, docs
+pages, config files.
 
 - **Broken links.** Fix references to files that no longer exist.
-- **Missing links.** Look for documents in different folders that cover related
-  topics but don't reference each other. Suggest cross-references where an agent
-  navigating one branch would genuinely benefit from knowing about a document in
-  another branch. Don't add links just to have them.
+- **Missing links.** Suggest cross-references where an agent would genuinely
+  benefit from a pointer to related code, docs, or context-db documents. Don't
+  add links just to have them.
 
 ## Interaction style
 

@@ -13,9 +13,11 @@ starting point.
 
 ## The fix
 
-"See also" links at the bottom of document bodies. Not in frontmatter (bloats
-the TOC), not in a separate graph file (second source of truth). Just markdown
-in the body — zero TOC tokens, only read when the file is already open.
+"See also" links at the bottom of document bodies. These can point to anything
+in the project — other context-db documents, source code, docs pages, config
+files. Not in frontmatter (bloats the TOC), not in a separate graph file (second
+source of truth). Just markdown in the body — zero TOC tokens, only read when
+the file is already open.
 
 ## What we rejected and why
 
