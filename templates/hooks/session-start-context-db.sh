@@ -1,7 +1,5 @@
 #!/bin/bash
-# SessionStart hook — tells the agent to load the context-db skill.
+# SessionStart hook — loads the context-db skill.
 # Wire this up in .claude/settings.local.json under hooks.SessionStart.
 
-cat <<'EOF'
-Read .claude/skills/context-db-manual/SKILL.md, then run the TOC script on context-db/.
-EOF
+echo "This project uses context-db. Read .claude/skills/context-db-manual/SKILL.md then run the TOC script on context-db/."
