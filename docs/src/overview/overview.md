@@ -114,6 +114,49 @@ bootstraps the agent works. Alternative approaches:
   (e.g. `bin/`) and tell the agent where it is and how to use it via whatever
   instruction mechanism you have.
 
+## The `context-db-manual` SKILL.md
+
+The SKILL.md is the core instruction set — the prompt that teaches an agent how
+to use `context-db`. Its design reflects a specific failure mode that the
+broader AI coding community has documented: **agents that trust cached knowledge
+over current code**.
+
+Claude Code's own memory system
+[treats memory as a hint, not truth](https://read.engineerscodex.com/p/diving-into-claude-codes-source-code).
+Memory accelerates — it tells the agent where to look — but the agent verifies
+before acting. The `context-db-manual` SKILL.md follows the same philosophy.
+
+**"Hint, not truth" framing.** The SKILL.md opens with an explicit statement
+that `context-db` can be stale, incomplete, or wrong. Without this, agents treat
+context files as authoritative and skip code reading — the ETH Zurich AGENTS.md
+study found this makes agents _worse_, not better. The framing prevents
+`context-db` from becoming the problem it exists to solve.
+
+**Verify-before-acting checklist.** If `context-db` names a file path, check it
+exists. If it names a function, grep for it. If it describes architecture, read
+the actual modules. This is borrowed directly from how Claude Code's memory
+system handles stale claims — verification is not optional, it's built into the
+workflow.
+
+**"Never skip code reading."** The most dangerous failure mode is an agent that
+reads `context-db`, feels oriented, and never opens the source files. The
+SKILL.md guards against this with an explicit prohibition and a two-step
+workflow: read `context-db` first (for orientation), then read the code (for
+truth). Both steps are required.
+
+**"What does NOT belong" guardrails.** Every line of `context-db` costs tokens.
+The SKILL.md explicitly excludes code summaries, API signatures, module layouts,
+and anything the code already makes obvious. This prevents context rot — the
+gradual accumulation of verbose, redundant content that degrades agent
+performance. The Chroma "Context Rot" research and the ETH Zurich study both
+found that more context tokens make agents worse when the content is redundant
+with what the agent could discover on its own.
+
+**Workflow ordering.** `context-db` first, then code. Not because `context-db`
+is authoritative, but because blind code exploration wastes tokens. `context-db`
+narrows the search space so the agent reads the right files instead of grepping
+the entire codebase. The ordering is about efficiency, not trust.
+
 ## Getting Started
 
 1. Copy `templates/skills/context-db-manual/` into
