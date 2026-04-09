@@ -6,6 +6,7 @@ __pycache__/
 *.tmp
 
 .claude
+.cursor
 node_modules/
 
 context-db/coding-standards/general-coding-standards
