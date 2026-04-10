@@ -22,6 +22,19 @@ first try with the minimum context window. Every audit decision — what to add,
 cut, restructure, or rewrite — is measured against this: does it help an agent
 get to the right answer faster, or is it noise?
 
+**First, do no harm.** Context-db gives agents confidence, and confidence
+reduces how much code they read. A bad context-db causes mistakes the agent
+wouldn't have made without it. The best entries are small, point to the code
+rather than summarizing it, and document only what the code can't tell you:
+traps, non-obvious connections between files, and design rationale. A 200-line
+context-db that points to code outperforms a 1000-line one that summarizes it.
+
+An audit is not just a health check — it's an opportunity to grow the knowledge
+base. If the project has areas that aren't covered, add new files, new folders,
+new hierarchy as needed. Follow the structural rules (5–10 items per folder, 3–4
+levels deep), but don't let the existing structure limit what gets documented.
+The structure serves the content, not the other way around.
+
 ## Target
 
 If `$ARGUMENTS` is provided, treat it as the folder to audit (e.g.
@@ -45,12 +58,8 @@ symlinks automatically:
 
 ## Audience
 
-The primary audience for context-db is LLM agents, though it should be useful
-for humans too. Every description and every document must help an agentic system
-get up to speed on the project using the smallest context window possible. Every
-word costs tokens. When evaluating content freshness, coverage gaps, and
-description quality, judge everything through this lens — include what an agent
-cannot infer from the code, omit what it can.
+LLM agents first, humans second. Every word costs tokens. Include what an agent
+can't infer from the code, omit what it can.
 
 ## Before you start — ask the user
 
@@ -104,6 +113,13 @@ flatten deep nesting. The goal is a tree where an agent reaches any document in
   Exception: do not create `context-db/context-db.md` — the root folder does not
   need a descriptor.
 - **Orphaned files:** Files that don't fit the theme of their parent folder.
+- **Vague descriptions.** Descriptions are routing decisions — an agent reads
+  them to decide whether to drill into a folder or file. A description like
+  "Architecture overview" or "Project notes" forces the agent to open the file
+  to find out if it's relevant. Good descriptions name the specific topics
+  covered so the agent can skip irrelevant files without reading them. Check
+  every description in the TOC output and flag any that don't give enough signal
+  for an agent to make a skip/read decision.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
@@ -125,6 +141,20 @@ recent git additions — for important topics context-db doesn't cover. Look for
 gotchas, design rationale, and cross-cutting concerns that an agent couldn't
 infer from any single file.
 
+**Project map completeness.** Somewhere in the context-db — the project root
+descriptor, a dedicated architecture doc, or across subfolder descriptions — an
+agent must be able to learn what major subsystems exist, where they live, and
+how they connect. This is not a code summary — it's an inventory. `ls` shows
+files, not purpose or relationships. Without this map, agents miss entire
+subsystems and either explore blind or reimplement things that already exist.
+
+To check completeness: run `ls` on the project's top-level source directories
+and packages — actually list them, don't work from memory. For each directory,
+ask: "Could an agent reading only the context-db learn that this subsystem
+exists and what role it plays?" If not, it's a gap. Don't prescribe where the
+information should live — flag the gap and let the user decide the right home
+for it.
+
 Describe each gap and ask the user whether to create a new entry.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
@@ -138,43 +168,72 @@ permission.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
-### Phase 5: Content value — is this earning its tokens?
+### Phase 5: Content value — is every topic earning its tokens?
 
-The most common context-db failure is **restating what the code already says**.
-Every line of context-db costs tokens to read. Verbose context-db is worse than
-no context-db — an agent wastes turns reading summaries when it could read the
-source directly in less time.
+Context-db gives agents confidence, and confidence reduces how much code they
+read. Every piece of content must justify the confidence it creates. Too verbose
+and the agent wastes turns reading summaries. Too thin and it gets no signal.
+Too instructional and it follows steps instead of reading code.
 
-For each document, ask: "Could an agent figure this out by reading the code?"
+**For each document, check three things.**
 
-**Delete or rewrite** content that falls into these categories:
+#### Does it point to code or replace it?
 
-- **Code summaries.** "The Shape base class has `x`, `y`, `width`, `height`
-  properties." → The agent reads `base.py` in one turn and gets more detail.
-- **Module layouts.** ASCII tree diagrams of the source directory. → `ls` is
-  faster and always current.
-- **Property lists and API signatures.** → These belong in docstrings.
-- **Step-by-step explanations of how a function works.** → The agent reads the
-  function.
+The best content names a reference implementation and documents what's
+non-obvious about it. Cut anything the agent could learn faster by reading the
+code directly:
 
-**Keep and strengthen** content in these categories:
+- Code summaries, property lists, API signatures → agent reads the source
+- Module layouts → `ls` is faster and always current
+- Step-by-step instructions → agent reads a reference implementation instead.
+  Instructions create blind spots: the agent follows the steps and misses
+  anything not listed
 
-- **Gotchas.** "Custom constructor params must be set BEFORE
-  `super().__init__()` because super calls `draw()`." → You can't learn this
-  from reading `draw()` alone. It only bites you when you subclass.
-- **Cross-file checklists.** "Adding a new shape? 1. Create class in
-  `shapes/`. 2. Add renderer to SVG backend. 3. Add isinstance dispatch. 4.
-  Export from `__init__.py`." → Each file makes sense on its own, but knowing
-  _which files must change together_ is the hard part.
-- **Why, not what.** "SVG backend draws fill and stroke as separate elements
-  because SVG strokes are centered on the boundary, causing alpha compositing
-  artifacts with semi-transparent fills." → The code shows the separation; only
-  context-db explains why it exists.
-- **Architecture at the highest level.** One paragraph on how major pieces
-  connect. Not a module-by-module walkthrough.
+#### Does it document what breaks?
 
-A good test: if you removed a document entirely, would the agent make a mistake
-it wouldn't otherwise make? If not, the document isn't earning its tokens.
+The highest-value content documents ripple effects — what else must change when
+you modify something in this area, that the agent won't find by tracing the call
+chain or grepping for the relevant symbol. Files in other packages. Config
+entries referenced by string literal. Schema files that need matching entries.
+Things that already exist that the agent might reimplement. Ordering constraints
+between subsystems.
+
+If a document describes a change pattern but doesn't mention what else is
+affected, it's incomplete.
+
+#### Is it too thin to help?
+
+Read the actual code the topic covers. Ask: "If an agent made a change in this
+area with only this document and the code, what would it get wrong?" If you find
+traps the document doesn't mention, add them.
+
+**Don't just flag problems — fix them.** Write at the "just right" level from
+the calibration examples below.
+
+#### Calibration examples
+
+**Subsystem inventory:**
+
+> Too thin: "The `src/services/` directory contains application services."
+>
+> Just right: "Services in `src/services/`: loop detection (multi-tier,
+> integrated into client loop), execution lifecycle, telemetry, tracker. Check
+> here before building new infrastructure."
+>
+> Too verbose: "`loopDetectionService.ts` exports `LoopDetectionService` with
+> methods `checkForLoop(history)`, `getConsecutiveCount()`..."
+
+**Change patterns:**
+
+> Too thin: "Adding a hook requires changes to the types file and handler."
+>
+> Just right: "Read `BeforeTool` end-to-end before adding a hook event. The core
+> hook machinery is discoverable. Non-obvious: settings registration is in a
+> different package (`packages/cli/`), and the fire site matters (tool hooks
+> fire from `coreToolHookTriggers.ts`, policy hooks from `scheduler.ts`)."
+>
+> Harmful: "1. Add to enum. 2. Add interfaces. 3. Add fire method..." — agent
+> follows steps, stops reading, misses anything not listed.
 
 **Guided mode: STOP here.** Wait for the user's response before proceeding.
 
