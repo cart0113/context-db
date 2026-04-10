@@ -1,15 +1,21 @@
 # context-db
 
-A portable standard for organizing project knowledge as hierarchical Markdown so
+A minimal standard for organizing project knowledge as hierarchical Markdown so
 LLM agents can discover and fetch only what they need.
 
-Every `.md` file has YAML frontmatter with a `description` field. A
-`context-db-generate-toc.sh` script reads the frontmatter and generates a table
-of contents for any folder. Agents browse the TOC, read only relevant files, and
-can write knowledge back over time.
+At its core, context-db solves the context bloat problem. Large `CLAUDE.md` and
+`AGENTS.md` files loaded every session hurt agent performance — but agents still
+need project-specific knowledge to produce correct code. context-db uses YAML
+frontmatter descriptions and a small bash script to mimic a vendor-supported
+discovery subsystem, leveraging the filesystem as a simple tree structure for
+logarithmic progressive disclosure. Agents navigate to what they need and skip
+the rest.
 
 ## Why context-db
 
+- **Minimal.** Only stores knowledge agents can't derive from reading code —
+  conventions, pitfalls, design rationale, domain knowledge. Everything else is
+  noise.
 - **Hierarchical.** Nested folders support progressive disclosure — agents read
   one TOC at a time and go deeper only when needed.
 - **Lightweight.** Plain Markdown with frontmatter. No special tooling, no
@@ -17,6 +23,55 @@ can write knowledge back over time.
 - **Scales.** Each TOC stays small (5–10 items by convention), so the knowledge
   base can grow to hundreds of documents while any navigation step stays cheap.
   The amount an agent reads is logarithmic relative to the total size.
+
+## The context problem
+
+> ["To alcohol! The cause of, and solution to, all of life's problems."](https://www.youtube.com/watch?v=SXyrYMxa-VI)
+> — Homer Simpson
+
+Much like Homer's relationship with alcohol, context files are both the cause
+of, and solution to, many agent problems.
+
+There is [increasing discussion](https://arxiv.org/abs/2502.11988) about whether
+repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
+help agent performance or hurt it. The findings are uncomfortable: agents given
+context files that describe code state tend to trust those descriptions, read
+less actual code, and perform _worse_ when the descriptions drift even slightly.
+The cost goes up, the success rate goes down.
+
+And yet — anyone who has worked with coding agents on a real project knows the
+agent needs _something_. Agents left to read source files with no guidance will
+default to their training: generic naming conventions, standard patterns, no
+awareness of project-specific constraints or the mistakes the agent will make in
+a given domain. The result is code that compiles and passes basic tests but
+doesn't match how the project actually works. Conventions, non-obvious pitfalls,
+design rationale that isn't in the code — these things genuinely help agents
+produce correct changes on the first try.
+
+This is a tough needle to thread. The `context-db-manual` SKILL.md tries to
+address it head-on:
+
+> **Context files describing information an agent can determine by using `find`,
+> `grep`, and `read` can be harmful to agent performance.** Only document what
+> the code can't tell you.
+
+The principle: context-db should contain the _delta_ — the gap between what the
+code shows and what the agent needs to know. Conventions the agent wouldn't
+infer. Pitfalls it will hit. Rationale that isn't visible in the source.
+Everything else — code summaries, architecture descriptions, module inventories
+— is noise that displaces code the agent could read instead.
+
+The hierarchical structure helps too. A flat 5,000-line `CLAUDE.md` loaded every
+session forces every agent to read through database indexing rules when it's
+working on CSS. The B-tree means agents navigate to relevant topics and skip the
+rest — the context cost is proportional to the task, not the total knowledge
+base.
+
+Keeping context-db healthy requires active maintenance. The
+[`/context-db-maintain`](#maintenance-skills) skill exists for this — its
+default posture is to cut, leaving the knowledge base smaller and sharper after
+each pass. Without regular maintenance, any knowledge base drifts toward the
+bloated state it was designed to avoid.
 
 ## Folder Structure
 
@@ -33,12 +88,14 @@ your-project/
 │       │   └── scripts/context-db-generate-toc.sh
 │       ├── context-db-reindex/            ← skill: reindex descriptions
 │       │   └── SKILL.md
-│       └── context-db-maintain/              ← skill: maintain (cut, fix, reindex)
+│       └── context-db-maintain/           ← skill: maintain (cut, fix, reindex)
 │           └── SKILL.md
 └── context-db/
     ├── <project-name>-project/            ← project-specific knowledge
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
     │   ├── architecture.md                ← document (frontmatter + body)
+    │   ├── project-coding-standards/      ← project-specific conventions
+    │   │   └── project-coding-standards.md
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md
@@ -55,15 +112,24 @@ so the same knowledge can be shared across every project that uses context-db.
 Every folder has a `<folder-name>.md` file containing only YAML frontmatter —
 this is the folder's description shown in the TOC.
 
-## SessionStart Hook
+## Wiring It In
 
-The rule tells the agent to load the skill, but rules alone aren't always
-reliable — the agent can skip or deprioritize them. The `SessionStart` hook
-(`templates/hooks/session-start-context-db.sh`) solves this by injecting a
-mandatory instruction into the conversation context before the first turn,
-ensuring `/context-db-manual` is loaded every time Claude Code starts up.
+An agent needs a minimal instruction set to use context-db — how to run the TOC
+script, when to read vs skip, and what to update. This is packaged as a
+**skill** (`.claude/skills/context-db-manual/`), which conveniently bundles the
+TOC script in its `scripts/` directory. When loaded, the agent gets everything
+it needs.
 
-Wire it up in `.claude/settings.local.json`:
+Skill preloading mechanisms alone aren't always reliable enough to ensure the
+agent reads the instructions on startup. Two stronger options:
+
+A **rule** (`.claude/rules/context-db.md`) tells the agent to load the skill at
+the start of every conversation. Rules fire automatically — no user action
+needed.
+
+A **SessionStart hook** (`templates/hooks/session-start-context-db.sh`) is even
+stronger — it injects the instruction into the conversation context before the
+first turn, ensuring the agent reads it every time:
 
 ```json
 {
@@ -83,21 +149,8 @@ Wire it up in `.claude/settings.local.json`:
 }
 ```
 
-## Wiring It In
-
-Two pieces: a **skill** and a **rule** (plus the optional hook above).
-
-The **skill** (`.claude/skills/context-db-manual/`) contains the full
-instructions for reading, writing, and maintaining context-db. It bundles the
-TOC script. When loaded, the agent gets everything it needs.
-
-The **rule** (`.claude/rules/context-db.md`) tells the agent that this project
-uses context-db and to load the skill at the start of every conversation. Rules
-load automatically — no user action needed.
-
-The skill+rule split tested better because the rule fires automatically and the
-skill keeps detailed instructions out of context until needed. But anything that
-bootstraps the agent works. Alternative approaches:
+Any mechanism that gets the SKILL.md content in front of the agent works.
+Alternative approaches:
 
 - **`AGENTS.md` or `CLAUDE.md`** — paste the SKILL.md content (or a summary)
   directly. Works with any agent framework.
@@ -106,54 +159,7 @@ bootstraps the agent works. Alternative approaches:
   conversation.
 - **Just the script** — place `context-db-generate-toc.sh` somewhere accessible
   (e.g. `bin/`) and tell the agent where it is and how to use it via whatever
-  instruction mechanism you have.
-
-## The context problem
-
-> ["To alcohol! The cause of, and solution to, all of life's problems."](https://www.youtube.com/watch?v=SXyrYMxa-VI)
-> — Homer Simpson
-
-Much like Homer's relationship with alcohol, context files are both the cause
-of, and solution to, many agent problems.
-
-There is [increasing discussion](https://arxiv.org/abs/2502.11988) about whether
-repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
-help agent performance or hurt it. The findings are uncomfortable: agents given
-context files that describe code state tend to trust those descriptions, read
-less actual code, and perform _worse_ when the descriptions drift even slightly.
-The cost goes up, the success rate goes down.
-
-And yet — anyone who has worked with coding agents on a real project knows you
-need _something_. Agents left to read source files with no guidance will default
-to their training: generic naming conventions, standard patterns, no awareness
-of your project's specific constraints or the mistakes they'll make in your
-domain. They'll produce code that compiles and passes basic tests but doesn't
-match how your project actually works. Conventions, non-obvious pitfalls, design
-rationale that isn't in the code — these things genuinely help agents produce
-correct changes on the first try.
-
-This is a tough needle to thread. The `context-db-manual` SKILL.md tries to
-address it head-on:
-
-> **Context files describing information an agent can determine by using `find`,
-> `grep`, and `read` can be harmful to agent performance.** Only document what
-> the code can't tell you.
-
-The principle is: context-db should contain the _delta_ — the gap between what
-the code shows and what the agent needs to know. Conventions the agent wouldn't
-infer. Pitfalls it will hit. Rationale that isn't visible in the source.
-Everything else — code summaries, architecture descriptions, module inventories
-— is noise that displaces code the agent could read instead.
-
-The hierarchical structure helps too. A flat 5,000-line `CLAUDE.md` loaded every
-session forces every agent to read through database indexing rules when it's
-working on CSS. The B-tree means agents navigate to relevant topics and skip the
-rest — the context cost is proportional to the task, not the total knowledge
-base.
-
-Whether this actually works is an open question — one we're
-[actively testing](guide/efficacy.md). But the design is intentional: small,
-corrective, on-demand, and always subordinate to the code.
+  instruction mechanism is available.
 
 ## Getting Started
 
@@ -162,7 +168,7 @@ corrective, on-demand, and always subordinate to the code.
 2. Copy `templates/rules/context-db.md` into `.claude/rules/context-db.md` (or
    symlink it).
 3. Copy `templates/hooks/session-start-context-db.sh` into `.claude/hooks/` and
-   wire it up in `.claude/settings.local.json` (see SessionStart Hook above).
+   wire it up in `.claude/settings.local.json` (see Wiring It In above).
 4. Create `context-db/` in your project and start adding knowledge.
 
 ## Private or Public
@@ -179,7 +185,7 @@ templates/                           Copy these into your project
   hooks/session-start-context-db.sh  SessionStart hook template
   skills/context-db-manual/          Skill template (instructions + TOC script)
   skills/context-db-reindex/         Reindex skill template
-  skills/context-db-maintain/      Maintain skill template
+  skills/context-db-maintain/        Maintain skill template
 context-db/                          This project's own knowledge database
 example/                             Example project structure
 docs/                                GitHub Pages documentation
