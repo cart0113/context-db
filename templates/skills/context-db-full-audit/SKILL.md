@@ -96,8 +96,9 @@ Do not ask a question and then answer it yourself in the same turn.
 
 ### Phase 1: Structural health
 
-Enforce logarithmic progressive disclosure — each folder level should halve the
-search space so agents navigate a decision tree, not scan a flat list.
+Enforce B-tree structure — 5–10 items per folder, 2–3 levels deep. Agents read
+descriptions at each level and branch into the relevant folder, narrowing by
+5–10x per level.
 
 **Target: 5–10 items per folder.** This is the core structural invariant.
 Actively restructure to achieve it — create subfolders, merge sparse folders,
@@ -110,8 +111,8 @@ flatten deep nesting. The goal is a tree where an agent reaches any document in
 - **Too few items (1–2 files):** Merge upward into the parent folder.
 - **Too deep (>3–4 levels):** Flatten. Wide and shallow beats narrow and deep.
 - **Missing folder descriptors:** Every subfolder needs `<folder-name>.md`.
-  Exception: do not create `context-db/context-db.md` — the root folder does not
-  need a descriptor.
+- **Delete `context-db/context-db.md` if it exists.** The root folder does not
+  need a descriptor — this file is never read and wastes tokens.
 - **Orphaned files:** Files that don't fit the theme of their parent folder.
 - **Vague descriptions.** Descriptions are routing decisions — an agent reads
   them to decide whether to drill into a folder or file. A description like
@@ -275,8 +276,13 @@ sake of changing them.
 
 ## Verify
 
-After all changes, run the TOC script on affected folders to confirm the output:
+After all changes (including reindex), run the TOC script on **every folder and
+subfolder** to catch YAML frontmatter problems — missing descriptions, parse
+errors, malformed fields. Broken YAML means the description won't render and
+agents can't navigate.
 
 ```
-.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh <folder>
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
+
+Then run it on each subfolder individually. Fix any issues found.

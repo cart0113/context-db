@@ -96,11 +96,16 @@ After all files are updated, revisit each `<folder-name>.md`:
 
 ### 5. Verify
 
-Run the TOC script on each affected folder to confirm the output looks correct:
+Run the TOC script on the target path and on **every subfolder individually** to
+catch YAML frontmatter problems — missing descriptions, parse errors, malformed
+fields. Broken YAML means the description won't render and agents can't
+navigate.
 
 ```
-.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh <folder>
+.claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
+
+Fix any issues found before finishing.
 
 ## How to write descriptions
 

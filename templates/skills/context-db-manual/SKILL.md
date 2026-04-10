@@ -1,64 +1,67 @@
 ---
 name: context-db-manual
 description:
-  'How to use context-db, a markdown knowledge base containing all project
-  context, standards, and knowledge.'
+  'How to use context-db, a markdown knowledge base containing project context,
+  architecture, gotchas, and design decisions.'
 allowed-tools: Bash Read
 ---
 
-`context-db/` is the project's knowledge base — gotchas, design decisions,
-cross-file connections, and what already exists. Checked into the repo,
-available to every agent, every session.
+`context-db/` is this project's knowledge base. It documents architecture,
+gotchas, design decisions, and cross-file connections — things you can't learn
+from reading any single file. It does not contain everything — it's a starting
+point, a map, a hint — but it helps you orient yourself in a project quickly.
 
-Every `.md` file has YAML frontmatter with a `description` field. The TOC script
-reads descriptions so you can browse without opening every file.
+## Reading
 
-## How to read it
+Browse what's available with the TOC script:
 
 ```
 .claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
 
-Read relevant topics. Skip what's clearly irrelevant.
-
-**Context-db is a hint, not truth.** It can be stale, incomplete, or wrong. It
-gives you a map — you still have to read the code. If it names a file, check it
-exists. If it points to a reference implementation, read that implementation
-end-to-end. If it conflicts with the code, trust the code.
-
-## First, do no harm
-
-Context-db gives agents confidence. Confidence reduces code reading. If
-context-db is wrong, stale, or too instructional, the agent makes mistakes it
-wouldn't have made without it. Keep it small. Keep it current. Point to code,
-don't replace it.
-
-## What belongs
-
-A map, not a substitute for reading. Small and focused beats comprehensive.
-
-- **What exists.** Subsystem inventory. Prevents reimplementation.
-- **Where to look.** File landmarks, reference implementations to follow.
-- **What breaks.** Gotchas, ripple effects, non-obvious files that must change
-  together but won't show up in a grep.
-- **Why.** Design rationale invisible in the code.
-
-## What does NOT belong
-
-- **Code summaries.** The agent reads the source.
-- **Step-by-step instructions.** The agent reads reference implementations.
-  Instructions create blind spots — the agent follows steps and misses anything
-  not listed.
-- **API signatures, module layouts.** `ls`, `grep`, and docstrings are better.
+Every file and folder has a `description` in its YAML frontmatter. By calling
+the TOC script on a folder, you get a list of descriptions for every file and
+subfolder in that folder. Use these descriptions to decide what to read next and
+what to skip — drill into topics relevant to your task, ignore the rest. You do
+not need to read every file in a folder, only the ones that are relevant based
+on their `description` frontmatter.
 
 ## Format
 
-Every `.md` needs frontmatter with a `description` — this is the routing
-decision an agent uses to skip or read the file. Be specific: "cli/core split,
-tool execution flow, model routing" not "Architecture overview."
+Every `.md` file needs YAML frontmatter with a `description` field. This is the
+routing decision — an agent reads it to decide whether to open the file. Be
+specific: "scheduler tool execution flow, budget enforcement hook" not
+"Architecture overview."
 
 Two types: documents (frontmatter + body) and folder descriptors (frontmatter
 only, named `<folder-name>.md`).
 
-Keep 5-10 items per folder. After changes, rewrite descriptions and run the TOC
-script to verify.
+Keep 5–10 items per folder. After changes, run the TOC script on the containing
+folder to verify. Context-db is a B-tree — agents read descriptions at each
+level and branch into the relevant folder, narrowing by 5–10x per level. An
+agent should reach any topic in 2–3 navigation steps.
+
+## Updating
+
+After completing a coding task, update context-db with what you learned that
+would help the next agent working in this area. The main goal is to make things
+easier for the next agent. Record critical information, but be concise — useful
+for the next LLM who has to cover the same code or problem.
+
+Update existing files when they cover the topic. Create new files for new
+topics. Keep notes concise — every token costs.
+
+Reorganize files/folders and create hierarchy when a folder gets too big.
+Maintain the B-tree property — 5–10 items per level, 2–3 levels deep.
+
+## What belongs
+
+- **What exists.** Subsystem inventory. Prevents reimplementation.
+- **Where to look.** File landmarks, reference implementations.
+- **What breaks.** Gotchas, ripple effects, files that must change together.
+- **Why.** Design rationale invisible in the code.
+
+## What does NOT belong
+
+- Code summaries, API signatures, module layouts — the agent reads the source.
+- Step-by-step instructions — point to reference implementations instead.
