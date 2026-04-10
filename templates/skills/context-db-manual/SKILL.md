@@ -2,14 +2,19 @@
 name: context-db-manual
 description:
   'How to use context-db, a markdown knowledge base containing project context,
-  architecture, gotchas, and design decisions.'
+  design decisions, conventions to follow, cross-file connections, common
+  pitfalls, etc.'
 allowed-tools: Bash Read
 ---
 
-`context-db/` is this project's knowledge base. It documents architecture,
-gotchas, design decisions, and cross-file connections — things you can't learn
-from reading any single file. It does not contain everything — it's a starting
-point, a map, a hint — but it helps you orient yourself in a project quickly.
+`context-db/` is this project's knowledge base — conventions, design decisions,
+cross-file connections, and common pitfalls. Things you can't derive from
+reading the code alone. It's a starting point, not a complete picture.
+
+Context about the code that can be inferred by reading the code is often harmful
+— it gives agents confidence to skip reading, and when it drifts, they make
+mistakes they wouldn't have made without it. Only document what the code can't
+tell you.
 
 ## Reading
 
@@ -19,52 +24,64 @@ Browse what's available with the TOC script:
 .claude/skills/context-db-manual/scripts/context-db-generate-toc.sh context-db/
 ```
 
-Every file and folder has a `description` in its YAML frontmatter. By calling
-the TOC script on a folder, you get a list of descriptions for every file and
-subfolder in that folder. Use these descriptions to decide what to read next and
-what to skip — drill into topics relevant to your task, ignore the rest. You do
-not need to read every file in a folder, only the ones that are relevant based
-on their `description` frontmatter.
-
-## Format
-
-Every `.md` file needs YAML frontmatter with a `description` field. This is the
-routing decision — an agent reads it to decide whether to open the file. Be
-specific: "scheduler tool execution flow, budget enforcement hook" not
-"Architecture overview."
-
-Two types: documents (frontmatter + body) and folder descriptors (frontmatter
-only, named `<folder-name>.md`).
-
-Keep 5–10 items per folder. Keep files between 50–150 lines, 200 max. If a file
-exceeds 200 lines, split it into a subfolder with the same name — the file
-becomes the folder descriptor and the content splits into smaller files. After
-changes, run the TOC script on the containing folder to verify. Context-db is a
-B-tree — agents read descriptions at each level and branch into the relevant
-folder, narrowing by 5–10x per level. An agent should reach any topic in 2–3
-navigation steps.
+Every file and folder has a `description` in its YAML frontmatter. The TOC
+script lists descriptions for every file and subfolder in a folder. Use them to
+decide what to read and what to skip — drill into relevant topics, ignore the
+rest. Context-db is a B-tree: agents read descriptions at each level and branch
+into the relevant folder, narrowing by 5–10x per level. Any topic should be
+reachable in 2–3 navigation steps.
 
 ## Updating
 
-After completing a coding task, update context-db with what you learned that
-would help the next agent working in this area. The main goal is to make things
-easier for the next agent. Record critical information, but be concise — useful
-for the next LLM who has to cover the same code or problem.
+After completing a coding task, update context-db only if you encountered
+something that would mislead the next agent — a non-obvious dependency, a
+constraint invisible in the code, a convention the agent wouldn't know, or a
+correction from the user. Do not summarize what the code does; the next agent
+reads the code.
 
-Update existing files when they cover the topic. Create new files for new
-topics. Keep notes concise — every token costs.
+Update existing files when they cover the topic. Create new files only for
+genuinely new pitfalls or conventions. Delete content that has drifted into code
+summary. A smaller, accurate context-db outperforms a larger, comprehensive one.
 
-Reorganize files/folders and create hierarchy when a folder gets too big.
-Maintain the B-tree property — 5–10 items per level, 2–3 levels deep.
+Every `.md` file needs YAML frontmatter with a `description` field — this is the
+routing decision agents use to decide whether to open the file. Be specific:
+"scheduler execution flow, budget enforcement hook" not "Architecture overview."
+Two types: documents (frontmatter + body) and folder descriptors (frontmatter
+only, named `<folder-name>.md`). Every subfolder needs a folder descriptor — it
+summarizes what the folder contains so agents can decide whether to drill in.
+The root `context-db/` folder does not get one; it is never read.
+
+Structure: 5–10 items per folder, target 50–150 lines per file, 200 max. If a
+file exceeds 200 lines, split it into a subfolder with the same name — the file
+becomes the folder descriptor and content splits into smaller files. After
+changes, run the TOC script to verify.
 
 ## What belongs
 
-- **What exists.** Subsystem inventory. Prevents reimplementation.
-- **Where to look.** File landmarks, reference implementations.
-- **What breaks.** Gotchas, ripple effects, files that must change together.
-- **Why.** Design rationale invisible in the code.
+_"Would removing this cause the next agent to make a mistake, even after reading
+the code?"_ If not, leave it out.
+
+- **Conventions.** How this project does things — naming, patterns, structure,
+  tooling choices. Without these, agents default to their training and produce
+  code that works but doesn't match the project.
+- **Corrections.** Corrections to an agent mid-task, or instructions you find
+  yourself repeating — proven knowledge the agent couldn't derive from code.
+- **Pitfalls.** Ripple effects, files that must change together but aren't
+  linked by imports, non-obvious ordering constraints, silent failures.
+- **Rationale.** Design decisions invisible in the code — constraints,
+  trade-offs, choices that would look wrong without context.
+- **Domain knowledge.** Protocols or concepts specific to this project's domain
+  that models weren't trained on.
 
 ## What does NOT belong
 
-- Code summaries, API signatures, module layouts — the agent reads the source.
-- Step-by-step instructions — point to reference implementations instead.
+Every token of context-db displaces a token of code the agent could read. When
+in doubt, leave it out.
+
+- **Code state** — what exists, what it does, how it's structured. These
+  descriptions drift, and agents trusting stale descriptions make worse mistakes
+  than agents reading code fresh.
+- **Step-by-step instructions** — agents follow the steps, stop reading, and
+  miss anything not listed. Point to a reference implementation instead.
+- **Anything derivable in 30 seconds** — if `ls`, `grep`, or reading one file
+  would reveal it, it doesn't belong.
