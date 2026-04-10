@@ -110,6 +110,10 @@ flatten deep nesting. The goal is a tree where an agent reaches any document in
   ask before making changes.
 - **Too few items (1–2 files):** Merge upward into the parent folder.
 - **Too deep (>3–4 levels):** Flatten. Wide and shallow beats narrow and deep.
+- **File too long (>200 lines):** Split into a subfolder with the same name —
+  the file becomes the folder descriptor and the content splits into smaller
+  files. Target 50–150 lines per file. When an agent reads a file, it reads the
+  whole thing — oversized files waste tokens on content irrelevant to the task.
 - **Missing folder descriptors:** Every subfolder needs `<folder-name>.md`.
 - **Delete `context-db/context-db.md` if it exists.** The root folder does not
   need a descriptor — this file is never read and wastes tokens.

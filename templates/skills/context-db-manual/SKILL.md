@@ -36,10 +36,13 @@ specific: "scheduler tool execution flow, budget enforcement hook" not
 Two types: documents (frontmatter + body) and folder descriptors (frontmatter
 only, named `<folder-name>.md`).
 
-Keep 5–10 items per folder. After changes, run the TOC script on the containing
-folder to verify. Context-db is a B-tree — agents read descriptions at each
-level and branch into the relevant folder, narrowing by 5–10x per level. An
-agent should reach any topic in 2–3 navigation steps.
+Keep 5–10 items per folder. Keep files between 50–150 lines, 200 max. If a file
+exceeds 200 lines, split it into a subfolder with the same name — the file
+becomes the folder descriptor and the content splits into smaller files. After
+changes, run the TOC script on the containing folder to verify. Context-db is a
+B-tree — agents read descriptions at each level and branch into the relevant
+folder, narrowing by 5–10x per level. An agent should reach any topic in 2–3
+navigation steps.
 
 ## Updating
 
