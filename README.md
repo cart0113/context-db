@@ -148,9 +148,11 @@ produce correct changes on the first try.
 This is a tough needle to thread. The `context-db-manual` SKILL.md tries to
 address it head-on:
 
-> **Context files describing information an agent can determine by using `find`,
-> `grep`, and `read` can be harmful to agent performance.** Only document what
-> the code can't tell you.
+```
+Context files describing information an agent can determine by using
+find, grep, and read can be harmful to agent performance. Only document
+what the code can't tell you.
+```
 
 The principle: context-db should contain the _delta_ — the gap between what the
 code shows and what the agent needs to know. Conventions the agent wouldn't
