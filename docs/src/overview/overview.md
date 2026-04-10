@@ -103,23 +103,22 @@ Alternative approaches:
 
 ## Private or Public
 
-Folders can be private (added to `.gitignore`). The `context-db-generate-toc.sh`
-script runs dynamically, so private folders appear in the TOC for local sessions
-but never get committed.
-
-## Repo Structure
+Folders can be private or symlinked from outside the repo. The TOC script runs
+dynamically, so anything it finds at runtime appears in the agent's navigation —
+whether it's committed, gitignored, or symlinked.
 
 ```
-templates/                           Copy these into your project
-  rules/context-db.md                Rule template
-  hooks/session-start-context-db.sh  SessionStart hook template
-  skills/context-db-manual/          Skill template (instructions + TOC script)
-  skills/context-db-reindex/         Reindex skill template
-  skills/context-db-maintain/        Maintain skill template
-context-db/                          This project's own knowledge database
-example/                             Example project structure
-docs/                                GitHub Pages documentation
+context-db/
+├── acme-project/                     ← committed, shared with team
+├── my-notes/                         ← gitignored, local only
+├── coding-standards/                 ← symlinked from ~/standards/coding
+└── infrastructure/                   ← symlinked from ../shared-infra/context-db/infra
 ```
+
+Add private folders to `.gitignore` — they appear in local TOC output but never
+get committed. Symlink shared knowledge from a personal standards repo or a
+team-wide infrastructure repo to avoid duplicating context across projects. See
+[Cross-Project Sharing](guide/cross-project-sharing.md) for patterns.
 
 ## The context problem
 
