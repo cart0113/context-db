@@ -13,16 +13,13 @@ the rest.
 
 ## Why context-db
 
-- **Minimal.** Only stores knowledge agents can't derive from reading code —
-  conventions, pitfalls, design rationale, domain knowledge. Everything else is
-  noise.
-- **Hierarchical.** Nested folders support progressive disclosure — agents read
-  one TOC at a time and go deeper only when needed.
-- **Lightweight.** Plain Markdown with frontmatter. No special tooling, no
-  service scripts, no vendor lock-in.
-- **Scales.** Each TOC stays small (5–10 items by convention), so the knowledge
-  base can grow to hundreds of documents while any navigation step stays cheap.
-  The amount an agent reads is logarithmic relative to the total size.
+- **Minimal by design.** Only stores what agents can't derive from code —
+  conventions, pitfalls, rationale, domain knowledge.
+- **Hierarchical.** Filesystem as a B-tree. Agents read frontmatter descriptions
+  at each level and branch into what's relevant, skipping everything else.
+- **Logarithmic cost.** 5–10 items per folder. Hundreds of documents, but any
+  navigation step is cheap — the amount read scales with the task, not the total
+  knowledge base.
 
 ## The context problem
 
