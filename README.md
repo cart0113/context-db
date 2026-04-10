@@ -129,7 +129,7 @@ docs/                                GitHub Pages documentation
 Much like Homer's relationship with alcohol, context files are both the cause
 of, and solution to, many agent problems.
 
-There is [increasing discussion](https://arxiv.org/abs/2502.11988) about whether
+There is [increasing discussion](https://arxiv.org/abs/2602.11988) about whether
 repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
 help agent performance or hurt it. The findings are uncomfortable: agents given
 context files that describe code state tend to trust those descriptions, read
