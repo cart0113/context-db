@@ -91,8 +91,7 @@ your-project/
     ├── <project-name>-project/            ← project-specific knowledge
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
     │   ├── architecture.md                ← document (frontmatter + body)
-    │   ├── project-coding-standards/      ← project-specific conventions
-    │   │   └── project-coding-standards.md
+    │   ├── project-coding-standards.md     ← project-specific conventions
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md
