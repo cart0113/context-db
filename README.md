@@ -114,14 +114,16 @@ whether it's committed, gitignored, or symlinked.
 context-db/
 ├── acme-project/                     ← committed, shared with team
 ├── my-notes/                         ← gitignored, local only
-├── coding-standards/                 ← symlinked from ~/standards/coding
-└── infrastructure/                   ← symlinked from ../shared-infra/context-db/infra
+├── coding-standards/                 ← symlink, gitignored (personal standards)
+├── team-standards/                   ← symlink, committed (git submodule)
+└── infrastructure/                   ← symlink, committed (shared mono-repo)
 ```
 
-Add private folders to `.gitignore` — they appear in local TOC output but never
-get committed. Symlink shared knowledge from a personal standards repo or a
-team-wide infrastructure repo to avoid duplicating context across projects. See
-[Cross-Project Sharing](guide/cross-project-sharing.md) for patterns.
+Private symlinks (added to `.gitignore`) can point anywhere — a personal
+standards repo, a local folder. Committed symlinks need to resolve for all team
+members: use a git submodule, a sibling repo at a known relative path, or a
+mono-repo. See [Cross-Project Sharing](guide/cross-project-sharing.md) for
+patterns.
 
 ## The context problem
 
