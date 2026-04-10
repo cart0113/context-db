@@ -1,9 +1,9 @@
 ---
 name: context-db-manual
 description:
-  'How to use context-db, a markdown knowledge base containing project context,
-  design decisions, conventions to follow, cross-file connections, common
-  pitfalls, etc.'
+  'How to use context-db — load this skill fully on startup. Markdown knowledge
+  base containing project context, conventions, design decisions, cross-file
+  connections, common pitfalls, etc.'
 allowed-tools: Bash Read
 ---
 
@@ -33,11 +33,11 @@ reachable in 2–3 navigation steps.
 
 ## Updating
 
-After completing a coding task, update context-db only if you encountered
-something that would mislead the next agent — a non-obvious dependency, a
-constraint invisible in the code, a convention the agent wouldn't know, or a
-correction from the user. Do not summarize what the code does; the next agent
-reads the code.
+After completing a task, update context-db only if you encountered something
+that would mislead the next agent — a non-obvious dependency, a constraint
+invisible in the code, a convention the agent wouldn't know, or a correction
+from the user. Do not summarize what the code does; the next agent reads the
+code.
 
 Update existing files when they cover the topic. Create new files only for
 genuinely new pitfalls or conventions. Delete content that has drifted into code
