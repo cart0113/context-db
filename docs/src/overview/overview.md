@@ -108,48 +108,52 @@ bootstraps the agent works. Alternative approaches:
   (e.g. `bin/`) and tell the agent where it is and how to use it via whatever
   instruction mechanism you have.
 
-## The `context-db-manual` SKILL.md
+## The context problem
 
-The SKILL.md is the core instruction set — the prompt that teaches an agent how
-to use `context-db`. Its design reflects a specific failure mode that the
-broader AI coding community has documented: **agents that trust cached knowledge
-over current code**.
+> ["To alcohol! The cause of, and solution to, all of life's problems."](https://www.youtube.com/watch?v=SXyrYMxa-VI)
+> — Homer Simpson
 
-Claude Code's own memory system
-[treats memory as a hint, not truth](https://read.engineerscodex.com/p/diving-into-claude-codes-source-code).
-Memory accelerates — it tells the agent where to look — but the agent verifies
-before acting. The `context-db-manual` SKILL.md follows the same philosophy.
+Much like Homer's relationship with alcohol, context files are both the cause
+of, and solution to, many agent problems.
 
-**"Hint, not truth" framing.** The SKILL.md opens with an explicit statement
-that `context-db` can be stale, incomplete, or wrong. Without this, agents treat
-context files as authoritative and skip code reading — the ETH Zurich AGENTS.md
-study found this makes agents _worse_, not better. The framing prevents
-`context-db` from becoming the problem it exists to solve.
+There is [increasing discussion](https://arxiv.org/abs/2502.11988) about whether
+repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
+help agent performance or hurt it. The findings are uncomfortable: agents given
+context files that describe code state tend to trust those descriptions, read
+less actual code, and perform _worse_ when the descriptions drift even slightly.
+The cost goes up, the success rate goes down.
 
-**Verify-before-acting checklist.** If `context-db` names a file path, check it
-exists. If it names a function, grep for it. If it describes architecture, read
-the actual modules. This is borrowed directly from how Claude Code's memory
-system handles stale claims — verification is not optional, it's built into the
-workflow.
+And yet — anyone who has worked with coding agents on a real project knows you
+need _something_. Agents left to read source files with no guidance will default
+to their training: generic naming conventions, standard patterns, no awareness
+of your project's specific constraints or the mistakes they'll make in your
+domain. They'll produce code that compiles and passes basic tests but doesn't
+match how your project actually works. Conventions, non-obvious pitfalls, design
+rationale that isn't in the code — these things genuinely help agents produce
+correct changes on the first try.
 
-**"Never skip code reading."** The most dangerous failure mode is an agent that
-reads `context-db`, feels oriented, and never opens the source files. The
-SKILL.md guards against this with an explicit prohibition and a two-step
-workflow: read `context-db` first (for orientation), then read the code (for
-truth). Both steps are required.
+This is a tough needle to thread. The `context-db-manual` SKILL.md tries to
+address it head-on:
 
-**"What does NOT belong" guardrails.** Every line of `context-db` costs tokens.
-The SKILL.md explicitly excludes code summaries, API signatures, module layouts,
-and anything the code already makes obvious. This prevents context rot — the
-gradual accumulation of verbose, redundant content that degrades agent
-performance. The Chroma "Context Rot" research and the ETH Zurich study both
-found that more context tokens make agents worse when the content is redundant
-with what the agent could discover on its own.
+> **Context files describing information an agent can determine by using `find`,
+> `grep`, and `read` can be harmful to agent performance.** Only document what
+> the code can't tell you.
 
-**Workflow ordering.** `context-db` first, then code. Not because `context-db`
-is authoritative, but because blind code exploration wastes tokens. `context-db`
-narrows the search space so the agent reads the right files instead of grepping
-the entire codebase. The ordering is about efficiency, not trust.
+The principle is: context-db should contain the _delta_ — the gap between what
+the code shows and what the agent needs to know. Conventions the agent wouldn't
+infer. Pitfalls it will hit. Rationale that isn't visible in the source.
+Everything else — code summaries, architecture descriptions, module inventories
+— is noise that displaces code the agent could read instead.
+
+The hierarchical structure helps too. A flat 5,000-line `CLAUDE.md` loaded every
+session forces every agent to read through database indexing rules when it's
+working on CSS. The B-tree means agents navigate to relevant topics and skip the
+rest — the context cost is proportional to the task, not the total knowledge
+base.
+
+Whether this actually works is an open question — one we're
+[actively testing](guide/efficacy.md). But the design is intentional: small,
+corrective, on-demand, and always subordinate to the code.
 
 ## Getting Started
 

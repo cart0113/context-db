@@ -7,14 +7,14 @@ description:
 allowed-tools: Bash Read
 ---
 
-`context-db/` is this project's knowledge base — conventions, design decisions,
-cross-file connections, and common pitfalls. Things you can't derive from
-reading the code alone. It's a starting point, not a complete picture.
+`context-db/` is this project's knowledge base. It documents architecture,
+gotchas, design decisions, and cross-file connections — things you can't learn
+from reading any single file. It does not contain everything — it's a starting
+point, a map, a hint — but it helps you orient yourself in a project quickly.
 
-Context about the code that can be inferred by reading the code is often harmful
-— it gives agents confidence to skip reading, and when it drifts, they make
-mistakes they wouldn't have made without it. Only document what the code can't
-tell you.
+**Context files describing information an agent can determine by using `find`,
+`grep`, and `read` can be harmful to agent performance.** Only document what the
+code can't tell you.
 
 ## Reading
 
