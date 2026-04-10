@@ -13,13 +13,14 @@ the rest.
 
 ## Why context-db
 
-- **Minimal by design.** Only stores what agents can't derive from code —
-  conventions, pitfalls, rationale, domain knowledge.
+- **Minimal by convention, not constraint.** Skill instructions tell agents what
+  to store — conventions, pitfalls, rationale, domain knowledge — and the
+  `/context-db-maintain` skill actively prunes. Like any codebase convention, it
+  works when the project maintainer enforces it.
 - **Hierarchical.** Filesystem as a B-tree. Agents read frontmatter descriptions
   at each level and branch into what's relevant, skipping everything else.
-- **Logarithmic cost.** 5–10 items per folder. Hundreds of documents, but any
-  navigation step is cheap — the amount read scales with the task, not the total
-  knowledge base.
+- **Logarithmic cost.** 5–10 items per folder, ~100 lines per file. The amount
+  read scales with the task, not the total knowledge base.
 
 ## Folder Structure
 
