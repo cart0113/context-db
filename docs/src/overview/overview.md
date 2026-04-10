@@ -184,9 +184,10 @@ purpose is genuinely ambiguous. Accepts an optional folder path to scope the
 reindex.
 
 **`/context-db-maintain`** — Maintain the knowledge base: cut stale or low-value
-content, fix structural problems and doc drift, check for coverage gaps, then
-reindex. Default posture is to cut — leave context-db smaller and sharper.
-Interactive by default. Accepts an optional folder path.
+content, remove content that can be derived from reading the code, fix
+structural problems and doc drift, check for coverage gaps, then reindex.
+Default posture is to cut — leave context-db smaller and sharper. Interactive by
+default. Accepts an optional folder path.
 
 Both skills live in `templates/skills/` and can be wired into any project the
 same way as the core `context-db-manual` skill.

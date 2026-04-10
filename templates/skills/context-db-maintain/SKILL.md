@@ -96,8 +96,9 @@ content directly. For ambiguous staleness, describe what looks off and ask.
 
 ### Phase 3: Content value — is every topic earning its tokens?
 
-Content describing code state is actively harmful — agents trust it, skip the
-code, and fail when it drifts. For each document, check three things.
+Content describing information an agent can determine by using `find`, `grep`,
+and `read` is actively harmful — agents trust it, skip the code, and fail when
+it drifts. For each document, check three things.
 
 #### Does it point to code or replace it?
 
