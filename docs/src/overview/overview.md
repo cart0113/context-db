@@ -90,8 +90,8 @@ your-project/
 └── context-db/
     ├── <project-name>-project/            ← project-specific knowledge
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
-    │   ├── architecture.md                ← document (frontmatter + body)
     │   ├── project-coding-standards.md     ← project-specific conventions
+    │   ├── architecture.md                ← document (frontmatter + body)
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md

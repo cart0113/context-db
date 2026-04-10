@@ -78,8 +78,8 @@ your-project/
 └── context-db/
     ├── project-name-project/                      ← main project context
     │   ├── project-name-project.md                ← folder description
-    │   ├── architecture.md                        ← context document
     │   ├── project-coding-standards.md             ← project-specific conventions
+    │   ├── architecture.md                        ← context document
     │   └── data-model/                            ← nested subfolder
     │       ├── data-model.md
     │       └── entities.md
