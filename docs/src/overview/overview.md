@@ -21,55 +21,6 @@ the rest.
   navigation step is cheap — the amount read scales with the task, not the total
   knowledge base.
 
-## The context problem
-
-> ["To alcohol! The cause of, and solution to, all of life's problems."](https://www.youtube.com/watch?v=SXyrYMxa-VI)
-> — Homer Simpson
-
-Much like Homer's relationship with alcohol, context files are both the cause
-of, and solution to, many agent problems.
-
-There is [increasing discussion](https://arxiv.org/abs/2502.11988) about whether
-repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
-help agent performance or hurt it. The findings are uncomfortable: agents given
-context files that describe code state tend to trust those descriptions, read
-less actual code, and perform _worse_ when the descriptions drift even slightly.
-The cost goes up, the success rate goes down.
-
-And yet — anyone who has worked with coding agents on a real project knows the
-agent needs _something_. Agents left to read source files with no guidance will
-default to their training: generic naming conventions, standard patterns, no
-awareness of project-specific constraints or the mistakes the agent will make in
-a given domain. The result is code that compiles and passes basic tests but
-doesn't match how the project actually works. Conventions, non-obvious pitfalls,
-design rationale that isn't in the code — these things genuinely help agents
-produce correct changes on the first try.
-
-This is a tough needle to thread. The `context-db-manual` SKILL.md tries to
-address it head-on:
-
-> **Context files describing information an agent can determine by using `find`,
-> `grep`, and `read` can be harmful to agent performance.** Only document what
-> the code can't tell you.
-
-The principle: context-db should contain the _delta_ — the gap between what the
-code shows and what the agent needs to know. Conventions the agent wouldn't
-infer. Pitfalls it will hit. Rationale that isn't visible in the source.
-Everything else — code summaries, architecture descriptions, module inventories
-— is noise that displaces code the agent could read instead.
-
-The hierarchical structure helps too. A flat 5,000-line `CLAUDE.md` loaded every
-session forces every agent to read through database indexing rules when it's
-working on CSS. The B-tree means agents navigate to relevant topics and skip the
-rest — the context cost is proportional to the task, not the total knowledge
-base.
-
-Keeping context-db healthy requires active maintenance. The
-[`/context-db-maintain`](#maintenance-skills) skill exists for this — its
-default posture is to cut, leaving the knowledge base smaller and sharper after
-each pass. Without regular maintenance, any knowledge base drifts toward the
-bloated state it was designed to avoid.
-
 ## Folder Structure
 
 ```
@@ -168,6 +119,55 @@ context-db/                          This project's own knowledge database
 example/                             Example project structure
 docs/                                GitHub Pages documentation
 ```
+
+## The context problem
+
+> ["To alcohol! The cause of, and solution to, all of life's problems."](https://www.youtube.com/watch?v=SXyrYMxa-VI)
+> — Homer Simpson
+
+Much like Homer's relationship with alcohol, context files are both the cause
+of, and solution to, many agent problems.
+
+There is [increasing discussion](https://arxiv.org/abs/2502.11988) about whether
+repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
+help agent performance or hurt it. The findings are uncomfortable: agents given
+context files that describe code state tend to trust those descriptions, read
+less actual code, and perform _worse_ when the descriptions drift even slightly.
+The cost goes up, the success rate goes down.
+
+And yet — anyone who has worked with coding agents on a real project knows the
+agent needs _something_. Agents left to read source files with no guidance will
+default to their training: generic naming conventions, standard patterns, no
+awareness of project-specific constraints or the mistakes the agent will make in
+a given domain. The result is code that compiles and passes basic tests but
+doesn't match how the project actually works. Conventions, non-obvious pitfalls,
+design rationale that isn't in the code — these things genuinely help agents
+produce correct changes on the first try.
+
+This is a tough needle to thread. The `context-db-manual` SKILL.md tries to
+address it head-on:
+
+> **Context files describing information an agent can determine by using `find`,
+> `grep`, and `read` can be harmful to agent performance.** Only document what
+> the code can't tell you.
+
+The principle: context-db should contain the _delta_ — the gap between what the
+code shows and what the agent needs to know. Conventions the agent wouldn't
+infer. Pitfalls it will hit. Rationale that isn't visible in the source.
+Everything else — code summaries, architecture descriptions, module inventories
+— is noise that displaces code the agent could read instead.
+
+The hierarchical structure helps too. A flat 5,000-line `CLAUDE.md` loaded every
+session forces every agent to read through database indexing rules when it's
+working on CSS. The B-tree means agents navigate to relevant topics and skip the
+rest — the context cost is proportional to the task, not the total knowledge
+base.
+
+Keeping context-db healthy requires active maintenance. The
+[`/context-db-maintain`](#maintenance-skills) skill exists for this — its
+default posture is to cut, leaving the knowledge base smaller and sharper after
+each pass. Without regular maintenance, any knowledge base drifts toward the
+bloated state it was designed to avoid.
 
 ## Maintenance Skills
 
