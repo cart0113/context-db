@@ -126,8 +126,8 @@ docs/                                GitHub Pages documentation
 > ["To alcohol! The cause of, and solution to, all of life's problems."](https://www.youtube.com/watch?v=SXyrYMxa-VI)
 > — Homer Simpson
 
-Much like Homer's relationship with alcohol, context files are both the cause
-of, and solution to, many agent problems.
+Similar to Homer's alcohol paradox, context files are both the cause of, and
+solution to, many agent problems.
 
 There is [increasing discussion](https://arxiv.org/abs/2602.11988) about whether
 repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
