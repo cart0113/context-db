@@ -5,21 +5,24 @@ LLM agents can discover and fetch only what they need.
 
 Large `CLAUDE.md` and `AGENTS.md` files loaded every session hurt agent
 performance — but agents still need project-specific knowledge to produce
-correct code. context-db mimics vendor-supported skill registration — every file
-gets a YAML `description` field — but organized hierarchically instead of
-linearly. A small bash script reads these descriptions to generate a table of
-contents for any folder. Agents navigate to what they need and skip the rest.
+correct code. Mimicking the SKILL.md frontmatter indexing system, context-db
+gives every file a YAML `description` field. However, files are organized in
+folders and subfolders, and a small bash script generates a table of contents
+for any folder — creating a filesystem-based discovery tree with logarithmic
+progressive disclosure. Agents navigate to what they need and skip the rest.
 
 ## Why context-db
 
+- **Hierarchical.** Filesystem as a B-tree. Agents read frontmatter descriptions
+  at each level and branch into what's relevant, skipping everything else.
+- **Logarithmic cost.** 5–10 items per folder, ~100 lines per file. The amount
+  read scales with the task, not the total knowledge base.
 - **Minimal.** Contains what agents can't derive from code — conventions,
   pitfalls, rationale, domain knowledge. Of course, this is by convention —
   context-db will contain whatever is put in it — but installed instructions
   provided by this project enforce these standards when agents generate the
   content, and the `/context-db-maintain` skill actively prunes content using
   this guidance.
-- **Logarithmic cost.** 5–10 items per folder, ~100 lines per file. The amount
-  read scales with the task, not the total knowledge base.
 
 ## Folder Structure
 
