@@ -3,11 +3,13 @@
 A minimal standard for organizing project knowledge as hierarchical Markdown so
 LLM agents can discover and fetch only what they need.
 
-At its core, context-db solves the context bloat problem. Large `CLAUDE.md` and
-`AGENTS.md` files loaded every session hurt agent performance — but agents still
-need project-specific knowledge to produce correct code. context-db leverages
-the filesystem as a tree structure for progressive disclosure. Agents navigate
-to what they need and skip the rest.
+Large `CLAUDE.md` and `AGENTS.md` files loaded every session hurt agent
+performance — but agents still need project-specific knowledge to produce
+correct code. Borrowing the SKILL.md frontmatter indexing pattern, context-db
+gives every file a YAML `description` field. Files are organized in folders and
+subfolders, and a small bash script generates a table of contents for any folder
+— creating a filesystem-based discovery tree with logarithmic progressive
+disclosure. Agents navigate to what they need and skip the rest.
 
 ## Why context-db
 
