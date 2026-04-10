@@ -154,11 +154,11 @@ find, grep, and read can be harmful to agent performance. Only document
 what the code can't tell you.
 ```
 
-The principle: context-db should contain the _delta_ — the gap between what the
-code shows and what the agent needs to know. Conventions the agent wouldn't
-infer. Pitfalls it will hit. Rationale that isn't visible in the source.
-Everything else — code summaries, architecture descriptions, module inventories
-— is noise that displaces code the agent could read instead.
+The principle: context-db should contain the gap between what the code shows and
+what the agent needs to know. Conventions the agent wouldn't infer. Pitfalls it
+will hit. Rationale that isn't visible in the source. Everything else — code
+summaries, architecture descriptions, module inventories — is noise that
+displaces code the agent could read instead.
 
 The hierarchical structure helps too. A flat 5,000-line `CLAUDE.md` loaded every
 session forces every agent to read through database indexing rules when it's
