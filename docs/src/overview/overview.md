@@ -106,24 +106,20 @@ Alternative approaches:
 
 ## Private or Public
 
-Folders can be private or symlinked from outside the repo. The TOC script runs
-dynamically, so anything it finds at runtime appears in the agent's navigation —
-whether it's committed, gitignored, or symlinked.
+The TOC script runs dynamically — anything it finds at runtime appears in the
+agent's navigation, whether committed, gitignored, or symlinked.
 
 ```
 context-db/
 ├── acme-project/                     ← committed, shared with team
 ├── my-notes/                         ← gitignored, local only
-├── coding-standards/                 ← symlink, gitignored (personal standards)
-├── team-standards/                   ← symlink, committed (git submodule)
-└── infrastructure/                   ← symlink, committed (shared mono-repo)
+├── personal-coding-standards/        ← symlink, gitignored (personal repo)
+└── team-coding-standards/            ← symlink, committed (shared location)
 ```
 
-Private symlinks (added to `.gitignore`) can point anywhere — a personal
-standards repo, a local folder. Committed symlinks need to resolve for all team
-members: use a git submodule, a sibling repo at a known relative path, or a
-mono-repo. See [Cross-Project Sharing](guide/cross-project-sharing.md) for
-patterns.
+Gitignored symlinks can point anywhere. Committed symlinks need to resolve for
+all team members — a shared filesystem location or relative path. See
+[Cross-Project Sharing](guide/cross-project-sharing.md) for patterns.
 
 ## The context problem
 
