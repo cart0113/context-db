@@ -13,10 +13,11 @@ the rest.
 
 ## Why context-db
 
-- **Minimal by convention, not constraint.** Skill instructions tell agents what
-  to store — conventions, pitfalls, rationale, domain knowledge — and the
-  `/context-db-maintain` skill actively prunes. Like any codebase convention, it
-  works when the project maintainer enforces it.
+- **Minimal.** Only stores what agents can't derive from code — conventions,
+  pitfalls, rationale, domain knowledge. Of course, context-db will contain
+  whatever is put in it — but the skill instructions enforce these standards
+  when agents generate the content, and the `/context-db-maintain` skill
+  actively prunes.
 - **Hierarchical.** Filesystem as a B-tree. Agents read frontmatter descriptions
   at each level and branch into what's relevant, skipping everything else.
 - **Logarithmic cost.** 5–10 items per folder, ~100 lines per file. The amount
