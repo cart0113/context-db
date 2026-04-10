@@ -4,12 +4,13 @@ A minimal standard for organizing project knowledge as hierarchical Markdown so
 LLM agents can discover and fetch only what they need.
 
 Large `CLAUDE.md` and `AGENTS.md` files loaded every session hurt agent
-performance — but agents still need project-specific knowledge to produce
-correct code. Mimicking the SKILL.md frontmatter indexing system, context-db
-gives every file a YAML `description` field. However, files are organized in
-folders and subfolders, and a small bash script generates a table of contents
-for any folder — creating a filesystem-based discovery tree with logarithmic
-progressive disclosure. Agents navigate to what they need and skip the rest.
+performance — but agents still need project-specific knowledge for best results.
+Mimicking the SKILL.md frontmatter indexing system, context-db gives every file
+and folder a YAML `description` field. However, files are organized in folders
+and subfolders, and a small bash script mimics vendor skills support and
+dynamically generates a table of contents for any folder — creating a
+filesystem-based discovery tree with logarithmic progressive disclosure. Agents
+navigate to what they need and can skip the rest.
 
 ## Why context-db
 
