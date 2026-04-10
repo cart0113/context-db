@@ -131,10 +131,10 @@ solution to, many agent problems.
 
 There is [increasing discussion](https://arxiv.org/abs/2602.11988) about whether
 repository context files — `CLAUDE.md`, `AGENTS.md`, `.cursorrules` — actually
-help agent performance or hurt it. The findings are uncomfortable: agents given
-context files that describe code state tend to trust those descriptions, read
-less actual code, and perform _worse_ when the descriptions drift even slightly.
-The cost goes up, the success rate goes down.
+help agent performance or hurt it. Agents given context files that describe code
+state tend to trust those descriptions, read less actual code, and perform
+_worse_ when the descriptions drift even slightly. The cost goes up, the success
+rate goes down.
 
 And yet — anyone who has worked with coding agents on a real project knows the
 agent needs _something_. Agents left to read source files with no guidance will
