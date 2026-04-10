@@ -5,21 +5,23 @@ LLM agents can discover and fetch only what they need.
 
 At its core, context-db solves the context bloat problem. Large `CLAUDE.md` and
 `AGENTS.md` files loaded every session hurt agent performance — but agents still
-need project-specific knowledge to produce correct code. context-db uses YAML
-frontmatter descriptions and a small bash script to mimic a vendor-supported
-discovery subsystem, leveraging the filesystem as a simple tree structure for
-logarithmic progressive disclosure. Agents navigate to what they need and skip
-the rest.
+need project-specific knowledge to produce correct code. context-db leverages
+the filesystem as a tree structure for progressive disclosure. Agents navigate
+to what they need and skip the rest.
 
 ## Why context-db
 
-- **Minimal.** Only stores what agents can't derive from code — conventions,
-  pitfalls, rationale, domain knowledge. Of course, context-db will contain
-  whatever is put in it — but the skill instructions enforce these standards
-  when agents generate the content, and the `/context-db-maintain` skill
-  actively prunes.
-- **Hierarchical.** Filesystem as a B-tree. Agents read frontmatter descriptions
-  at each level and branch into what's relevant, skipping everything else.
+- **Minimal.** Contains what agents can't derive from code — conventions,
+  pitfalls, rationale, domain knowledge. Of course, this is by convention —
+  context-db will contain whatever is put in it — but installed instructions
+  provided by this project enforce these standards when agents generate the
+  content, and the `/context-db-maintain` skill actively prunes content using
+  this guidance.
+- **Frontmatter-driven discovery.** Every file has a YAML `description` field —
+  the same pattern agent frameworks use for SKILL.md registration, applied
+  hierarchically instead of linearly. A small bash script reads these
+  descriptions and generates a TOC for any folder, giving agents a navigation
+  index without vendor-specific tooling.
 - **Logarithmic cost.** 5–10 items per folder, ~100 lines per file. The amount
   read scales with the task, not the total knowledge base.
 
