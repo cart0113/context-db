@@ -125,25 +125,7 @@ needed.
 
 A **SessionStart hook** (`templates/hooks/session-start-context-db.sh`) is even
 stronger — it injects the instruction into the conversation context before the
-first turn, ensuring the agent reads it every time:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "matcher": "startup|resume",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/session-start-context-db.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
+first turn, ensuring the agent reads it every time.
 
 Any mechanism that gets the SKILL.md content in front of the agent works.
 Alternative approaches:
