@@ -1,77 +1,107 @@
 ---
 description:
-  Subagent architecture — runs from inside context-db/, stream-json for live
-  output, constrained navigation (TOC + Read only), cost tracking
+  Subagent architecture — script entry point, four modes (ask, review,
+  update-context-db, instructions), how each mode spawns claude -p, tools per
+  mode, review scope config, stream-json output
 ---
 
 # Subagent Architecture
 
 ## Single script, four modes
 
-`context-db-agent.py` is the only script. It handles all four modes:
+`context-db-sub-agent.py` is the only script. It handles all four modes:
 
 - **instructions** — reads `.contextdb.json`, outputs tailored directives for
   the main agent. Called by the session-start hook and the rule. The main agent
   never sees `.contextdb.json`.
-- **ask/review/maintain** — calls `claude -p` with tools so the subagent model
-  navigates context-db itself.
+- **ask** — calls `claude -p` from inside context-db/ so the subagent navigates
+  the knowledge base and returns relevant context.
+- **review** — calls `claude -p` from the project root. The subagent runs
+  `git diff` itself, navigates context-db for conventions, and returns a
+  human-readable review report on stdout.
+- **update-context-db** — two-phase: first subagent writes to context-db/
+  directly, then a review subagent checks the changes via `git diff`.
 
-The script does NOT read context-db files. The model does.
+## Execution model per mode
 
-## Runs from inside context-db/
+### ask — runs from context-db/
 
-The subagent runs with `cwd=context-db/` and `--bare` (no hooks, no rules, no
-skills, no CLAUDE.md). This sandboxes it to just the markdown files. The model
-has no access to project code, git history, or other tools. It sees only the TOC
-script (passed as an absolute path) and the files in its working directory.
+- Tools: `Bash,Read`
+- The subagent navigates the B-tree (TOC script + Read), returns verbatim
+  snippets from relevant files.
+- Does NOT answer the prompt or help with the task.
 
-## Instructions mode
+### review — runs from project root
 
-The main agent needs to know when to call ask/review/maintain, what command to
-run, and what the response means. The `instructions` mode reads config and
-stitches together directive language:
+- Tools: `Bash,Read`
+- The subagent runs `git diff` itself to see what changed.
+- Navigates context-db (via TOC script with `context-db/` prefix) to find
+  relevant conventions.
+- Returns a full review report citing context-db sources for each critique.
+- **Scope config** controls what gets reviewed:
+  - `context-db-only` (default): only flag issues backed by context-db
+    conventions. No general opinions.
+  - `context-db-and-general`: also do a general code review. Report has two
+    sections: "Convention Issues" and "General Code Review".
+- Requires a clean git baseline — instructions tell main agent to ensure repo is
+  committed before making changes.
 
-- Exact commands with the script's resolved path.
-- What each response is and who it's from (project knowledge expert).
-- Mandatory vs optional (automatic = "You MUST", confirm = "Ask the user").
-- Wait instruction — main agent must not explore the codebase in parallel.
-- Frequency rules for ask mode (always, new topic, major only).
-- Skipped modes are omitted entirely.
+### update-context-db — two phases
 
-The rule and hook both call `context-db-agent.py instructions`. The main agent
-follows the output. Config changes take effect on next session start.
+Phase 1 (update): runs from context-db/
 
-## Constrained navigation
+- Tools: `Bash,Read,Write,Edit`
+- Navigates context-db, then edits/creates files directly.
 
-The system prompt tells the model to navigate using ONLY the TOC script and
-Read. No `find`, `grep`, or `ls`. This keeps haiku focused:
+Phase 2 (review): runs from project root
 
-1. Run TOC on `.` to see top-level descriptions.
-2. Pick relevant folders or files from descriptions.
-3. If folder, run TOC on it. If file, read the whole file (~100 lines each).
-4. Repeat until done.
+- Tools: `Bash,Read`
+- Script captures `git diff context-db/` (including new untracked files).
+- Diff is passed to the review subagent in the user message.
+- Checks accuracy, redundancy, structure, value, completeness.
 
-This produces clean 2-3 step navigation. Without these constraints, haiku adds
-defensive commands (`head -50`, `2>/dev/null`, `find`, `ls -la`) that waste
-turns and slow things down.
+Both phases return on stdout — no report files.
 
-## Stream-json output
+## All subagent output goes to stdout
 
-The script uses `--output-format stream-json` with `--verbose` to stream events
-as the subagent works. It prints tool calls live (reading/running) so the caller
-can see progress, then outputs the final result demarcated:
+Every mode returns its results in demarcated sections:
 
 ```
---- context for prompt ---
-[subagent's response]
---- end context ---
+[response]
+{subagent's response}
+[end response]
 
---- metadata ---
-model: haiku | cost: $0.0191 | tokens: 88in/28out | time: 20.6s
---- end metadata ---
+[response-instructions]
+{how the main agent should treat this response}
+[end response-instructions]
+
+[context-db-sub-agent-usage-reminder]
+{brief with commands for next call}
+[end context-db-sub-agent-usage-reminder]
 ```
 
-The demarcation prevents the main agent from confusing metadata with context.
+No files are written. The main agent reads the response inline.
+
+## Config (.contextdb.json)
+
+Per-mode settings at the top level (not nested under "modes"):
+
+```json
+{
+  "ask": { "model": "haiku", "when": "major" },
+  "review": { "model": "sonnet", "when": "major", "scope": "context-db-only" },
+  "update-context-db": {
+    "model": "sonnet",
+    "when": "major",
+    "review": { "enabled": true, "model": "sonnet" }
+  }
+}
+```
+
+- `model`: haiku, sonnet, or opus
+- `when`: never, major, always
+- `scope` (review only): context-db-only or context-db-and-general
+- `review` (update-context-db only): sub-config for the review phase
 
 ## Environment guard
 

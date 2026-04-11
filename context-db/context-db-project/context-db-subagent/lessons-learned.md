@@ -114,3 +114,33 @@ and self-corrects.
 `--output-format stream-json --verbose` lets the script print tool calls as they
 happen. Without this, `claude -p` buffers everything and the caller sees nothing
 until the full response is ready — which takes 20-30 seconds.
+
+## Review runs from project root, not context-db/
+
+The review subagent needs to run `git diff` and read project source files. It
+runs from the project root with the TOC script path for context-db navigation
+using `bash {toc} context-db/`. This is different from ask mode which runs from
+inside context-db/.
+
+## Let the review subagent run git diff itself
+
+Early design passed the diff to the review subagent in the user message. Simpler
+approach: give it Bash + Read, let it run `git diff` itself. Fewer moving parts,
+the subagent sees exactly what git sees, and the script doesn't need
+diff-capture logic for the review path.
+
+## Stdout over report files
+
+Early design had review subagents write report files that the main agent had to
+read and then delete. Stdout is cleaner — the response comes back inline in the
+`[response]` section, no file lifecycle to manage. The main agent reads it
+immediately and acts. Only exception: update-context-db still captures the diff
+in the script because it needs to diff only context-db/ changes.
+
+## Review scope separation matters
+
+Two distinct review modes: `context-db-only` (default) only flags issues backed
+by a convention in the knowledge base, each critique citing its source.
+`context-db-and-general` adds a general code review section. Separating these
+prevents the model from mixing convention-backed critiques with general opinions
+— the main agent needs to know which critiques have authority behind them.
