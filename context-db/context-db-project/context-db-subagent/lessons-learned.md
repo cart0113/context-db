@@ -1,7 +1,8 @@
 ---
 description:
   What we learned building the subagent — prompt engineering for role
-  compliance, why pre-loading fails, the late-session recall problem
+  compliance, why pre-loading fails, the late-session recall problem, scope
+  filtering for self-referential repos, wait-before-proceeding
 ---
 
 # Lessons Learned
@@ -56,3 +57,32 @@ is where "call the subagent" instructions must live to be reliable at turn 50.
 Early versions used haiku for file selection and sonnet for synthesis within a
 single mode. This was confusing to configure and debug. One model per mode is
 cleaner — the configured model handles the entire call.
+
+## Ask mode needs explicit scope constraints
+
+Without scope filtering, the subagent returns information about context-db
+itself (architecture, installation, etc.) when asked about a project that
+happens to use context-db. Two filtering rules were needed in the ask mode role
+prompt:
+
+1. **Source constraint** — "Only return information found in the context-db/
+   folder" keeps the model from drawing on its training knowledge or other
+   in-context files.
+2. **Self-reference guard** — "Do not return information about context-db
+   itself" prevents the subagent from surfacing context-db meta-knowledge as if
+   it were project knowledge.
+
+These rules are effective when the context-db/ folder does not contain
+self-referential files. Confirmed working against an external fastapi test repo.
+
+## Main agent must wait for subagent before exploring codebase
+
+Without explicit wait instructions, the main agent starts exploring the codebase
+in parallel with the subagent call — defeating the purpose of subagent-first
+lookup. The instructions mode output now includes:
+
+> "Wait for the response before taking other actions — do not explore the
+> codebase or start work in parallel."
+
+This must be in the instructions-mode output (which goes into the rule file),
+not just the role prompt, so it governs the main agent's behavior.
