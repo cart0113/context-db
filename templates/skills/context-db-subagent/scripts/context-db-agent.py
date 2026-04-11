@@ -194,20 +194,32 @@ def generate_instructions(config, script_path):
 
 ROLE_PROMPTS = {
     "ask": """\
-You are a project knowledge expert. Return ONLY bullet points of relevant
-project knowledge. Nothing else.
+You are a project knowledge lookup service.
 
-Only return information found in the context-db/ folder. Do not return
-information about context-db itself — its structure, maintenance, or operation.
-Only return project knowledge relevant to the developer's work.
+Your working directory is a B-tree of markdown files (~100 lines each). Navigate
+it using ONLY these steps:
+1. Run: bash {toc_script} .
+   This lists subfolders and files with descriptions from their YAML frontmatter.
+2. Pick what's relevant to the developer's prompt.
+   - If it's a folder, run: bash {toc_script} <subfolder>/
+   - If it's a file, read the whole file.
+3. Repeat until you've found what applies.
 
-If nothing is relevant, respond: No relevant project context.
-
-Never write code. Never answer the prompt. Never ask questions.
-Only return knowledge from the files you read.""",
+Do not use find, grep, or ls. Only the TOC script and Read.
+All files are relative to your cwd (.). The TOC script is an external tool —
+never read files from its directory.
+Never write code. Never answer the prompt. Never help with the task.
+Only return knowledge from the files you read.
+If nothing is relevant, respond: No relevant project context.""",
 
     "review": """\
-You are a project knowledge expert. Check the plan against project conventions.
+You are a project knowledge lookup service. Check the plan against project
+conventions found in your working directory.
+
+To navigate, run: bash {toc_script} .
+This lists subfolders and files with descriptions from their YAML frontmatter.
+Drill into relevant folders: bash {toc_script} <subfolder>/
+Then read the files that match.
 
 Respond with:
 - VIOLATION: [what the plan does wrong] — convention: [the rule]
@@ -218,8 +230,14 @@ If no issues: No convention issues found.
 Never help implement the plan. Only flag convention problems.""",
 
     "maintain": """\
-You are maintaining a project knowledge base. Determine where to file the
-learnings below.
+You are maintaining a knowledge base. Your working directory contains the
+markdown files.
+
+To navigate, run: bash {toc_script} .
+This lists subfolders and files with descriptions from their YAML frontmatter.
+Drill into relevant folders: bash {toc_script} <subfolder>/
+
+Determine where to file the learnings below.
 
 Respond with:
 ACTION: update|create|skip
@@ -227,45 +245,31 @@ FILE: path/to/file.md
 CONTENT:
 [content to add]
 
-If skipping:
-ACTION: skip
-REASON: [why this doesn't belong]
-
 Rules:
 - Only file what the code can't tell you (conventions, pitfalls, corrections)
 - Update existing files when they cover the topic
 - Create new files only for genuinely new topics""",
 }
 
-# Content first, then navigation instructions
 USER_MSG_TEMPLATES = {
     "ask": """\
-Developer's prompt: {prompt}
+Use this knowledge base to provide the best, most useful context for this \
+developer prompt:
 
-Now navigate the project knowledge base to find relevant conventions,
-standards, pitfalls, and context. Use the TOC script to browse:
-  {toc_script} {context_db}
-Read descriptions at each level. Drill into relevant folders. Read matching
-files. Return what applies to the prompt above.""",
+"{prompt}"
+""",
 
     "review": """\
-Plan to review:
-{prompt}
+Review this implementation plan against project conventions:
 
-Now navigate the project knowledge base to find conventions and standards
-that apply. Use the TOC script to browse:
-  {toc_script} {context_db}
-Read descriptions at each level. Drill into relevant folders. Read matching
-files. Flag any violations of the conventions you find.""",
+"{prompt}"
+""",
 
     "maintain": """\
-Learnings to file:
-{prompt}
+File these learnings:
 
-Now navigate the project knowledge base to understand its structure. Use the
-TOC script to browse:
-  {toc_script} {context_db}
-Determine where these learnings should be filed.""",
+"{prompt}"
+""",
 }
 
 
@@ -300,22 +304,32 @@ def config_summary(config):
 # ── TOC script discovery ────────────────────────────────────────────────────
 
 
-def find_toc_script():
-    """Find context-db-generate-toc.sh relative to this script."""
+def find_toc_script(context_db_path=None):
+    """Find context-db-generate-toc.sh — check project .claude/ first."""
     from pathlib import Path
 
+    toc_name = "context-db-manual/scripts/context-db-generate-toc.sh"
+
+    # 1. Relative to project root (.claude/skills/) — works whether cwd is
+    #    project root or context-db/ (one level up)
+    candidates = []
+    if context_db_path:
+        project_root = Path(context_db_path).resolve().parent
+        candidates.append(project_root / ".claude" / "skills" / toc_name)
+    candidates.append(Path.cwd() / ".claude" / "skills" / toc_name)
+    candidates.append(Path.cwd().parent / ".claude" / "skills" / toc_name)
+
+    # 2. Relative to this script (follows symlinks back to templates)
     script_dir = Path(__file__).resolve().parent
     skills_dir = script_dir.parent.parent
+    candidates.append(skills_dir / toc_name)
 
-    for candidate in [
-        skills_dir / "context-db-manual" / "scripts" / "context-db-generate-toc.sh",
-        Path(__file__).parent.parent.parent / "context-db-manual" / "scripts" / "context-db-generate-toc.sh",
-    ]:
+    for candidate in candidates:
         if candidate.exists():
-            return str(candidate)
+            return str(candidate.resolve())
 
     # Fallback — assume standard install location
-    return ".claude/skills/context-db-manual/scripts/context-db-generate-toc.sh"
+    return ".claude/skills/" + toc_name
 
 
 # ── Script path detection ──────────────────────────────────────────────────
@@ -326,7 +340,8 @@ def detect_script_path():
     from pathlib import Path
 
     # Try symlink-relative path first (preserves .claude/ structure)
-    script_dir_sym = Path(__file__).parent
+    # Normalize to collapse ../  (e.g. hooks/../skills → skills)
+    script_dir_sym = Path(os.path.normpath(Path(__file__).parent))
     candidate_sym = script_dir_sym / "context-db-agent.py"
     if candidate_sym.exists():
         return str(candidate_sym)
@@ -352,47 +367,105 @@ def run_instructions(args):
 
 def run_subagent(args):
     """Call the subagent for ask/review/maintain modes."""
-    # Validate context-db exists
-    if not os.path.isdir(args.context_db):
-        print(f"Error: context-db not found: {args.context_db}", file=sys.stderr)
+    # Resolve context-db to absolute path — we'll cd into it
+    context_db = os.path.abspath(args.context_db)
+    if not os.path.isdir(context_db):
+        print(f"Error: context-db not found: {context_db}", file=sys.stderr)
         sys.exit(1)
 
     # Load config
     config = load_config(args.config)
     model = args.model or config["modes"][args.mode]["model"]
 
-    # Find TOC script
-    toc_script = args.toc_script or find_toc_script()
+    # Find TOC script — resolve to absolute since we'll change cwd
+    toc_script = os.path.abspath(args.toc_script or find_toc_script())
 
-    # System prompt: role only
-    system_prompt = ROLE_PROMPTS[args.mode]
+    # System prompt includes TOC path; user message is just the prompt
+    system_prompt = ROLE_PROMPTS[args.mode].format(toc_script=toc_script)
+    user_msg = USER_MSG_TEMPLATES[args.mode].format(prompt=args.prompt)
 
-    # User message: content first, then navigation instructions
-    user_msg = USER_MSG_TEMPLATES[args.mode].format(
-        prompt=args.prompt,
-        toc_script=toc_script,
-        context_db=args.context_db,
-    )
+    # Debug: print full prompts and exit when --debug is set
+    if args.debug:
+        print("=== SYSTEM PROMPT ===", flush=True)
+        print(system_prompt, flush=True)
+        print("\n=== USER MESSAGE ===", flush=True)
+        print(user_msg, flush=True)
+        print("=====================", flush=True)
+        return
 
-    # Call claude with tools so the model can navigate context-db itself
+    # Call claude from inside context-db/ — no rules, no skills, just markdown
     cmd = [
         "claude", "-p",
         "--model", model,
         "--tools", "Bash,Read",
+        "--output-format", "stream-json",
+        "--verbose",
         "--no-session-persistence",
         "--permission-mode", "bypassPermissions",
         "--system-prompt", system_prompt,
+        "--bare",
     ]
+
+    # Print full details for visibility
+    cmd_display = [c if c != system_prompt else '"<system prompt>"' for c in cmd]
+    print(f"[context-db {args.mode}] cwd={context_db}", flush=True)
+    print(f"[context-db {args.mode}] {' '.join(cmd_display)}", flush=True)
+    print(f"\n--- system prompt ---\n{system_prompt}\n--- end system prompt ---", flush=True)
+    print(f"\n--- user message ---\n{user_msg}\n--- end user message ---\n", flush=True)
 
     env = os.environ.copy()
     env["CONTEXT_DB_SUBAGENT"] = "1"
 
+    # Stream output: read stream-json events, print tool activity live
+    import time as _time
+    start_time = _time.time()
+    final_text = ""
+    cost_usd = 0.0
+    total_input = 0
+    total_output = 0
     try:
-        result = subprocess.run(
-            cmd, input=user_msg,
-            capture_output=True, text=True, timeout=180, env=env,
+        proc = subprocess.Popen(
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True, env=env,
+            cwd=context_db,
         )
+        proc.stdin.write(user_msg)
+        proc.stdin.close()
+
+        for line in proc.stdout:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            etype = event.get("type", "")
+            if etype == "assistant":
+                # Print tool calls as they happen for visibility
+                for block in event.get("message", {}).get("content", []):
+                    if block.get("type") == "tool_use":
+                        tool = block.get("name", "")
+                        inp = block.get("input", {})
+                        if tool == "Read":
+                            print(f"  reading: {inp.get('file_path', '')}", flush=True)
+                        elif tool == "Bash":
+                            print(f"  running: {inp.get('command', '')}", flush=True)
+                # Track token usage from assistant messages
+                usage = event.get("message", {}).get("usage", {})
+                total_input += usage.get("input_tokens", 0)
+                total_output += usage.get("output_tokens", 0)
+            elif etype == "result":
+                final_text = event.get("result", "")
+                cost_usd = event.get("total_cost_usd", 0.0)
+                if args.debug:
+                    print(f"  [debug result keys: {list(event.keys())}]", flush=True)
+
+        proc.wait(timeout=180)
+        stderr_out = proc.stderr.read()
     except subprocess.TimeoutExpired:
+        proc.kill()
         print("Error: subagent timed out", file=sys.stderr)
         sys.exit(1)
     except FileNotFoundError:
@@ -400,25 +473,22 @@ def run_subagent(args):
               file=sys.stderr)
         sys.exit(1)
 
-    if result.returncode != 0:
-        print(f"Error: {result.stderr}", file=sys.stderr)
+    if proc.returncode != 0:
+        print(f"Error: {stderr_out}", file=sys.stderr)
         sys.exit(1)
 
-    # Output with mode tag and reminder footer
-    cfg = config_summary(config)
-    mode_label = {
-        "ask": "project context",
-        "review": "plan review",
-        "maintain": "filing recommendation",
-    }
-    print(f"[context-db {args.mode}] {mode_label[args.mode]}\n")
-    print(result.stdout.strip())
-    print(
-        f"\n---\n"
-        f"context-db-agent: Call me with 'ask' before starting work, "
-        f"'review' before code changes, 'maintain' after completing work.\n"
-        f"Config: {cfg}"
-    )
+    elapsed = _time.time() - start_time
+
+    # Demarcated output — context for the main agent, then metadata
+    print(f"\n--- context for prompt ---")
+    print(final_text.strip())
+    print(f"--- end context ---")
+    print(f"\n--- metadata ---")
+    print(f"model: {model} | cost: ${cost_usd:.4f} | "
+          f"tokens: {total_input}in/{total_output}out | "
+          f"time: {elapsed:.1f}s")
+    print(f"config: {config_summary(config)}")
+    print(f"--- end metadata ---", flush=True)
 
 
 def main():
@@ -432,12 +502,14 @@ def main():
     parser.add_argument("prompt", nargs="?", default="",
                         help="The prompt to process (not used for instructions)")
     parser.add_argument("--model", help="Override model (default from config)")
-    parser.add_argument("--context-db", default="context-db/",
-                        help="Path to context-db folder")
+    parser.add_argument("--context-db", default=".",
+                        help="Path to context-db folder (default: current directory)")
     parser.add_argument("--config", default=".contextdb.json",
                         help="Path to config file")
     parser.add_argument("--session-id", help="Session ID (reserved for future)")
     parser.add_argument("--toc-script", help="Path to TOC script (auto-detected)")
+    parser.add_argument("--debug", action="store_true",
+                        help="Print full prompts before calling the subagent")
 
     args = parser.parse_args()
 

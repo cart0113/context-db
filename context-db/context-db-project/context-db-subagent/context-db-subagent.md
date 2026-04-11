@@ -1,5 +1,6 @@
 ---
 description:
-  Subagent delivery mode — architecture, how to install, config options, what we
-  learned building it, and why the model must navigate the B-tree
+  Subagent delivery mode — runs from inside context-db/ with --bare, constrained
+  B-tree navigation (TOC + Read only), stream-json for live output, cost
+  tracking
 ---

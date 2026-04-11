@@ -1,8 +1,8 @@
 ---
 description:
-  What we learned building the subagent — prompt engineering for role
-  compliance, why pre-loading fails, the late-session recall problem, scope
-  filtering for self-referential repos, wait-before-proceeding
+  What we learned building the subagent — constrained navigation, running from
+  context-db/, the late-session recall problem, why pre-loading fails, prompt
+  engineering for haiku compliance
 ---
 
 # Lessons Learned
@@ -86,3 +86,31 @@ lookup. The instructions mode output now includes:
 
 This must be in the instructions-mode output (which goes into the rule file),
 not just the role prompt, so it governs the main agent's behavior.
+
+## Run from inside context-db/, not the project root
+
+Running `claude -p` with `cwd=context-db/` and `--bare` sandboxes the subagent
+to just the markdown files. No rules, no skills, no CLAUDE.md — it can't wander
+into the codebase. The `--context-db` flag defaults to `.` (current directory)
+so the expected flow is `cd context-db/ && run the script`.
+
+## Constrain navigation to TOC + Read only
+
+Without constraints, haiku adds defensive commands (`find`, `ls -la`,
+`head -50`, `2>/dev/null`) that waste turns. Telling it "Do not use find, grep,
+or ls. Only the TOC script and Read." produces clean 2-3 step navigation.
+
+## Absolute TOC path is a breadcrumb
+
+The TOC script path is absolute (e.g.,
+`/path/to/skills/context-db-manual/ scripts/...`). Haiku sees it and tries to
+read files relative to that location. Adding "All files are relative to your cwd
+(.). The TOC script is an external tool — never read files from its directory."
+fixes this, but haiku still occasionally tries the wrong path on first attempt
+and self-corrects.
+
+## stream-json for live output
+
+`--output-format stream-json --verbose` lets the script print tool calls as they
+happen. Without this, `claude -p` buffers everything and the caller sees nothing
+until the full response is ready — which takes 20-30 seconds.
