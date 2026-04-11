@@ -2,7 +2,7 @@
 # SessionStart hook — directs the agent to read context-db before responding.
 # Wire this up in .claude/settings.local.json under hooks.SessionStart.
 #
-# This hook and templates/rules/context-db.md must say the same thing.
+# This hook and templates/rules/context-db-manual.md must say the same thing.
 # If you change one, change the other.
 
 cat <<'EOF'

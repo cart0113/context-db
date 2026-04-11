@@ -1,13 +1,14 @@
 ---
 description:
-  How context-db-generate-toc.sh works — awk-based frontmatter parsing, multi-line description
-  handling, and known edge cases
+  How context-db-generate-toc.sh works — awk-based frontmatter parsing,
+  multi-line description handling, and known edge cases
 ---
 
 # context-db-generate-toc.sh
 
-`context-db-generate-toc.sh` is the core script. It generates TOCs on the fly by reading
-YAML frontmatter from `.md` files and printing description/path pairs to stdout.
+`context-db-generate-toc.sh` is the core script. It generates TOCs on the fly by
+reading YAML frontmatter from `.md` files and printing description/path pairs to
+stdout.
 
 ## Frontmatter parsing
 
@@ -56,3 +57,17 @@ for description file lookup.
 
 Names starting with `_` or `.` are always skipped. This is how `_drafts/` and
 `.hidden/` folders stay out of the TOC.
+
+## Files without frontmatter are silently skipped
+
+The script only lists `.md` files that have a `description` field in their YAML
+frontmatter. If a file has **no frontmatter at all**, it produces no output and
+is completely invisible in the TOC — no error, no `(no description)`
+placeholder.
+
+**Practical pitfall**: A newly created file will not appear in navigation until
+frontmatter is added. This can look like the file wasn't saved or the wrong
+folder was used.
+
+**Rule**: Add frontmatter immediately when creating any new `.md` file in the
+knowledge base — do not leave it for later.

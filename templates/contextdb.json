@@ -1,0 +1,17 @@
+{
+  "modes": {
+    "ask": {
+      "model": "haiku",
+      "behavior": "automatic",
+      "frequency": "always"
+    },
+    "review": {
+      "model": "sonnet",
+      "behavior": "confirm"
+    },
+    "maintain": {
+      "model": "sonnet",
+      "behavior": "automatic"
+    }
+  }
+}

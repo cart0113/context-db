@@ -201,6 +201,10 @@ tool output), rolling compression, tool-based retrieval over pre-loading,
 6. **Smaller models may benefit disproportionately** from the progressive
    disclosure pattern, since they are more sensitive to context noise.
 
+For deeper analysis of these implications — including the three failure modes of
+context delivery and a subagent-based alternative — see
+[context-db-theory/context-delivery-problem.md](context-db-theory/context-delivery-problem.md).
+
 ## Sources
 
 - [Spotify: Context Engineering (Honk, Part 2)](https://engineering.atspotify.com/2025/11/context-engineering-background-coding-agents-part-2)
@@ -220,3 +224,14 @@ tool output), rolling compression, tool-based retrieval over pre-loading,
 - [JetBrains Research: Smarter Context Management](https://blog.jetbrains.com/research/2025/12/efficient-context-management/)
 - [Lance Martin: Context Engineering for Agents](https://rlancemartin.github.io/2025/06/23/context_engineering/)
 - [Anthropic: Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
+- [Anthropic: Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
+- [OpenAI: The Instruction Hierarchy (2024)](https://openai.com/index/the-instruction-hierarchy/)
+- [MemGPT: Towards LLMs as Operating Systems (arXiv:2310.08560)](https://arxiv.org/abs/2310.08560)
+- [Letta: Benchmarking AI Agent Memory](https://www.letta.com/blog/benchmarking-ai-agent-memory)
+- [ContextBench: Context Retrieval in Coding Agents (arXiv:2602.05892)](https://arxiv.org/html/2602.05892)
+- [MAST: Multi-Agent Systems Failure Taxonomy](https://towardsdatascience.com/the-multi-agent-trap/)
+- [Karpathy: LLM Wiki / Knowledge Base Architecture](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
+- [Claude Code Source Leak Analysis (VentureBeat)](https://venturebeat.com/technology/claude-codes-source-code-appears-to-have-leaked-heres-what-we-know)
+- [Claude Code System Prompt Architecture (dbreunig)](https://www.dbreunig.com/2026/04/04/how-claude-code-builds-a-system-prompt.html)
+- [Controlled Benchmark: AI Memory in Coding Agents](https://medium.com/@mrsandelin/the-first-controlled-benchmark-of-ai-memory-in-coding-agents-8e0bb776d39e)
+- [Lost in the Middle (TACL 2024)](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00638/119630/)

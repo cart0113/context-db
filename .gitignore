@@ -7,6 +7,8 @@ __pycache__/
 
 .claude
 .cursor
+.contextdb.json
+.playwright-mcp/
 node_modules/
 
 context-db/context-db.md
@@ -20,3 +22,7 @@ context-db/local-repos-to-update/
 bin/sync-to-repos.sh
 
 context-db/context-db-project/context-db-theory/other/
+context-db/git-standards
+context-db/writing-effective-skills
+
+fast-api-test/
