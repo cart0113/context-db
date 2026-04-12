@@ -2,9 +2,9 @@
 """
 context-db-sub-agent.py — project knowledge subagent.
 
-Calls claude -p from inside context-db/ so the model navigates the B-tree
-itself using the TOC script and Read tool. The main agent's context window
-stays clean.
+Calls claude -p from the project root so the model navigates the B-tree
+in context-db/ using the TOC script and Read tool. The main agent's context
+window stays clean.
 
 Modes:
   instructions       Print directives for the main agent (from .contextdb.json)
@@ -38,11 +38,11 @@ MODES = ["user-prompt", "pre-review", "code-review", "update-context-db"]
 
 DEFAULT_CONFIG = {
     "user-prompt": {"model": "haiku", "when": "major"},
-    "pre-review": {"model": "haiku", "when": "major"},
+    "pre-review": {"model": "haiku", "when": "never"},
     # review-type: "context-db" = only flag issues backed by context-db conventions
     #              "full"       = also do a general review
-    "code-review": {"model": "sonnet", "when": "major", "review-type": "context-db"},
-    "update-context-db": {"model": "sonnet", "when": "major"},
+    "code-review": {"model": "sonnet", "when": "never", "review-type": "context-db"},
+    "update-context-db": {"model": "sonnet", "when": "never"},
     # "auto-commit" = commit before changes automatically
     # "ask-user"    = ask the user what to do with uncommitted changes
     "uncommitted-changes": "ask-user",
@@ -187,7 +187,7 @@ UPDATE_BRIEF = {
 def generate_instructions(config, script_path):
     """Generate directives for the main agent."""
     blocks = [
-        "This project has a context agent. You MUST follow the instructions "
+        "This project has a context sub-agent. You MUST follow the instructions "
         "below."
     ]
 
@@ -394,31 +394,42 @@ def generate_brief(config, script_path):
 # Placeholders use {toc}, {context_db_rel} — filled via .format() at call time.
 
 SYSTEM_PROMPTS = {
-    # user-prompt & pre-review: sub-agent runs from inside context-db/ (cwd=context-db/)
-    # code-review & update-context-db: sub-agent runs from project root (cwd=project root)
+    # All modes run from project root (cwd=project root).
+    # user-prompt & pre-review navigate {context_db_rel}/ for knowledge.
+    # code-review & update-context-db also run git commands from project root.
 
     "user-prompt": """\
-You are a project knowledge lookup service.
+You are a project knowledge and standards lookup service.
 
-Your working directory is a B-tree of markdown files (~100 lines each). Navigate
-it using ONLY these steps:
-1. Run: bash {toc} .
+The project knowledge base is at {context_db_rel}/. It is a B-tree of markdown
+files (~100 lines each). Navigate it using ONLY these steps:
+1. Run: bash {toc} {context_db_rel}/
    This lists subfolders and files with descriptions from their YAML frontmatter.
 2. Pick what's relevant to the developer's prompt.
-   - If it's a folder, run: bash {toc} <subfolder>/
+   - If it's a folder, run: bash {toc} {context_db_rel}/<subfolder>/
    - If it's a file, read the whole file.
 3. Repeat until you've found what applies.
 
 Do not use find, grep, or ls. Only the TOC script and Read.
-All files are relative to your cwd (.). The TOC script is an external tool —
-never read files from its directory.
+The TOC script is an external tool — never read files from its directory.
 Never write code. Never answer the prompt. Never help with the task.
+
+Your job: find ALL relevant knowledge from this knowledge base. This includes:
+- Background context: pitfalls, gotchas, design decisions, cross-file
+  connections, conventions specific to the areas being asked about
+- Applicable standards and procedures: based on what the prompt is about,
+  look for standards that apply. For example:
+  - Coding question → project coding standards, language-specific standards
+  - Documentation or writing → writing standards
+  - Commit or release → commit procedures, release standards
+  - Any other work → whatever standards, procedures, or protocols apply
+  Read the prompt and use judgment about what to look for.
 
 Return your findings as a list of verbatim snippets. For each relevant section:
 1. One line explaining why this snippet is relevant.
 2. The exact text from the file, wrapped in markers:
 
-[context-db/path/to/file.md:START-END]
+[{context_db_rel}/path/to/file.md:START-END]
 exact file content, copied verbatim
 [end]
 
@@ -426,7 +437,7 @@ Do not summarize or paraphrase file content. Quote it exactly.
 If nothing is relevant, respond: No relevant project context.""",
 
     "pre-review": """\
-You are a project standards lookup service.
+You are a project knowledge and standards lookup service.
 
 A developer is about to make changes. They will tell you:
 - What type of changes (code, documentation, config, etc.)
@@ -434,41 +445,39 @@ A developer is about to make changes. They will tell you:
 - The size (minor, medium, major, total overhaul)
 - Their plan for what to change
 
-Your job: find ALL standards, conventions, and rules that apply to this type of
-work. Be thorough — the developer will follow what you return and skip what you
-don't return.
+Your job: find ALL relevant knowledge from this knowledge base. This includes:
+- Background context: pitfalls, gotchas, design decisions, cross-file
+  connections, conventions specific to the areas being changed
+- Applicable standards: general coding standards, language-specific standards,
+  writing standards (if documentation), any other rules that apply
 
-Your working directory is a B-tree of markdown files (~100 lines each). Navigate
-it using ONLY these steps:
-1. Run: bash {toc} .
+Return everything relevant. Be thorough — the developer will use what you
+return and won't see what you don't return.
+
+The project knowledge base is at {context_db_rel}/. It is a B-tree of markdown
+files (~100 lines each). Navigate it using ONLY these steps:
+1. Run: bash {toc} {context_db_rel}/
    This lists subfolders and files with descriptions from their YAML frontmatter.
 2. Pick what's relevant to the planned changes.
-   - If it's a folder, run: bash {toc} <subfolder>/
+   - If it's a folder, run: bash {toc} {context_db_rel}/<subfolder>/
    - If it's a file, read the whole file.
 3. Repeat until you've covered all applicable areas.
 
-Pay special attention to:
-- General coding standards
-- Language-specific standards (match the language in the plan)
-- Writing standards (if documentation is being changed)
-- Conventions and pitfalls specific to the areas being changed
-
 Do not use find, grep, or ls. Only the TOC script and Read.
-All files are relative to your cwd (.). The TOC script is an external tool —
-never read files from its directory.
-Never write code. Never help with the task. Only return standards.
+The TOC script is an external tool — never read files from its directory.
+Never write code. Never help with the task. Only return knowledge.
 
 Return your findings as a list of verbatim snippets. For each relevant section:
-1. One line explaining why this standard applies to the planned changes.
+1. One line explaining why this is relevant to the planned changes.
 2. The exact text from the file, wrapped in markers:
 
-[context-db/path/to/file.md:START-END]
+[{context_db_rel}/path/to/file.md:START-END]
 exact file content, copied verbatim
 [end]
 
-Do not summarize or paraphrase. Quote exactly. Return ALL applicable standards
-— err on the side of including too much rather than too little.
-If nothing is relevant, respond: No relevant project standards.""",
+Do not summarize or paraphrase. Quote exactly. Err on the side of including
+too much rather than too little.
+If nothing is relevant, respond: No relevant project context.""",
 
     # code-review prompt is built dynamically by build_review_prompt()
     "code-review": None,
@@ -523,13 +532,14 @@ When done, summarize what you changed and why.""",
 # {prompt} is filled with the main agent's prompt at call time via .format().
 USER_PROMPTS = {
     "user-prompt": """\
-Use this knowledge base to provide the best, most useful context for this
-developer prompt:
+Find ALL relevant project knowledge for this developer prompt — context,
+pitfalls, conventions, and any applicable standards or procedures:
 
 "{prompt}" """,
 
     "pre-review": """\
-Find ALL standards, conventions, and rules that apply to these planned changes:
+Find ALL relevant project knowledge for these planned changes — context,
+pitfalls, conventions, and applicable standards:
 
 "{prompt}" """,
 
@@ -612,10 +622,10 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
         "bypassPermissions",
         "--system-prompt",
         system_prompt,
-        "--bare",
     ]
 
-    env = {**os.environ, "CONTEXT_DB_SUBAGENT": "1"}
+    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    env["CONTEXT_DB_SUBAGENT"] = "1"
     start = time.time()
     final_text = ""
     cost_usd = 0.0
@@ -709,21 +719,23 @@ def print_output_sections(response_text, response_instructions, config):
 
 RESPONSE_INSTRUCTIONS = {
     "user-prompt": """\
-Context from the project's knowledge base. This is a starting point —
-corroborate against the actual code and docs before acting. Follow any
-project standards returned.""",
+Context and applicable standards from the project's knowledge base. This is
+a starting point — corroborate against the actual code and docs before acting.
+Follow any project standards returned.""",
 
     "pre-review": """\
-The pre-review subagent has returned standards and conventions that apply to
-your planned changes. Follow these standards when making your edits. These
-are verbatim quotes from the project's knowledge base.""",
+The pre-review subagent has returned project context and applicable standards
+for your planned changes — pitfalls, conventions, coding standards, and other
+relevant knowledge. These are verbatim quotes from the project's knowledge
+base. This response may have been generated by a less capable model — treat
+it as additional context. Evaluate each item and use your own judgment on
+what applies.""",
 
     "code-review": """\
 The code-review subagent has checked your changes against project conventions
-in context-db.
-IMPORTANT: This review may have been generated by a less capable model —
-treat it as advisory. Evaluate each item yourself, fix real issues, and
-ignore false positives.""",
+in context-db. This response may have been generated by a less capable
+model — treat it as additional insight, not as authoritative. Evaluate each
+item yourself, fix real issues, and ignore false positives.""",
 
     "update-context-db": """\
 The update subagent has made changes to context-db/. Review the changes it
@@ -781,7 +793,7 @@ def run_code_review(args):
 
 
 def run_subagent(args):
-    """Run a single-phase subagent (user-prompt or pre-review)."""
+    """Run a single-phase subagent (user-prompt or pre-review) from project root."""
     context_db = (
         os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
     )
@@ -792,19 +804,24 @@ def run_subagent(args):
     config = load_config(args.config)
     model = args.model or config[args.mode]["model"]
     toc = os.path.abspath(args.toc_script or find_toc_script())
-
-    system_prompt = SYSTEM_PROMPTS[args.mode].format(toc=toc)
-    user_msg = USER_PROMPTS[args.mode].format(prompt=args.prompt)
+    project_root = find_project_root(context_db)
+    context_db_rel = os.path.relpath(context_db, project_root)
     debug = args.debug
 
+    system_prompt = SYSTEM_PROMPTS[args.mode].format(
+        toc=toc, context_db_rel=context_db_rel
+    )
+    user_msg = USER_PROMPTS[args.mode].format(prompt=args.prompt)
+
     if debug:
-        print(f"cwd: {context_db}")
+        print(f"cwd: {project_root}")
+        print(f"context-db: {context_db_rel}/")
         print(f"model: {model}")
         print(f"\n[system prompt]\n{system_prompt}\n[end]")
         print(f"\n[user message]\n{user_msg}\n[end]\n")
 
     text, cost_usd, elapsed = spawn_claude(
-        system_prompt, user_msg, model, MODE_TOOLS[args.mode], context_db, debug
+        system_prompt, user_msg, model, MODE_TOOLS[args.mode], project_root, debug
     )
 
     if text is None:

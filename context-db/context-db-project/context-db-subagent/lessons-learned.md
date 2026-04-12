@@ -1,8 +1,8 @@
 ---
 description:
-  What we learned building the subagent — constrained navigation, running from
-  context-db/, the late-session recall problem, why pre-loading fails, prompt
-  engineering for haiku compliance
+  What we learned building the subagent — the late-session recall problem, why
+  pre-loading fails, prompt engineering for haiku compliance, why pre-review
+  exists
 ---
 
 # Lessons Learned
@@ -26,18 +26,16 @@ the system prompt. Problems:
   symlinks in Python 3.9)
 - Bypasses the description-based routing that context-db is designed for
 
-Fix: let the model navigate with Bash and Read tools, same as manual mode.
-
 ## Cheap models need structured output constraints
 
 Haiku ignores "do NOT help with the task" instructions. It treats the user's raw
 prompt as a request to itself. Two fixes were needed:
 
-1. **Structured output format in the role prompt** — "respond with ONLY bullet
-   points" constrains the output shape, making task-help harder
-2. **Wrapping the prompt** — `Developer's prompt: commit everything to git`
-   reframes it as a lookup request, not a task request. Without this wrapper,
-   haiku acts as a coding assistant instead of a knowledge lookup service.
+1. **Structured output format** — "respond with ONLY verbatim snippets"
+   constrains the output shape, making task-help harder
+2. **Wrapping the prompt** — `Developer's prompt: <text>` reframes it as a
+   lookup request, not a task request. Without this wrapper, haiku acts as a
+   coding assistant instead of a knowledge lookup service.
 
 ## Content-first ordering matters
 
@@ -52,112 +50,50 @@ The session-start hook fires once. The SKILL.md loads on demand. But the rule
 file stays in context for the entire session — it survives compression. The rule
 is where "call the subagent" instructions must live to be reliable at turn 50.
 
-## One model per mode
+## Constrain navigation to TOC + Read only
 
-Early versions used haiku for file selection and sonnet for synthesis within a
-single mode. This was confusing to configure and debug. One model per mode is
-cleaner — the configured model handles the entire call.
+Without constraints, haiku adds defensive commands (`find`, `ls -la`,
+`head -50`, `2>/dev/null`) that waste turns. Telling it "Do not use find, grep,
+or ls" produces clean 2-3 step navigation.
 
-## user-prompt mode needs explicit scope constraints
+## Absolute TOC path is a breadcrumb
 
-Without scope filtering, the subagent returns information about context-db
-itself (architecture, installation, etc.) when asked about a project that
-happens to use context-db. Two filtering rules were needed in the user-prompt
-mode role prompt:
-
-1. **Source constraint** — "Only return information found in the context-db/
-   folder" keeps the model from drawing on its training knowledge or other
-   in-context files.
-2. **Self-reference guard** — "Do not return information about context-db
-   itself" prevents the subagent from surfacing context-db meta-knowledge as if
-   it were project knowledge.
-
-These rules are effective when the context-db/ folder does not contain
-self-referential files. Confirmed working against an external fastapi test repo.
+The TOC script path is absolute. Haiku sees it and tries to read files relative
+to that location. Adding "The TOC script is an external tool — never read files
+from its directory" fixes this, but haiku still occasionally tries the wrong
+path on first attempt and self-corrects.
 
 ## Main agent must wait for subagent before exploring codebase
 
 Without explicit wait instructions, the main agent starts exploring the codebase
 in parallel with the subagent call — defeating the purpose of subagent-first
-lookup. The instructions mode output now includes:
-
-> "Wait for the response before taking other actions — do not explore the
-> codebase or start work in parallel."
-
-This must be in the instructions-mode output (which goes into the rule file),
-not just the role prompt, so it governs the main agent's behavior.
-
-## Run from inside context-db/, not the project root
-
-Running `claude -p` with `cwd=context-db/` and `--bare` sandboxes the subagent
-to just the markdown files. No rules, no skills, no CLAUDE.md — it can't wander
-into the codebase. The `--context-db` flag defaults to `.` (current directory)
-so the expected flow is `cd context-db/ && run the script`.
-
-## Constrain navigation to TOC + Read only
-
-Without constraints, haiku adds defensive commands (`find`, `ls -la`,
-`head -50`, `2>/dev/null`) that waste turns. Telling it "Do not use find, grep,
-or ls. Only the TOC script and Read." produces clean 2-3 step navigation.
-
-## Absolute TOC path is a breadcrumb
-
-The TOC script path is absolute (e.g.,
-`/path/to/skills/context-db-manual/ scripts/...`). Haiku sees it and tries to
-read files relative to that location. Adding "All files are relative to your cwd
-(.). The TOC script is an external tool — never read files from its directory."
-fixes this, but haiku still occasionally tries the wrong path on first attempt
-and self-corrects.
-
-## stream-json for live output
-
-`--output-format stream-json --verbose` lets the script print tool calls as they
-happen. Without this, `claude -p` buffers everything and the caller sees nothing
-until the full response is ready — which takes 20-30 seconds.
-
-## code-review runs from project root, not context-db/
-
-The code-review subagent needs to run `git diff` and read project source files.
-It runs from the project root with the TOC script path for context-db navigation
-using `bash {toc} context-db/`. This is different from user-prompt mode which
-runs from inside context-db/.
-
-## Let the code-review subagent run git diff itself
-
-Early design passed the diff to the code-review subagent in the user message.
-Simpler approach: give it Bash + Read, let it run `git diff` itself. Fewer
-moving parts, the subagent sees exactly what git sees, and the script doesn't
-need diff-capture logic for the review path.
-
-## Stdout over report files
-
-Early design had review subagents write report files that the main agent had to
-read and then delete. Stdout is cleaner — the response comes back inline in the
-`[response]` section, no file lifecycle to manage. The main agent reads it
-immediately and acts. Only exception: update-context-db still captures the diff
-in the script because it needs to diff only context-db/ changes.
+lookup. The wait instruction must be in the instructions-mode output (not the
+sub-agent prompt) so it governs the main agent's behavior.
 
 ## Main agents don't follow standards reliably — feed them before they start
 
-User-prompt and session-start loading both deliver standards into context, but
-the main agent often ignores them when making edits. The pattern: agent reads
-standards early, starts a long task, by the time it's writing code the standards
-have faded into background context it doesn't actively consult.
+The main agent often ignores standards loaded at session start. By the time it's
+writing code, the standards have faded into background context. Pre-review mode
+forces the agent to call for applicable standards _immediately before starting
+edits_ as a workflow step. This is a structural fix — telling the agent "follow
+the standards" in instructions doesn't work reliably.
 
-Pre-review mode addresses this by requiring the agent to call for applicable
-standards _immediately before starting edits_, using a structured plan as the
-query. The agent can't easily skip this — it's step 1 in the workflow
-instructions. Getting the standards at the moment of action, rather than at
-session start, produces better compliance.
+## Do not anthropomorphize in docs or prompts
 
-This is a structural fix, not a prompt fix. Telling the agent "follow the
-standards" in instructions doesn't work reliably. Making it call for standards
-as a workflow step forces the retrieval at the right moment.
+Don't call the main agent "the expert" or give it human qualities. Frame
+sub-agent responses as "additional context" — not as advice from a junior to a
+senior. The goal is to inform, not to establish a hierarchy between models.
 
 ## Review type separation matters
 
-Two distinct review types: `context-db` (default) only flags issues backed by a
-convention in the knowledge base, each critique citing its source. `full` adds a
-general code review section. Separating these prevents the model from mixing
-convention-backed critiques with general opinions — the main agent needs to know
-which critiques have authority behind them.
+`context-db` review only flags issues backed by a convention, each critique
+citing its source. `full` adds a general review section. Separating these
+prevents the model from mixing convention-backed critiques with general opinions
+— the main agent needs to know which critiques have authority behind them.
+
+## Self-reference guard for user-prompt
+
+Without scope filtering, the subagent returns information about context-db
+itself when asked about a project that uses context-db. The system prompt must
+constrain the subagent to only return information found in the knowledge base,
+not about the knowledge base system itself.
