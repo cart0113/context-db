@@ -1,7 +1,7 @@
 ---
 description:
-  When to call user-prompt, code-review, and update-context-db — frequency
-  rules, the review flow (commit -> change -> review -> evaluate), what to skip
+  When to call pre-review, user-prompt, code-review, and update-context-db —
+  frequency rules, combined pre-review + code-review workflow, what to skip
 ---
 
 # When to Call the Subagent
@@ -13,6 +13,23 @@ call takes 10-30 seconds and costs tokens. A follow-up like "make that variable
 name shorter" does not need a fresh knowledge base lookup or convention review.
 
 The challenge is teaching the main agent to judge when a call is worth the cost.
+
+## pre-review — immediately before making edits
+
+Pre-review runs as step 1 of the combined workflow, before any code changes. The
+agent sends a structured plan and gets back verbatim applicable standards.
+
+What should NOT trigger pre-review:
+
+- Pure git operations (commit, push, branch).
+- Explanation requests with no edits planned.
+- Follow-up refinements on the same task (standards already fetched).
+
+What SHOULD trigger pre-review:
+
+- Any task that involves writing or editing code, docs, or config.
+- Starting a new task of a different type than the previous one.
+- Anything where coding or writing standards are relevant.
 
 ## user-prompt — before starting work
 

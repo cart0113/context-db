@@ -40,13 +40,15 @@ or settings.
 
 ```json
 {
+  "pre-review": { "model": "haiku", "when": "major" },
   "user-prompt": { "model": "haiku", "when": "major" },
   "code-review": {
     "model": "sonnet",
     "when": "major",
     "review-type": "context-db"
   },
-  "update-context-db": { "model": "sonnet", "when": "major" }
+  "update-context-db": { "model": "sonnet", "when": "major" },
+  "uncommitted-changes": "ask-user"
 }
 ```
 
@@ -61,6 +63,10 @@ One model per mode — the configured model handles the entire call. Exception:
 
 **review-type** (code-review only): `context-db` (only flag convention issues)
 or `full` (convention issues + general code review).
+
+**uncommitted-changes:** `ask-user` (default, agent asks the developer before
+committing) or `auto-commit` (agent commits automatically to establish a clean
+baseline before code-review runs).
 
 The main agent never reads this file. The `instructions` mode reads it and
 returns the right instructions.

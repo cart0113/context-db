@@ -137,6 +137,23 @@ read and then delete. Stdout is cleaner — the response comes back inline in th
 immediately and acts. Only exception: update-context-db still captures the diff
 in the script because it needs to diff only context-db/ changes.
 
+## Main agents don't follow standards reliably — feed them before they start
+
+User-prompt and session-start loading both deliver standards into context, but
+the main agent often ignores them when making edits. The pattern: agent reads
+standards early, starts a long task, by the time it's writing code the standards
+have faded into background context it doesn't actively consult.
+
+Pre-review mode addresses this by requiring the agent to call for applicable
+standards _immediately before starting edits_, using a structured plan as the
+query. The agent can't easily skip this — it's step 1 in the workflow
+instructions. Getting the standards at the moment of action, rather than at
+session start, produces better compliance.
+
+This is a structural fix, not a prompt fix. Telling the agent "follow the
+standards" in instructions doesn't work reliably. Making it call for standards
+as a workflow step forces the retrieval at the right moment.
+
 ## Review type separation matters
 
 Two distinct review types: `context-db` (default) only flags issues backed by a

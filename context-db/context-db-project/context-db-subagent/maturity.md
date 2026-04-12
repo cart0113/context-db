@@ -1,13 +1,30 @@
 ---
 description:
-  Maturity status of each subagent mode — user-prompt is 75% (good test
-  results), code-review is 40% (structure done, needs real testing),
-  update-context-db is 25% (single-phase, initial tests working)
+  Maturity status of each subagent mode — pre-review is 30% (newly added,
+  initial design done), user-prompt is 75% (good test results), code-review is
+  40% (structure done, needs real testing), update-context-db is 25%
+  (single-phase, initial tests working)
 ---
 
 # Subagent Mode Maturity
 
 Status as of 2026-04-11.
+
+## pre-review — 30%
+
+Newly added. The agent sends a structured plan (type/language/size) and the
+subagent returns verbatim applicable standards. Default model: haiku. The
+combined workflow in instructions mode wires pre-review and code-review into a
+single numbered sequence.
+
+Remaining work:
+
+- Real-world testing to verify standards recall quality
+- Tuning the structured plan format — what fields give the subagent enough
+  signal to pick the right standards
+- Verifying haiku compliance (returns standards, does not help with the task)
+- Testing the combined workflow instructions across different enabled/disabled
+  configurations
 
 ## user-prompt — 75%
 

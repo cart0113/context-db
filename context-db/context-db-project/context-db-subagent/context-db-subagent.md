@@ -1,7 +1,8 @@
 ---
 description:
-  Subagent delivery mode — four modes (ask, review, update-context-db,
-  instructions). Ask runs from context-db/ with constrained navigation. Review
-  runs from project root, diffs and checks conventions. Update-context-db has
-  two phases (write then review). All output on stdout, no report files.
+  Subagent delivery mode — five modes (pre-review, user-prompt, code-review,
+  update-context-db, instructions). Pre-review feeds standards to the agent
+  before edits. User-prompt runs from context-db/ with constrained navigation.
+  Code-review runs from project root. Update-context-db is single-phase. All
+  output on stdout, no report files.
 ---
