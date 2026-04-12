@@ -1,17 +1,11 @@
 {
-  "modes": {
-    "ask": {
-      "model": "haiku",
-      "behavior": "automatic",
-      "frequency": "always"
-    },
-    "review": {
-      "model": "sonnet",
-      "behavior": "confirm"
-    },
-    "maintain": {
-      "model": "sonnet",
-      "behavior": "automatic"
-    }
-  }
+  "user-prompt": { "model": "haiku", "when": "major" },
+  "pre-review": { "model": "haiku", "when": "major" },
+  "code-review": {
+    "model": "sonnet",
+    "when": "major",
+    "review-type": "context-db"
+  },
+  "update-context-db": { "model": "sonnet", "when": "major" },
+  "uncommitted-changes": "ask-user"
 }

@@ -36,25 +36,31 @@ ln -s ../GIT_STANDARDS/templates/.claude-project .claude
 
 Copy `templates/contextdb.json` to `.contextdb.json` in the project root. This
 file should be in `.gitignore` — different developers may want different models
-or behaviors.
+or settings.
 
 ```json
 {
-  "modes": {
-    "ask": { "model": "haiku", "behavior": "automatic", "frequency": "always" },
-    "review": { "model": "sonnet", "behavior": "confirm" },
-    "maintain": { "model": "sonnet", "behavior": "automatic" }
-  }
+  "user-prompt": { "model": "haiku", "when": "major" },
+  "code-review": {
+    "model": "sonnet",
+    "when": "major",
+    "review-type": "context-db"
+  },
+  "update-context-db": { "model": "sonnet", "when": "major" }
 }
 ```
 
 ### Config options
 
 **model:** `haiku` (cheap/fast), `sonnet` (balanced), `opus` (best judgment).
-One model per mode — the configured model handles the entire call.
+One model per mode — the configured model handles the entire call. Exception:
+`full` review-type defaults to opus if no model is explicitly set.
 
-**behavior:** `automatic` (call without asking), `confirm` (ask user first),
-`skip` (disable this mode).
+**when:** `always` (every prompt/change), `major` (significant new work only),
+`never` (disabled).
 
-**frequency** (ask mode only): `always` (every prompt), `new` (topic changes),
-`major` (significant new work only).
+**review-type** (code-review only): `context-db` (only flag convention issues)
+or `full` (convention issues + general code review).
+
+The main agent never reads this file. The `instructions` mode reads it and
+returns the right instructions.

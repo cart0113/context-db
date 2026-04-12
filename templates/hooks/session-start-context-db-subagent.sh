@@ -31,8 +31,8 @@ This project has a knowledge expert. You MUST follow these instructions.
 
   python3 .claude/skills/context-db-subagent/scripts/context-db-sub-agent.py <mode> "<message>"
 
-  ask: Run on every user prompt. Pass the user's exact prompt. Do not skip it, do not ask.
-  review: Run after planning but BEFORE writing code. Pass your implementation plan. Ask the user before running.
-  maintain: Run after completing work. Pass what you learned — corrections, conventions, pitfalls. Do not skip it, do not ask.
+  user-prompt: Run on every user prompt. Pass the user's exact prompt. Do not skip it, do not ask.
+  code-review: Run after code changes. Pass a summary of changes made. Ask the user before running.
+  update-context-db: Run after completing work. Pass what you learned — corrections, conventions, pitfalls. Do not skip it, do not ask.
 EOF
 fi

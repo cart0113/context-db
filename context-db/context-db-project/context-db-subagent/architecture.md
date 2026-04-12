@@ -1,8 +1,8 @@
 ---
 description:
-  Subagent architecture — script entry point, four modes (ask, review,
-  update-context-db, instructions), how each mode spawns claude -p, tools per
-  mode, review scope config, stream-json output
+  Subagent architecture — script entry point, four modes (user-prompt,
+  code-review, update-context-db, instructions), how each mode spawns claude -p,
+  tools per mode, review-type config, stream-json output
 ---
 
 # Subagent Architecture
@@ -14,53 +14,50 @@ description:
 - **instructions** — reads `.contextdb.json`, outputs tailored directives for
   the main agent. Called by the session-start hook and the rule. The main agent
   never sees `.contextdb.json`.
-- **ask** — calls `claude -p` from inside context-db/ so the subagent navigates
-  the knowledge base and returns relevant context.
-- **review** — calls `claude -p` from the project root. The subagent runs
+- **user-prompt** — calls `claude -p` from inside context-db/ so the subagent
+  navigates the knowledge base and returns relevant context as verbatim
+  snippets.
+- **code-review** — calls `claude -p` from the project root. The subagent runs
   `git diff` itself, navigates context-db for conventions, and returns a
   human-readable review report on stdout.
-- **update-context-db** — two-phase: first subagent writes to context-db/
-  directly, then a review subagent checks the changes via `git diff`.
+- **update-context-db** — calls `claude -p` from the project root. The subagent
+  runs `git diff` to see what changed, navigates context-db to understand
+  existing knowledge, then writes/edits context-db files directly.
 
 ## Execution model per mode
 
-### ask — runs from context-db/
+### user-prompt — runs from context-db/
 
 - Tools: `Bash,Read`
 - The subagent navigates the B-tree (TOC script + Read), returns verbatim
   snippets from relevant files.
 - Does NOT answer the prompt or help with the task.
 
-### review — runs from project root
+### code-review — runs from project root
 
 - Tools: `Bash,Read`
 - The subagent runs `git diff` itself to see what changed.
 - Navigates context-db (via TOC script with `context-db/` prefix) to find
   relevant conventions.
 - Returns a full review report citing context-db sources for each critique.
-- **Scope config** controls what gets reviewed:
-  - `context-db-only` (default): only flag issues backed by context-db
+- **review-type** config controls what gets reviewed:
+  - `context-db` (default, sonnet): only flag issues backed by context-db
     conventions. No general opinions.
-  - `context-db-and-general`: also do a general code review. Report has two
-    sections: "Convention Issues" and "General Code Review".
+  - `full` (opus): also do a general code review. Report has two sections:
+    "Convention Issues" and "General Code Review".
 - Requires a clean git baseline — instructions tell main agent to ensure repo is
   committed before making changes.
 
-### update-context-db — two phases
-
-Phase 1 (update): runs from context-db/
+### update-context-db — runs from project root
 
 - Tools: `Bash,Read,Write,Edit`
-- Navigates context-db, then edits/creates files directly.
-
-Phase 2 (review): runs from project root
-
-- Tools: `Bash,Read`
-- Script captures `git diff context-db/` (including new untracked files).
-- Diff is passed to the review subagent in the user message.
-- Checks accuracy, redundancy, structure, value, completeness.
-
-Both phases return on stdout — no report files.
+- The subagent runs `git diff` to see what code changed this session.
+- Navigates context-db (via TOC script with `context-db/` prefix) to understand
+  existing knowledge.
+- Uses the developer's notes + the diff to update context-db files directly.
+- Only files what the code can't tell you — conventions, corrections, pitfalls,
+  design rationale.
+- Returns a summary on stdout.
 
 ## All subagent output goes to stdout
 
@@ -88,20 +85,19 @@ Per-mode settings at the top level (not nested under "modes"):
 
 ```json
 {
-  "ask": { "model": "haiku", "when": "major" },
-  "review": { "model": "sonnet", "when": "major", "scope": "context-db-only" },
-  "update-context-db": {
+  "user-prompt": { "model": "haiku", "when": "major" },
+  "code-review": {
     "model": "sonnet",
     "when": "major",
-    "review": { "enabled": true, "model": "sonnet" }
-  }
+    "review-type": "context-db"
+  },
+  "update-context-db": { "model": "sonnet", "when": "major" }
 }
 ```
 
 - `model`: haiku, sonnet, or opus
 - `when`: never, major, always
-- `scope` (review only): context-db-only or context-db-and-general
-- `review` (update-context-db only): sub-config for the review phase
+- `review-type` (code-review only): context-db or full
 
 ## Environment guard
 

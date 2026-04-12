@@ -8,16 +8,17 @@ stays clean.
 
 Modes:
   instructions       Print directives for the main agent (from .contextdb.json)
-  ask                What should the developer know before starting this work?
-  review             Does this plan violate any project conventions?
-  update-context-db  File learnings into context-db, then review changes
+  user-prompt        What should the developer know before starting this work?
+  pre-review         Given a plan, what standards and conventions apply?
+  code-review        Do the changes violate any project conventions?
+  update-context-db  File learnings into context-db
 
 Usage:
   context-db-sub-agent.py instructions
   context-db-sub-agent.py instructions --brief
-  context-db-sub-agent.py instructions --ask-when always --review-when never
-  context-db-sub-agent.py ask "user prompt"
-  context-db-sub-agent.py ask "prompt" --debug
+  context-db-sub-agent.py user-prompt "user prompt"
+  context-db-sub-agent.py pre-review "Type: code (Python). Size: medium. Plan: ..."
+  context-db-sub-agent.py code-review "summary of changes" --debug
   context-db-sub-agent.py update-context-db "what was learned" --debug
 
 Dependencies: python3 (stdlib only), claude CLI
@@ -33,28 +34,28 @@ from pathlib import Path
 
 # ── Config ──────────────────────────────────────────────────────────────────
 
-MODES = ["ask", "review", "update-context-db"]
+MODES = ["user-prompt", "pre-review", "code-review", "update-context-db"]
 
 DEFAULT_CONFIG = {
-    "ask": {"model": "haiku", "when": "major"},
-    # scope: "context-db-only" = only flag issues backed by context-db conventions
-    #        "context-db-and-general" = also do a general code review
-    "review": {"model": "sonnet", "when": "major", "scope": "context-db-only"},
-    "update-context-db": {
-        "model": "sonnet",
-        "when": "major",
-        "review": {"enabled": True, "model": "sonnet"},
-    },
+    "user-prompt": {"model": "haiku", "when": "major"},
+    "pre-review": {"model": "haiku", "when": "major"},
+    # review-type: "context-db" = only flag issues backed by context-db conventions
+    #              "full"       = also do a general review
+    "code-review": {"model": "sonnet", "when": "major", "review-type": "context-db"},
+    "update-context-db": {"model": "sonnet", "when": "major"},
+    # "auto-commit" = commit before changes automatically
+    # "ask-user"    = ask the user what to do with uncommitted changes
+    "uncommitted-changes": "ask-user",
     "reinforce_subagent_rules": True,
 }
 
 # Tools granted to each mode's subagent
 MODE_TOOLS = {
-    "ask": "Bash,Read",
-    "review": "Bash,Read",
+    "user-prompt": "Bash,Read",
+    "pre-review": "Bash,Read",
+    "code-review": "Bash,Read",
     "update-context-db": "Bash,Read,Write,Edit",
 }
-
 
 
 def load_config(config_path):
@@ -65,15 +66,10 @@ def load_config(config_path):
             user = json.load(f)
         for mode in MODES:
             if mode in user:
-                for key, val in user[mode].items():
-                    if isinstance(val, dict) and isinstance(
-                        config[mode].get(key), dict
-                    ):
-                        config[mode][key].update(val)
-                    else:
-                        config[mode][key] = val
-        if "reinforce_subagent_rules" in user:
-            config["reinforce_subagent_rules"] = user["reinforce_subagent_rules"]
+                config[mode].update(user[mode])
+        for key in ("uncommitted-changes", "reinforce_subagent_rules"):
+            if key in user:
+                config[key] = user[key]
     return config
 
 
@@ -124,47 +120,62 @@ def find_project_root(context_db):
     )
     if result.returncode == 0:
         return result.stdout.strip()
-    # Fallback: assume context-db is one level below project root
     return os.path.dirname(context_db)
 
 
 # ── Instructions mode ───────────────────────────────────────────────────────
+# generate_instructions() and generate_brief() produce text that the MAIN AGENT
+# sees. This is how the main agent learns when/how to call this script.
+# Output goes to stdout via the session-start hook → main agent reads it.
+#
+# The *_WHEN dicts control the "When:" line in the main agent's instructions.
+# The *_BRIEF dicts produce the short reminder appended to every sub-agent response.
 
 
-# Per-mode "when" descriptions — what "major" means for each mode
-ASK_WHEN = {
+# FOR MAIN AGENT: "When should I call this mode?"
+# Appears in the session-start instructions under each mode's ## heading.
+USER_PROMPT_WHEN = {
     "always": "Run this on every new user prompt. Do not skip it, do not ask.",
-    "major": (
-        "Run this when the user's prompt introduces significant new work or "
-        "the topic has changed (e.g. was writing code, now asked to write docs "
-        "or commit). Skip follow-ups, small refinements, and clarifications "
-        "on the same topic."
-    ),
+    "major": """\
+Run this when the user's prompt introduces significant new work or the topic
+has changed (e.g. was writing code, now asked to write docs or commit). Skip
+follow-ups, small refinements, and clarifications on the same topic.""",
 }
-REVIEW_WHEN = {
-    "always": "Run this after every code change. Do not skip it, do not ask.",
-    "major": (
-        "Run this after significant code changes — new features, API changes, "
-        "new files, architectural decisions. Skip single-line fixes, renames, "
-        "formatting, and changes you are confident about from a prior ask."
-    ),
+PRE_REVIEW_WHEN = {
+    "always": "Run this before every change. Do not skip it, do not ask.",
+    "major": """\
+Run this before significant changes — new features, API changes, new files,
+architectural decisions, major doc updates. Skip single-line fixes, renames,
+formatting, and changes you are confident about from a prior user-prompt.""",
+}
+CODE_REVIEW_WHEN = {
+    "always": "Run this after every change. Do not skip it, do not ask.",
+    "major": """\
+Run this after significant edits to files in the project — new features, API
+changes, new files, architectural decisions, major doc updates. Skip small
+fixes, renames, formatting, and changes you are confident about from a prior
+user-prompt, especially if they are follow-on edits to a major edit.""",
 }
 UPDATE_WHEN = {
     "always": "Run this after every completed task. Do not skip it, do not ask.",
-    "major": (
-        "Run this when important information came up during the session that "
-        "future agents should know — user corrections, discovered conventions, "
-        "surprising pitfalls. Skip routine work where nothing new was learned."
-    ),
+    "major": """\
+Run this when important information came up during the session that future
+agents should know — user corrections, discovered conventions, surprising
+pitfalls. Skip routine work where nothing new was learned.""",
 }
 
-# Brief versions for the reminder section
-ASK_BRIEF = {
+# FOR MAIN AGENT: short one-liners for the reminder block appended to every
+# sub-agent response. Keeps the main agent aware of the workflow late in session.
+USER_PROMPT_BRIEF = {
     "always": "on every new user prompt",
     "major": "when work changes topic or scope (skip follow-ups and small refinements)",
 }
-REVIEW_BRIEF = {
-    "always": "after every code change",
+PRE_REVIEW_BRIEF = {
+    "always": "before every change",
+    "major": "before significant changes (skip small fixes, renames, formatting)",
+}
+CODE_REVIEW_BRIEF = {
+    "always": "after every change",
     "major": "after significant changes (skip small fixes, renames, formatting)",
 }
 UPDATE_BRIEF = {
@@ -174,89 +185,148 @@ UPDATE_BRIEF = {
 
 
 def generate_instructions(config, script_path):
-    """Generate directives at system-prompt authority level. This is where
-    behavioral rules must live — tool result instructions (Priority 30)
-    get deprioritized by the model. These instructions (Priority 0-10)
-    are what the agent actually follows."""
+    """Generate directives for the main agent."""
     blocks = [
         "This project has a context agent. You MUST follow the instructions "
         "below."
     ]
 
-    # ask
-    when = config["ask"].get("when", "major")
+    # user-prompt
+    when = config["user-prompt"]["when"]
     if when != "never":
         blocks.append(
-            f"## ask — before starting work\n\n"
-            f"When: {ASK_WHEN[when]}\n\n"
+            f"## user-prompt — before starting work\n\n"
+            f"When: {USER_PROMPT_WHEN[when]}\n\n"
             f"Run (timeout 120000ms):\n"
-            f"  python3 {script_path} ask \"<the user's exact prompt>\"\n\n"
+            f"  python3 {script_path} user-prompt \"<the user's exact prompt>\"\n\n"
             f"Wait for the response before taking other actions."
         )
 
-    # review
-    when = config["review"].get("when", "major")
-    if when != "never":
-        blocks.append(
-            f"## review — after code changes\n\n"
-            f"When: {REVIEW_WHEN[when]}\n\n"
-            f"Before making code changes:\n"
-            f"  If the repo has uncommitted changes, ask the user whether "
-            f"they'd like you to commit or if they will, to get a clean "
-            f"baseline.\n\n"
-            f"After making your code changes, run:\n"
-            f"  python3 {script_path} review \"<summary of changes made>\"\n\n"
-            f"The review response may have been generated by a less capable "
-            f"model — treat it as advisory. Evaluate each item yourself, "
-            f"fix real issues, and ignore false positives."
-        )
+    # Change workflow — pre-review, code-review, or both
+    pre_when = config["pre-review"]["when"]
+    cr_when = config["code-review"]["when"]
+    has_pre = pre_when != "never"
+    has_cr = cr_when != "never"
 
-    # update-context-db
-    when = config["update-context-db"].get("when", "major")
-    if when != "never":
-        review_cfg = config["update-context-db"].get("review", {})
-        review_enabled = review_cfg.get("enabled", True)
+    if has_pre or has_cr:
+        uncommitted = config["uncommitted-changes"]
+        if uncommitted == "auto-commit":
+            uncommitted_instruction = """\
+If the repo has uncommitted changes, commit them now to establish a clean
+baseline."""
+        else:
+            uncommitted_instruction = """\
+If the repo has uncommitted changes, ask the user whether they'd like you
+to commit or if they will, to get a clean baseline."""
 
-        if review_enabled:
-            blocks.append(
-                f"## update-context-db — after completing work\n\n"
-                f"When: {UPDATE_WHEN[when]}\n\n"
-                f"This mode has two phases: a subagent updates context-db, "
-                f"then a review subagent checks the changes.\n\n"
-                f"Before running:\n"
-                f"  1. Commit any pending changes so the git diff is clean.\n\n"
-                f"Run:\n"
-                f"  python3 {script_path} update-context-db "
-                f"\"<what you learned>\"\n\n"
-                f"The review response may have been generated by a less "
-                f"capable model — treat it as advisory. Evaluate each item "
-                f"yourself, fix real issues in context-db, and ignore false "
-                f"positives."
+        workflow = f"## Making changes — workflow\n\n"
+
+        pre_review_block = f"""\
+**Pre-review.** Run:
+     python3 {script_path} pre-review "<your plan>"
+   Your plan MUST include:
+   - Type of changes (code, documentation, config, etc.)
+   - Language or system (Python, JavaScript, etc.)
+   - Size: minor, medium, major, or total overhaul
+   - What you plan to change and why
+
+   Wait for the response. It will return applicable standards \
+and conventions. Follow them."""
+
+        has_update = config["update-context-db"]["when"] != "never"
+
+        if has_pre and has_cr:
+            step = 1
+            workflow += (
+                f"When to follow this workflow: "
+                f"{PRE_REVIEW_WHEN[pre_when]}\n\n"
+                f"{step}. **Baseline.** {uncommitted_instruction}\n\n"
+            )
+            step += 1
+            workflow += (
+                f"{step}. **Plan your changes.** Before editing, describe "
+                f"what you intend to do.\n\n"
+            )
+            step += 1
+            workflow += f"{step}. {pre_review_block}\n\n"
+            step += 1
+            workflow += (
+                f"{step}. **Make your changes** following the standards "
+                f"returned.\n\n"
+            )
+            step += 1
+            workflow += (
+                f"{step}. **Code-review.** Run:\n"
+                f"     python3 {script_path} code-review "
+                f"\"<summary of changes made>\"\n"
+                f"   Evaluate each item — treat as advisory, fix real issues, "
+                f"ignore false positives."
+            )
+            if has_update:
+                step += 1
+                workflow += (
+                    f"\n\n{step}. **Update context-db** if you learned "
+                    f"something important (see below)."
+                )
+        elif has_pre:
+            workflow += (
+                f"When to follow this workflow: "
+                f"{PRE_REVIEW_WHEN[pre_when]}\n\n"
+                f"1. **Plan your changes.** Before editing, describe what you "
+                f"intend to do.\n\n"
+                f"2. {pre_review_block}\n\n"
+                f"3. **Make your changes** following the standards returned."
             )
         else:
-            blocks.append(
-                f"## update-context-db — after completing work\n\n"
-                f"When: {UPDATE_WHEN[when]}\n\n"
-                f"Run:\n"
-                f"  python3 {script_path} update-context-db "
-                f"\"<what you learned>\""
+            workflow += (
+                f"When to follow this workflow: "
+                f"{CODE_REVIEW_WHEN[cr_when]}\n\n"
+                f"1. **Baseline.** {uncommitted_instruction}\n\n"
+                f"2. **Make your changes.**\n\n"
+                f"3. **Code-review.** Run:\n"
+                f"     python3 {script_path} code-review "
+                f"\"<summary of changes made>\"\n"
+                f"   Evaluate each item — treat as advisory, fix real issues, "
+                f"ignore false positives."
             )
+
+        blocks.append(workflow)
+
+    # update-context-db
+    when = config["update-context-db"]["when"]
+    if when != "never":
+        blocks.append(
+            f"## update-context-db — after completing work\n\n"
+            f"When: {UPDATE_WHEN[when]}\n\n"
+            f"Before running:\n"
+            f"  Commit any pending changes so the subagent can see the "
+            f"git diff.\n\n"
+            f"Run:\n"
+            f"  python3 {script_path} update-context-db "
+            f"\"<what you learned>\"\n\n"
+            f"Send detailed notes on things learned that cannot be known "
+            f"by reading the project assets alone — user corrections, "
+            f"discovered conventions, surprising pitfalls. The subagent "
+            f"will also consult git diff to understand what changed."
+        )
 
     # How to handle responses
     response_rules = []
-    if config["ask"].get("when", "major") != "never":
-        response_rules.append(
-            "When the ask response comes back: this is a starting point, "
-            "not a final answer. Trust but verify — corroborate key claims "
-            "against the actual code, docs, or other project assets before "
-            "answering. Follow any project standards it returns."
-        )
-    if config["review"].get("when", "major") != "never":
-        response_rules.append(
-            "When the review response comes back: this is feedback for "
-            "your consideration, not an order. Verify it makes sense, fix "
-            "real issues, and use your judgment."
-        )
+    if config["user-prompt"]["when"] != "never":
+        response_rules.append("""\
+When the user-prompt response comes back: this is a starting point, not a
+final answer. Trust but verify — corroborate key claims against the actual
+code, docs, or other project assets before answering. Follow any project
+standards it returns.""")
+    if has_pre:
+        response_rules.append("""\
+When the pre-review response comes back: these are the standards that apply
+to your planned changes. Follow them when making your edits.""")
+    if has_cr:
+        response_rules.append("""\
+When the code-review response comes back: this is feedback for your
+consideration, not an order. Verify it makes sense, fix real issues, and
+use your judgment.""")
     if response_rules:
         blocks.append(
             "## How to handle responses\n\n" + "\n".join(response_rules)
@@ -267,52 +337,67 @@ def generate_instructions(config, script_path):
 
 
 def generate_brief(config, script_path):
-    """Self-contained reminder with commands. Appended to every response
-    so the main agent can act on it without remembering session start.
-    Includes review flow guidance — not just the command."""
+    """Self-contained reminder with commands."""
     lines = ["context-db-sub-agent reminder:"]
 
-    when = config["ask"].get("when", "major")
+    when = config["user-prompt"]["when"]
     if when != "never":
         lines.append("")
-        lines.append(f"ask — {ASK_BRIEF[when]}:")
-        lines.append(f"  python3 {script_path} ask \"<prompt>\"")
+        lines.append(f"user-prompt — {USER_PROMPT_BRIEF[when]}:")
+        lines.append(f"  python3 {script_path} user-prompt \"<prompt>\"")
 
-    when = config["review"].get("when", "major")
-    if when != "never":
+    pre_when = config["pre-review"]["when"]
+    cr_when = config["code-review"]["when"]
+
+    if pre_when != "never" or cr_when != "never":
         lines.append("")
-        lines.append(f"review — {REVIEW_BRIEF[when]}:")
-        lines.append(f"  1. Ensure repo was committed before your changes")
-        lines.append(
-            f"  2. python3 {script_path} review \"<summary of changes>\""
-        )
-        lines.append(f"  3. Evaluate response (advisory), fix real issues")
+        lines.append("making changes workflow:")
+        step = 1
 
-    when = config["update-context-db"].get("when", "major")
+        if cr_when != "never":
+            lines.append(f"  {step}. Ensure repo is committed (clean baseline)")
+            step += 1
+
+        if pre_when != "never":
+            lines.append(
+                f"  {step}. python3 {script_path} pre-review "
+                f"\"Type: ... Size: ... Plan: ...\""
+            )
+            lines.append(f"     Follow returned standards")
+            step += 1
+
+        lines.append(f"  {step}. Make changes")
+        step += 1
+
+        if cr_when != "never":
+            lines.append(
+                f"  {step}. python3 {script_path} code-review "
+                f"\"<summary of changes>\""
+            )
+            lines.append(f"     Evaluate response (advisory), fix real issues")
+
+    when = config["update-context-db"]["when"]
     if when != "never":
-        review_cfg = config["update-context-db"].get("review", {})
-        review_enabled = review_cfg.get("enabled", True)
-
         lines.append("")
         lines.append(f"update-context-db — {UPDATE_BRIEF[when]}:")
-        if review_enabled:
-            lines.append(f"  1. Commit pending changes first")
-            lines.append(
-                f"  2. python3 {script_path} update-context-db \"<learnings>\""
-            )
-            lines.append(f"  3. Evaluate review response (advisory), fix real issues")
-        else:
-            lines.append(
-                f"  python3 {script_path} update-context-db \"<learnings>\""
-            )
+        lines.append(f"  1. Commit pending changes first")
+        lines.append(
+            f"  2. python3 {script_path} update-context-db \"<learnings>\""
+        )
 
     return "\n".join(lines)
 
 
 # ── System prompts ──────────────────────────────────────────────────────────
+# FOR SUB-AGENTS: these are the --system-prompt passed to `claude -p`.
+# The sub-agent sees ONLY this + the user message. No rules, no skills, no CLAUDE.md.
+# Placeholders use {toc}, {context_db_rel} — filled via .format() at call time.
 
 SYSTEM_PROMPTS = {
-    "ask": """\
+    # user-prompt & pre-review: sub-agent runs from inside context-db/ (cwd=context-db/)
+    # code-review & update-context-db: sub-agent runs from project root (cwd=project root)
+
+    "user-prompt": """\
 You are a project knowledge lookup service.
 
 Your working directory is a B-tree of markdown files (~100 lines each). Navigate
@@ -339,50 +424,130 @@ exact file content, copied verbatim
 
 Do not summarize or paraphrase file content. Quote it exactly.
 If nothing is relevant, respond: No relevant project context.""",
-    # Review prompt is built dynamically by build_review_prompt() based on scope.
-    # This entry is kept as a placeholder; run_review() does not use it.
-    "review": None,
-    "update-context-db": """\
-You are maintaining a knowledge base in your working directory ({cwd}).
 
-Navigate using ONLY:
+    "pre-review": """\
+You are a project standards lookup service.
+
+A developer is about to make changes. They will tell you:
+- What type of changes (code, documentation, config, etc.)
+- What language or system (Python, JavaScript, markdown docs, etc.)
+- The size (minor, medium, major, total overhaul)
+- Their plan for what to change
+
+Your job: find ALL standards, conventions, and rules that apply to this type of
+work. Be thorough — the developer will follow what you return and skip what you
+don't return.
+
+Your working directory is a B-tree of markdown files (~100 lines each). Navigate
+it using ONLY these steps:
 1. Run: bash {toc} .
-2. Drill into folders: bash {toc} <subfolder>/
-3. Read matching files to understand what already exists.
+   This lists subfolders and files with descriptions from their YAML frontmatter.
+2. Pick what's relevant to the planned changes.
+   - If it's a folder, run: bash {toc} <subfolder>/
+   - If it's a file, read the whole file.
+3. Repeat until you've covered all applicable areas.
 
-Then make your changes directly:
-- Use Edit to update existing files that cover the topic.
-- Use Write to create new files only for genuinely new topics.
-- Use absolute paths for all file operations (your cwd is {cwd}).
-- Follow the format of existing files (YAML frontmatter with name and
-  description fields, content in markdown).
+Pay special attention to:
+- General coding standards
+- Language-specific standards (match the language in the plan)
+- Writing standards (if documentation is being changed)
+- Conventions and pitfalls specific to the areas being changed
 
-Rules:
-- Only file what the code can't tell you.
-- Update existing files before creating new ones.
-- Keep files around 100 lines.
+Do not use find, grep, or ls. Only the TOC script and Read.
+All files are relative to your cwd (.). The TOC script is an external tool —
+never read files from its directory.
+Never write code. Never help with the task. Only return standards.
+
+Return your findings as a list of verbatim snippets. For each relevant section:
+1. One line explaining why this standard applies to the planned changes.
+2. The exact text from the file, wrapped in markers:
+
+[context-db/path/to/file.md:START-END]
+exact file content, copied verbatim
+[end]
+
+Do not summarize or paraphrase. Quote exactly. Return ALL applicable standards
+— err on the side of including too much rather than too little.
+If nothing is relevant, respond: No relevant project standards.""",
+
+    # code-review prompt is built dynamically by build_review_prompt()
+    "code-review": None,
+
+    "update-context-db": """\
+You are maintaining a project knowledge base at {context_db_rel}/.
+Your working directory is the project root.
+
+## Step 1: Understand what changed
+
+Run: git diff
+to see what changes were made this session.
+
+## Step 2: Navigate existing knowledge
+
+Browse the knowledge base:
+  Run: bash {toc} {context_db_rel}/
+  Drill into folders: bash {toc} {context_db_rel}/<subfolder>/
+  Read files to understand what's already documented.
+
+## Step 3: Update the knowledge base
+
+Using the developer's notes AND the git diff, update {context_db_rel}/:
+- Edit existing files when they cover the topic.
+- Create new files only for genuinely new topics.
+- Use absolute paths for all file operations.
+
+## What belongs in context-db
+
+Only file what the code can't tell you. Ask: "Would removing this cause the
+next agent to make a mistake, even after reading the code?" If not, skip it.
+
+Good content: conventions, corrections from the user, pitfalls (ripple effects,
+files that must change together but aren't linked by imports), design rationale
+invisible in the code, domain knowledge specific to this project.
+
+Bad content: code summaries, what exists, how it's structured, step-by-step
+instructions, anything derivable in 30 seconds with ls/grep/read.
+
+## File format
+
+- Every .md file needs YAML frontmatter with `description` field.
+- Descriptions are routing decisions — be specific, not vague.
+- Target 50-150 lines per file, 200 max.
+- 5-10 items per folder.
+- Subfolders need a folder descriptor file (<folder-name>.md, frontmatter only).
 
 When done, summarize what you changed and why.""",
 }
 
+# FOR SUB-AGENTS: the user message sent to `claude -p` (stdin).
+# {prompt} is filled with the main agent's prompt at call time via .format().
 USER_PROMPTS = {
-    "ask": (
-        "Use this knowledge base to provide the best, most useful context "
-        'for this developer prompt:\n\n"{prompt}"'
-    ),
-    "review": (
-        "Review these changes against project conventions:"
-        '\n\n"{prompt}"'
-    ),
-    "update-context-db": 'File these learnings:\n\n"{prompt}"',
+    "user-prompt": """\
+Use this knowledge base to provide the best, most useful context for this
+developer prompt:
+
+"{prompt}" """,
+
+    "pre-review": """\
+Find ALL standards, conventions, and rules that apply to these planned changes:
+
+"{prompt}" """,
+
+    "code-review": """\
+Review these changes against project conventions:
+
+"{prompt}" """,
+
+    "update-context-db": """\
+File these learnings:
+
+"{prompt}" """,
 }
 
-def build_review_prompt(toc, context_db_rel, scope):
-    """Build the review system prompt based on scope config.
 
-    scope: "context-db-only"      — only flag issues backed by context-db
-           "context-db-and-general" — also do a general code review
-    """
+def build_review_prompt(toc, context_db_rel, review_type):
+    """FOR SUB-AGENT: build the code-review system prompt.
+    Dynamic because review-type adds/removes the general review section."""
     base = f"""\
 You are a code review service. Your working directory is the project root.
 
@@ -405,16 +570,16 @@ Write a full, human-readable review report. For each issue:
 
 If no convention issues are found, say so clearly."""
 
-    if scope == "context-db-and-general":
+    if review_type == "full":
         base += """
 
-After the convention review, also perform a general code review using your own
-expertise. Flag anything that looks wrong, risky, or could be improved —
-regardless of whether it appears in the knowledge base.
+After the convention review, also perform a general review of the changes using
+your own expertise. Flag anything that looks wrong, risky, or could be improved
+— regardless of whether it appears in the knowledge base.
 
 Clearly separate the two sections in your report:
   ## Convention Issues (from context-db)
-  ## General Code Review"""
+  ## General Review"""
     else:
         base += """
 
@@ -427,45 +592,11 @@ Never suggest fixes — only identify problems."""
     return base
 
 
-REVIEW_UPDATE_PROMPT = """\
-You are reviewing changes made to a project knowledge base (context-db/).
-
-You will receive the learnings that were filed and a git diff of all changes.
-Perform a thorough review:
-
-1. ACCURACY — Read the project's source code, docs, and other files to verify
-   the knowledge is correct. Flag anything that contradicts what's in the code.
-2. REDUNDANCY — Read other files in context-db/ to check if this information
-   is already covered elsewhere. Flag duplication.
-3. STRUCTURE — Check context-db conventions: YAML frontmatter with name and
-   description fields, files ~100 lines, logical folder placement.
-4. VALUE — Is this knowledge that code can't tell you? Flag entries that just
-   restate what's obvious from reading the source.
-5. COMPLETENESS — Did the update miss anything important from the learnings?
-
-Your working directory is the project root. context-db/ is a subdirectory.
-You can Read any file in the project to verify claims.
-
-For each issue found:
-  ISSUE: [category] — [description]
-  FILE: [path]
-  SUGGESTION: [what to fix]
-
-If everything looks good:
-  APPROVED — [brief summary of why the changes are sound]
-
-Be thorough but fair. Minor style nits are not issues."""
-
-
 # ── Subagent execution ─────────────────────────────────────────────────────
 
 
 def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
-    """Run claude -p subprocess and return (response_text, cost_usd, elapsed).
-
-    Returns (None, 0.0, elapsed) on timeout so the caller can decide how
-    to handle it (fatal for update, non-fatal for review).
-    """
+    """Run claude -p subprocess and return (response_text, cost_usd, elapsed)."""
     cmd = [
         "claude",
         "-p",
@@ -565,18 +696,46 @@ def print_output_sections(response_text, response_instructions, config):
     print(response_instructions.strip())
     print(f"[end response-instructions]")
 
-    if config.get("reinforce_subagent_rules", True):
+    if config["reinforce_subagent_rules"]:
         script_path = find_script_path()
         print(f"\n[context-db-sub-agent-usage-reminder]")
         print(generate_brief(config, script_path))
         print(f"[end context-db-sub-agent-usage-reminder]")
 
 
+# ── Response instructions ──────────────────────────────────────────────────
+# FOR MAIN AGENT: printed inside [response-instructions] after every sub-agent
+# call. Tells the main agent how to treat the response it just received.
+
+RESPONSE_INSTRUCTIONS = {
+    "user-prompt": """\
+Context from the project's knowledge base. This is a starting point —
+corroborate against the actual code and docs before acting. Follow any
+project standards returned.""",
+
+    "pre-review": """\
+The pre-review subagent has returned standards and conventions that apply to
+your planned changes. Follow these standards when making your edits. These
+are verbatim quotes from the project's knowledge base.""",
+
+    "code-review": """\
+The code-review subagent has checked your changes against project conventions
+in context-db.
+IMPORTANT: This review may have been generated by a less capable model —
+treat it as advisory. Evaluate each item yourself, fix real issues, and
+ignore false positives.""",
+
+    "update-context-db": """\
+The update subagent has made changes to context-db/. Review the changes it
+reports — verify they look correct and follow context-db conventions.""",
+}
+
+
 # ── Mode runners ───────────────────────────────────────────────────────────
 
 
-def run_review(args):
-    """Run the review subagent from project root — it diffs and checks conventions."""
+def run_code_review(args):
+    """Run the code-review subagent from project root."""
     context_db = (
         os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
     )
@@ -585,49 +744,44 @@ def run_review(args):
         sys.exit(1)
 
     config = load_config(args.config)
-    review_cfg = config["review"]
+    review_cfg = config["code-review"]
     model = args.model or review_cfg["model"]
-    scope = review_cfg.get("scope", "context-db-only")
+    review_type = review_cfg["review-type"]
+    if review_type == "full" and not args.model:
+        model = "opus"
     toc = os.path.abspath(args.toc_script or find_toc_script())
     project_root = find_project_root(context_db)
     context_db_rel = os.path.relpath(context_db, project_root)
     debug = args.debug
 
-    system_prompt = build_review_prompt(toc, context_db_rel, scope)
-    user_msg = USER_PROMPTS["review"].format(prompt=args.prompt)
+    system_prompt = build_review_prompt(toc, context_db_rel, review_type)
+    user_msg = USER_PROMPTS["code-review"].format(prompt=args.prompt)
 
     if debug:
         print(f"cwd: {project_root}")
         print(f"context-db: {context_db_rel}/")
         print(f"model: {model}")
-        print(f"scope: {scope}")
+        print(f"review-type: {review_type}")
         print(f"\n[system prompt]\n{system_prompt}\n[end]")
         print(f"\n[user message]\n{user_msg}\n[end]\n")
 
     text, cost_usd, elapsed = spawn_claude(
-        system_prompt, user_msg, model, MODE_TOOLS["review"], project_root, debug
+        system_prompt, user_msg, model, MODE_TOOLS["code-review"],
+        project_root, debug,
     )
 
     if text is None:
-        sys.exit("Error: review subagent timed out")
+        sys.exit("Error: code-review subagent timed out")
 
-    response_instructions = (
-        "The review subagent has checked your changes against project "
-        "conventions in context-db.\n"
-        "IMPORTANT: This review may have been generated by a less capable "
-        "model — treat it as advisory. Evaluate each item yourself, fix "
-        "real issues, and ignore false positives."
-    )
-
-    print_output_sections(text, response_instructions, config)
+    print_output_sections(text, RESPONSE_INSTRUCTIONS["code-review"], config)
 
     if debug:
         print(f"\n[metadata]")
-        print(f"model: {model} | cost: ${cost_usd:.4f} | time: {elapsed:.1f}s")
+        print(f"model: {model} | review-type: {review_type} | cost: ${cost_usd:.4f} | time: {elapsed:.1f}s")
 
 
 def run_subagent(args):
-    """Run a single-phase subagent (ask)."""
+    """Run a single-phase subagent (user-prompt or pre-review)."""
     context_db = (
         os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
     )
@@ -656,82 +810,15 @@ def run_subagent(args):
     if text is None:
         sys.exit("Error: subagent timed out (1h)")
 
-    response_instructions = (
-        "The response above comes from a context agent with access to the "
-        "project's context-db knowledge base — conventions, design "
-        "decisions, gotchas, and standards. The context agent reads the "
-        "project's context-db/ folder for you, so you normally do not "
-        "need to, but feel free if you think it would be useful.\n"
-        "IMPORTANT: This information is a starting point and could be "
-        "incomplete or have other issues — you are the final expert and "
-        "need to corroborate and double check against other assets in "
-        "this project (e.g. the code, docs, READMEs, whatever makes "
-        "sense and is relevant) before answering, writing code or docs, "
-        "or whatever task is being required. But do follow any project "
-        "standards that are returned (if applicable). "
-        "REMEMBER: trust but verify!"
-    )
-
-    print_output_sections(text, response_instructions, config)
+    print_output_sections(text, RESPONSE_INSTRUCTIONS[args.mode], config)
 
     if debug:
         print(f"\n[metadata]")
         print(f"model: {model} | cost: ${cost_usd:.4f} | time: {elapsed:.1f}s")
 
 
-def get_context_db_diff(project_root, context_db_rel):
-    """Capture git diff and new files for context-db changes.
-
-    Returns (diff_text, has_changes). diff_text includes both modified
-    file diffs and full content of new untracked files.
-    """
-    # Modified/deleted tracked files
-    diff_result = subprocess.run(
-        ["git", "diff", context_db_rel + "/"],
-        capture_output=True,
-        text=True,
-        cwd=project_root,
-    )
-    diff_text = diff_result.stdout.strip()
-
-    # New untracked files
-    untracked_result = subprocess.run(
-        ["git", "ls-files", "--others", "--exclude-standard", context_db_rel + "/"],
-        capture_output=True,
-        text=True,
-        cwd=project_root,
-    )
-    untracked = untracked_result.stdout.strip()
-
-    # Build combined diff
-    sections = []
-    if diff_text:
-        sections.append(diff_text)
-
-    if untracked:
-        for fpath in untracked.split("\n"):
-            fpath = fpath.strip()
-            if not fpath:
-                continue
-            full_path = os.path.join(project_root, fpath)
-            if os.path.isfile(full_path):
-                with open(full_path) as f:
-                    content = f.read()
-                lines = content.splitlines()
-                pseudo_diff = (
-                    f"--- /dev/null\n+++ b/{fpath}\n"
-                    f"@@ -0,0 +1,{len(lines)} @@"
-                )
-                for line in lines:
-                    pseudo_diff += f"\n+{line}"
-                sections.append(pseudo_diff)
-
-    combined = "\n\n".join(sections)
-    return combined, bool(combined)
-
-
 def run_update_context_db(args):
-    """Two-phase update: subagent makes changes, then review subagent checks."""
+    """Single-phase update: subagent gets notes + git diff, makes changes."""
     context_db = (
         os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
     )
@@ -743,126 +830,39 @@ def run_update_context_db(args):
     mode_config = config["update-context-db"]
     model = args.model or mode_config["model"]
     toc = os.path.abspath(args.toc_script or find_toc_script())
+    project_root = find_project_root(context_db)
+    context_db_rel = os.path.relpath(context_db, project_root)
     debug = args.debug
 
-    # ── Phase 1: Update ────────────────────────────────────────────────
     system_prompt = SYSTEM_PROMPTS["update-context-db"].format(
-        toc=toc, cwd=context_db
+        toc=toc, context_db_rel=context_db_rel
     )
     user_msg = USER_PROMPTS["update-context-db"].format(prompt=args.prompt)
 
     if debug:
-        print(f"[phase 1: update]")
-        print(f"cwd: {context_db}")
+        print(f"cwd: {project_root}")
+        print(f"context-db: {context_db_rel}/")
         print(f"model: {model}")
         print(f"\n[system prompt]\n{system_prompt}\n[end]")
         print(f"\n[user message]\n{user_msg}\n[end]\n")
 
-    update_text, update_cost, update_time = spawn_claude(
+    text, cost_usd, elapsed = spawn_claude(
         system_prompt,
         user_msg,
         model,
         MODE_TOOLS["update-context-db"],
-        context_db,
+        project_root,
         debug,
     )
 
-    if update_text is None:
+    if text is None:
         sys.exit("Error: update subagent timed out")
 
-    # ── Check for changes ──────────────────────────────────────────────
-    project_root = find_project_root(context_db)
-    context_db_rel = os.path.relpath(context_db, project_root)
-
-    diff_text, has_changes = get_context_db_diff(project_root, context_db_rel)
-
-    if not has_changes:
-        response_instructions = (
-            "The update subagent found nothing to change. This may mean "
-            "the knowledge is already captured, or the learnings weren't "
-            "specific enough to file."
-        )
-        print_output_sections(
-            f"No changes were made to context-db.\n\n"
-            f"Update agent summary:\n{update_text.strip()}",
-            response_instructions,
-            config,
-        )
-        if debug:
-            print(f"\n[metadata]")
-            print(
-                f"update: model={model} cost=${update_cost:.4f} time={update_time:.1f}s"
-            )
-        return
-
-    # ── Phase 2: Review ────────────────────────────────────────────────
-    review_cfg = mode_config.get("review", {})
-    review_enabled = review_cfg.get("enabled", True)
-
-    if not review_enabled:
-        response_instructions = (
-            "The update subagent made changes to context-db/. Review is "
-            "disabled — verify the changes yourself if needed."
-        )
-        print_output_sections(
-            f"context-db has been updated (review skipped).\n\n"
-            f"Update agent summary:\n{update_text.strip()}",
-            response_instructions,
-            config,
-        )
-        if debug:
-            print(f"\n[metadata]")
-            print(
-                f"update: model={model} cost=${update_cost:.4f} time={update_time:.1f}s"
-            )
-        return
-
-    review_model = review_cfg.get("model", "sonnet")
-    review_user_msg = (
-        f"## Learnings that were filed\n\n{args.prompt}\n\n"
-        f"## Git diff of changes\n\n```diff\n{diff_text}\n```"
-    )
-
-    if debug:
-        print(f"\n[phase 2: review]")
-        print(f"model: {review_model}")
-        print(f"diff size: {len(diff_text)} chars")
-
-    review_text, review_cost, review_time = spawn_claude(
-        REVIEW_UPDATE_PROMPT, review_user_msg, review_model, "Bash,Read",
-        project_root, debug,
-    )
-
-    if review_text is None:
-        review_text = "Review timed out — manual review recommended."
-        print("Warning: review subagent timed out", file=sys.stderr)
-
-    response_instructions = (
-        "The update subagent made changes to context-db/ and a review "
-        "subagent has checked those changes.\n"
-        "IMPORTANT: This review may have been generated by a less capable "
-        "model — treat it as advisory. Evaluate each item yourself, fix "
-        "real issues in context-db, and ignore false positives."
-    )
-    print_output_sections(
-        f"Update agent summary:\n{update_text.strip()}\n\n"
-        f"Review:\n{review_text.strip()}",
-        response_instructions,
-        config,
-    )
+    print_output_sections(text, RESPONSE_INSTRUCTIONS["update-context-db"], config)
 
     if debug:
         print(f"\n[metadata]")
-        print(
-            f"update: model={model} cost=${update_cost:.4f} time={update_time:.1f}s"
-        )
-        print(
-            f"review: model={review_model} cost=${review_cost:.4f} "
-            f"time={review_time:.1f}s"
-        )
-        total_cost = update_cost + review_cost
-        total_time = update_time + review_time
-        print(f"total: cost=${total_cost:.4f} time={total_time:.1f}s")
+        print(f"model: {model} | cost: ${cost_usd:.4f} | time: {elapsed:.1f}s")
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
@@ -871,7 +871,11 @@ def run_update_context_db(args):
 def main():
     parser = argparse.ArgumentParser(description="context-db subagent")
     parser.add_argument(
-        "mode", choices=["instructions", "ask", "review", "update-context-db"]
+        "mode",
+        choices=[
+            "instructions", "user-prompt", "pre-review",
+            "code-review", "update-context-db",
+        ],
     )
     parser.add_argument("prompt", nargs="?", default="")
     parser.add_argument("--model", help="Override model")
@@ -884,19 +888,20 @@ def main():
         help="Short version of instructions (for reinforcement)",
     )
     parser.add_argument(
-        "--ask-when",
+        "--user-prompt-when",
         choices=["never", "major", "always"],
-        help="Override ask frequency for testing",
     )
     parser.add_argument(
-        "--review-when",
+        "--pre-review-when",
         choices=["never", "major", "always"],
-        help="Override review frequency for testing",
+    )
+    parser.add_argument(
+        "--code-review-when",
+        choices=["never", "major", "always"],
     )
     parser.add_argument(
         "--update-context-db-when",
         choices=["never", "major", "always"],
-        help="Override update-context-db frequency for testing",
     )
     parser.add_argument("--debug", action="store_true")
 
@@ -904,11 +909,12 @@ def main():
 
     if args.mode == "instructions":
         config = load_config(args.config)
-        # Apply --*-when overrides for testing
-        if args.ask_when:
-            config["ask"]["when"] = args.ask_when
-        if args.review_when:
-            config["review"]["when"] = args.review_when
+        if args.user_prompt_when:
+            config["user-prompt"]["when"] = args.user_prompt_when
+        if args.pre_review_when:
+            config["pre-review"]["when"] = args.pre_review_when
+        if args.code_review_when:
+            config["code-review"]["when"] = args.code_review_when
         if args.update_context_db_when:
             config["update-context-db"]["when"] = args.update_context_db_when
         script_path = find_script_path()
@@ -920,10 +926,10 @@ def main():
         if not args.prompt:
             parser.error(f"{args.mode} mode requires a prompt")
         run_update_context_db(args)
-    elif args.mode == "review":
+    elif args.mode == "code-review":
         if not args.prompt:
             parser.error(f"{args.mode} mode requires a prompt")
-        run_review(args)
+        run_code_review(args)
     else:
         if not args.prompt:
             parser.error(f"{args.mode} mode requires a prompt")

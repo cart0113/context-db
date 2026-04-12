@@ -19,7 +19,7 @@ files. The main agent never touches context-db directly.
 One entry point, four modes:
 
 ```
-python3 .claude/skills/context-db-subagent/scripts/context-db-agent.py <mode> "<prompt>"
+python3 .claude/skills/context-db-subagent/scripts/context-db-sub-agent.py <mode> "<prompt>"
 ```
 
 ### Modes
@@ -27,21 +27,23 @@ python3 .claude/skills/context-db-subagent/scripts/context-db-agent.py <mode> "<
 - **instructions** — Read config, return tailored instructions for the main
   agent. Called by the session-start hook and the rule. The main agent never
   needs to see `.contextdb.json`.
-- **ask** — Forward the user's raw prompt. The subagent navigates context-db and
-  returns relevant conventions, standards, pitfalls.
-- **review** — Send your coding plan. The subagent checks it against project
-  conventions and flags violations.
-- **maintain** — Send what you learned. The subagent determines where to file it
-  in context-db.
+- **user-prompt** — Forward the user's raw prompt. The subagent navigates
+  context-db and returns verbatim snippets of relevant conventions, standards,
+  pitfalls.
+- **code-review** — Send a summary of changes. The subagent runs `git diff`,
+  checks against project conventions, and returns a review report. Configurable
+  via `review-type`: `context-db` (default, sonnet) or `full` (context-db +
+  general code review, opus).
+- **update-context-db** — Send what you learned. The subagent determines where
+  to file it in context-db, then a review subagent checks the changes.
 
 ### Config
 
 `.contextdb.json` in the project root controls:
 
 - Which model each mode uses (haiku, sonnet, opus)
-- Behavior per mode: `automatic` (just do it), `confirm` (ask user first),
-  `skip` (disabled)
-- Frequency for ask mode: `always`, `new` (topic change), `major` (big prompts)
+- `when` per mode: `always`, `major` (significant new work), `never`
+- `review-type` (code-review only): `context-db` or `full`
 
 The main agent never reads this file. The `instructions` mode reads it and
 returns the right instructions.
