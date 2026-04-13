@@ -1,8 +1,8 @@
 ---
 name: context-db
 description:
-  'Project knowledge base — consult conventions and standards, review changes,
-  file learnings, audit and maintain.'
+  'Project knowledge base {read-manual, prompt, pre-review, review, update,
+  maintain}'
 allowed-tools: Bash,Read,Write,Edit,Glob,Grep
 ---
 
