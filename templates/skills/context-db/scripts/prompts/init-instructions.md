@@ -2,6 +2,7 @@ This project has a context-db knowledge base at `context-db/`.
 
 Use `/context-db <command>` to interact with it:
 
+- `/context-db read-manual` — load reading/writing instructions into context
 - `/context-db prompt "<instruction>"` — consult for relevant
   knowledge/standards
 - `/context-db pre-review "<plan>"` — check plan against standards before

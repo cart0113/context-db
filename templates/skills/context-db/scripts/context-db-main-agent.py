@@ -14,6 +14,7 @@ context rot.
 
 Sub-commands:
   init          Startup instructions (called by rule, not in SKILL.md)
+  read-manual   Load context-db reading/writing instructions into context
   prompt        Consult context-db for knowledge/standards
   pre-review    Check plan against standards before implementing
   review        Review changes against conventions
@@ -22,6 +23,9 @@ Sub-commands:
 
 Usage:
   context-db-main-agent.py init
+  context-db-main-agent.py read-manual
+  context-db-main-agent.py read-manual --read
+  context-db-main-agent.py read-manual --write
   context-db-main-agent.py prompt "user instruction"
   context-db-main-agent.py prompt "user instruction" --mode main-agent
   context-db-main-agent.py review "summary" --model opus --review-type full
@@ -73,6 +77,8 @@ def load_config(config_path):
         for cmd in COMMANDS:
             if cmd in user:
                 config[cmd].update(user[cmd])
+        if "init" in user:
+            config["init"] = user["init"]
     return config
 
 
@@ -159,10 +165,55 @@ def print_reminder():
 # ── Command handlers ────────────────────────────────────────────────────────
 
 
-def cmd_init(args):
-    """Print startup instructions for the main agent."""
+def cmd_init(args, config):
+    """Print startup instructions for the main agent.
+
+    If config has init.read-manual set, also prints the read-manual content.
+    """
     template = load_template("init-instructions")
     print(template.strip())
+
+    # Check if init should auto-load the manual
+    init_config = config.get("init", {})
+    read_manual = init_config.get("read-manual", False)
+    if read_manual:
+        scope = read_manual if isinstance(read_manual, str) else "all"
+        print()
+        _print_read_manual(scope)
+
+
+def cmd_read_manual(args):
+    """Print context-db reading/writing instructions into the agent's context."""
+    # Determine scope from flags
+    if args.read and not args.write:
+        scope = "read"
+    elif args.write and not args.read:
+        scope = "write"
+    else:
+        scope = "all"
+
+    _print_read_manual(scope)
+    print_reminder()
+
+
+def _print_read_manual(scope):
+    """Print read-manual content for the given scope."""
+    toc = find_toc_script()
+    context_db_rel = find_context_db()
+
+    parts = []
+    header = "# context-db Manual"
+
+    if scope in ("all", "read"):
+        t = load_template("read-manual-read")
+        parts.append(fill_template(t, toc=toc, context_db_rel=context_db_rel))
+
+    if scope in ("all", "write"):
+        t = load_template("read-manual-write")
+        parts.append(fill_template(t, toc=toc, context_db_rel=context_db_rel))
+
+    output = header + "\n\n" + "\n\n".join(parts)
+    print_section("instructions", output)
 
 
 def cmd_main_agent(command, prompt, cmd_config, debug=False):
@@ -252,22 +303,32 @@ def main():
     parser = argparse.ArgumentParser(description="context-db dispatcher")
     parser.add_argument(
         "command",
-        choices=["init", "prompt", "pre-review", "review", "update", "maintain"],
+        choices=[
+            "init", "read-manual",
+            "prompt", "pre-review", "review", "update", "maintain",
+        ],
     )
     parser.add_argument("prompt", nargs="?", default="")
     parser.add_argument("--mode", choices=["sub-agent", "main-agent", "ask"])
     parser.add_argument("--model", choices=["haiku", "sonnet", "opus", "ask"])
     parser.add_argument("--review-type", choices=["context-db", "full"])
+    parser.add_argument("--read", action="store_true",
+                        help="read-manual: only reading instructions")
+    parser.add_argument("--write", action="store_true",
+                        help="read-manual: only writing instructions")
     parser.add_argument("--config", default=".contextdb.json")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
+    config = load_config(args.config)
 
     if args.command == "init":
-        cmd_init(args)
+        cmd_init(args, config)
         return
 
-    config = load_config(args.config)
+    if args.command == "read-manual":
+        cmd_read_manual(args)
+        return
 
     if args.command == "maintain":
         cmd_maintain(args, config)
