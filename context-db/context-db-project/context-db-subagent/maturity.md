@@ -2,6 +2,7 @@
 description:
   Maturity status of each subagent mode — user-prompt at 75%, others early
   stage. Only user-prompt is enabled by default.
+status: deprecated
 ---
 
 # Subagent Mode Maturity

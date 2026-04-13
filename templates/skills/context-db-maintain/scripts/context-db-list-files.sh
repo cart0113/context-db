@@ -1,1 +1,0 @@
-../../context-db-reindex/scripts/context-db-list-files.sh

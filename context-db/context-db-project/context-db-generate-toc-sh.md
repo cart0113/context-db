@@ -1,10 +1,11 @@
 ---
 description:
-  How context-db-generate-toc.sh works — awk-based frontmatter parsing,
-  multi-line description handling, and known edge cases
+  How the TOC script works — frontmatter parsing, multi-line description
+  handling, and known edge cases. Both bash (.sh) and Python (.py) versions
+  exist and produce identical output.
 ---
 
-# context-db-generate-toc.sh
+# context-db-generate-toc
 
 `context-db-generate-toc.sh` is the core script. It generates TOCs on the fly by
 reading YAML frontmatter from `.md` files and printing description/path pairs to

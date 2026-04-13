@@ -1,8 +1,8 @@
 ---
 description:
-  What we learned building the subagent — the late-session recall problem, why
-  pre-loading fails, prompt engineering for haiku compliance, why pre-review
-  exists
+  What we learned building the sub-agent — late-session recall problem, why
+  pre-loading fails, prompt engineering for haiku, relative paths, selectivity.
+  Still valid for the unified /context-db skill.
 ---
 
 # Lessons Learned

@@ -2,6 +2,7 @@
 description:
   Why frequency control matters for the subagent — cost of unnecessary calls,
   why "major" is the right default, edge cases the instructions don't cover
+status: deprecated
 ---
 
 # When to Call the Subagent

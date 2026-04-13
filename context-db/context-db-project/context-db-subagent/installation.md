@@ -2,6 +2,7 @@
 description:
   How to install subagent mode — symlink switching, .contextdb.json should be
   gitignored, full review-type defaults to opus
+status: deprecated
 ---
 
 # Installing Subagent Mode

@@ -40,14 +40,15 @@ script replaces bash.
 
 ## Progress
 
-- Step 1: Branch + structure — done (scaffold all files)
+- Step 1: Branch + structure — done
 - Step 2: Python TOC script — done (72/72 tests, identical to bash)
 - Step 3: Prompt templates — done (20 templates extracted)
 - Step 4: context-db-main-agent.py — done (dispatcher with mode routing)
-- Step 5: context-db-sub-agent.py — done (claude -p spawner)
-- Step 6: SKILL.md + wiring — done (rule, hook, config template)
-- Step 7: Testing — partial (TOC tested, end-to-end pending)
-- Step 8: Migration + cleanup — not started (old skills still exist)
+- Step 5: context-db-sub-agent.py — done (claude -p spawner, end-to-end tested)
+- Step 6: SKILL.md + wiring — done (rule, hook, config, GIT_STANDARDS template)
+- Step 7: Testing — done (TOC 72/72, sub-agent end-to-end, dispatcher all modes)
+- Step 8: Migration + cleanup — done (old skills/hooks/rules deleted, symlinks
+  updated, old context-db docs marked deprecated, GIT_STANDARDS updated)
 
 ## Key decisions
 

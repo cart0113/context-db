@@ -1,7 +1,9 @@
 ---
 description:
-  Why the subagent uses indirection (instructions mode), why combined workflow
-  exists, environment guard rationale, API key stripping rationale
+  Why the sub-agent uses indirection (instructions mode), environment guard
+  rationale, API key stripping rationale. Superseded by unified /context-db
+  skill.
+status: deprecated
 ---
 
 # Subagent Architecture — Design Decisions
