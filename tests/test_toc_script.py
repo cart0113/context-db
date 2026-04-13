@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """
-Test suite for context-db-generate-toc.sh
+Test suite for context-db-generate-toc (bash and Python versions).
 
 Creates temp directories with various frontmatter styles, runs the TOC
 script, and asserts expected output. Covers YAML scalar styles an LLM
 is likely to produce.
+
+Both implementations must produce identical output for all test cases.
 """
 
 import os
@@ -13,7 +15,7 @@ import tempfile
 import textwrap
 import unittest
 
-SCRIPT = os.path.join(
+BASH_SCRIPT = os.path.join(
     os.path.dirname(__file__),
     "..",
     ".claude",
@@ -22,16 +24,31 @@ SCRIPT = os.path.join(
     "scripts",
     "context-db-generate-toc.sh",
 )
-SCRIPT = os.path.abspath(SCRIPT)
+BASH_SCRIPT = os.path.abspath(BASH_SCRIPT)
+
+PYTHON_SCRIPT = os.path.join(
+    os.path.dirname(__file__),
+    "..",
+    ".claude",
+    "skills",
+    "context-db",
+    "scripts",
+    "context-db-generate-toc.py",
+)
+PYTHON_SCRIPT = os.path.abspath(PYTHON_SCRIPT)
+
+# Default to bash; Python tests override via subclass
+_ACTIVE_SCRIPT = BASH_SCRIPT
+_ACTIVE_CMD = "bash"
 
 
 def run_toc(path):
-    """Run the TOC script on a directory, return (stdout, stderr, returncode)."""
-    r = subprocess.run(
-        ["bash", SCRIPT, path],
-        capture_output=True,
-        text=True,
-    )
+    """Run the active TOC script on a directory, return (stdout, stderr, returncode)."""
+    if _ACTIVE_CMD == "bash":
+        cmd = ["bash", _ACTIVE_SCRIPT, path]
+    else:
+        cmd = ["python3", _ACTIVE_SCRIPT, path]
+    r = subprocess.run(cmd, capture_output=True, text=True)
     return r.stdout, r.stderr, r.returncode
 
 
@@ -576,6 +593,37 @@ description: {indicator}
         for indicator in indicators:
             with self.subTest(indicator=indicator):
                 self.assertIn(f"Content for {indicator} test", out)
+
+
+# ── Python TOC script tests ──────────────────────────────────────────────────
+# Run the exact same test cases against the Python version.
+# Each test class is subclassed with the Python script active.
+
+
+def _make_python_test_class(base_class):
+    """Create a subclass that runs tests against the Python TOC script."""
+
+    class PythonTest(base_class):
+        def setUp(self):
+            global _ACTIVE_SCRIPT, _ACTIVE_CMD
+            _ACTIVE_SCRIPT = PYTHON_SCRIPT
+            _ACTIVE_CMD = "python3"
+            super().setUp()
+
+        def tearDown(self):
+            global _ACTIVE_SCRIPT, _ACTIVE_CMD
+            super().tearDown()
+            _ACTIVE_SCRIPT = BASH_SCRIPT
+            _ACTIVE_CMD = "bash"
+
+    PythonTest.__name__ = f"Python{base_class.__name__}"
+    PythonTest.__qualname__ = f"Python{base_class.__qualname__}"
+    return PythonTest
+
+
+PythonTestReadDescription = _make_python_test_class(TestReadDescription)
+PythonTestTOCStructure = _make_python_test_class(TestTOCStructure)
+PythonTestBlockScalarRegression = _make_python_test_class(TestBlockScalarRegression)
 
 
 if __name__ == "__main__":
