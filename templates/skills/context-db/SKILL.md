@@ -6,45 +6,10 @@ description:
 allowed-tools: Bash,Read,Write,Edit,Glob,Grep
 ---
 
-## Usage
-
-Pass your sub-command and instructions to the dispatcher:
+Run the dispatcher with the user's sub-command and arguments:
 
 ```
-python3 .claude/skills/context-db/scripts/context-db-main-agent.py <command> [args] [flags]
+python3 .claude/skills/context-db/scripts/context-db-main-agent.py <command> [args]
 ```
 
-## Commands
-
-### LEARN — load context-db knowledge into your context
-
-- **read-manual** — Load instructions for reading and writing context-db. Use
-  `--read` for reading only, `--write` for writing only. Default: both.
-
-### READ — consult the knowledge base
-
-- **prompt** "<instruction>" — Consult context-db for relevant knowledge and
-  standards before starting work.
-- **pre-review** "<plan>" — Check your plan against standards before
-  implementing.
-- **review** "<summary>" — Review your changes against project conventions.
-
-### WRITE — update the knowledge base
-
-- **update** "<learnings>" — File learnings from this session into context-db.
-- **maintain** [path] — Audit and maintain context-db quality (7-phase).
-
-## Flags
-
-- `--mode sub-agent|main-agent` — Override execution mode
-- `--model haiku|sonnet|opus` — Override model for sub-agent mode
-- `--review-type context-db|full` — Override review scope (review only)
-- `--read` / `--write` — Scope read-manual output
-- `--debug` — Show system prompts and tool calls
-
-## How results come back
-
-The script outputs structured sections. Follow the instructions in each:
-
-- `[instructions]` — Instructions to follow or knowledge to absorb
-- `[reminder]` — Available commands (re-instruction for context rot)
+Commands: {read-manual, prompt, pre-review, review, update, maintain}

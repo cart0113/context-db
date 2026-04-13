@@ -299,10 +299,22 @@ def cmd_maintain(args, config):
 # ── CLI ─────────────────────────────────────────────────────────────────────
 
 
+USAGE = """\
+/context-db {read-manual, prompt, pre-review, review, update, maintain}
+
+  read-manual                  — load context-db reading/writing knowledge
+  prompt "<instruction>"       — consult knowledge base
+  pre-review "<plan>"          — check standards before implementing
+  review "<summary>"           — review changes against conventions
+  update "<learnings>"         — file learnings
+  maintain [path]              — audit and maintain"""
+
+
 def main():
     parser = argparse.ArgumentParser(description="context-db dispatcher")
     parser.add_argument(
         "command",
+        nargs="?",
         choices=[
             "init", "read-manual",
             "prompt", "pre-review", "review", "update", "maintain",
@@ -320,6 +332,11 @@ def main():
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
+
+    if not args.command:
+        print(USAGE)
+        return
+
     config = load_config(args.config)
 
     if args.command == "init":
