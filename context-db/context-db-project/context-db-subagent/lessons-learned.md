@@ -56,12 +56,18 @@ Without constraints, haiku adds defensive commands (`find`, `ls -la`,
 `head -50`, `2>/dev/null`) that waste turns. Telling it "Do not use find, grep,
 or ls" produces clean 2-3 step navigation.
 
-## Absolute TOC path is a breadcrumb
+## All paths must be relative to cwd
 
-The TOC script path is absolute. Haiku sees it and tries to read files relative
-to that location. Adding "The TOC script is an external tool — never read files
-from its directory" fixes this, but haiku still occasionally tries the wrong
-path on first attempt and self-corrects.
+Early versions resolved the TOC script and context-db to absolute paths. The
+subagent saw `/Users/.../GIT_CONTEXT_DB/templates/skills/...` for the TOC script
+and tried to read files relative to that location — causing double-reads (wrong
+path, then self-correction). Similarly, `git rev-parse --show-toplevel` returned
+a parent git repo instead of the actual project directory.
+
+Fix: all paths are relative to cwd (the project root where the user runs the
+script). TOC script is `.claude/skills/.../context-db-generate-toc.sh`,
+context-db is `context-db/`. No absolute paths, no symlink resolution, no git
+root detection. The subagent sees the same paths a developer would use.
 
 ## Main agent must wait for subagent before exploring codebase
 

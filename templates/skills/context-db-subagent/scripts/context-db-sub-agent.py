@@ -77,50 +77,43 @@ def load_config(config_path):
 
 
 def find_toc_script():
-    """Find context-db-generate-toc.sh."""
+    """Find context-db-generate-toc.sh. Returns path relative to cwd."""
     toc = "context-db-manual/scripts/context-db-generate-toc.sh"
-    for base in [
-        Path.cwd() / ".claude" / "skills",
-        Path.cwd().parent / ".claude" / "skills",
-        Path(__file__).resolve().parent.parent.parent,
-    ]:
-        candidate = base / toc
-        if candidate.exists():
-            return str(candidate.resolve())
-    return ".claude/skills/" + toc
+    # Relative to cwd — the expected path when running from project root
+    rel = ".claude/skills/" + toc
+    if os.path.exists(rel):
+        return rel
+    # Parent (running from a subdirectory)
+    parent_rel = os.path.join("..", rel)
+    if os.path.exists(parent_rel):
+        return parent_rel
+    # Fallback: resolve from this script's real location
+    candidate = Path(__file__).resolve().parent.parent.parent / toc
+    if candidate.exists():
+        return str(candidate)
+    return rel
 
 
 def find_script_path():
     """Find this script's path for use in generated instructions."""
-    normalized = (
-        Path(os.path.normpath(Path(__file__).parent)) / "context-db-sub-agent.py"
-    )
-    if normalized.exists():
-        return str(normalized)
+    rel = ".claude/skills/context-db-subagent/scripts/context-db-sub-agent.py"
+    if os.path.exists(rel):
+        return rel
+    parent_rel = os.path.join("..", rel)
+    if os.path.exists(parent_rel):
+        return parent_rel
+    # Fallback: resolve from this script's real location
     resolved = Path(__file__).resolve()
     if resolved.exists():
         return str(resolved)
-    return ".claude/skills/context-db-subagent/scripts/context-db-sub-agent.py"
+    return rel
 
 
 def find_context_db():
-    """Find context-db/. Works from project root or inside context-db/."""
+    """Find context-db/ relative to cwd."""
     if os.path.isdir("context-db"):
-        return os.path.abspath("context-db")
-    return os.path.abspath(".")
-
-
-def find_project_root(context_db):
-    """Find git project root from context-db path."""
-    result = subprocess.run(
-        ["git", "rev-parse", "--show-toplevel"],
-        capture_output=True,
-        text=True,
-        cwd=context_db,
-    )
-    if result.returncode == 0:
-        return result.stdout.strip()
-    return os.path.dirname(context_db)
+        return "context-db"
+    return "."
 
 
 # ── Instructions mode ───────────────────────────────────────────────────────
@@ -399,75 +392,89 @@ SYSTEM_PROMPTS = {
     # code-review & update-context-db also run git commands from project root.
 
     "user-prompt": """\
-You are a project knowledge and standards lookup service.
+You are a project knowledge lookup service. Your job is to find knowledge and
+standards that are directly applicable to the developer's prompt.
 
-The project knowledge base is at {context_db_rel}/. It is a B-tree of markdown
-files (~100 lines each). Navigate it using ONLY these steps:
-1. Run: bash {toc} {context_db_rel}/
-   This lists subfolders and files with descriptions from their YAML frontmatter.
-2. Pick what's relevant to the developer's prompt.
-   - If it's a folder, run: bash {toc} {context_db_rel}/<subfolder>/
-   - If it's a file, read the whole file.
-3. Repeat until you've found what applies.
+`{context_db_rel}/` is this project's knowledge base — a B-tree of markdown
+files documenting architecture, gotchas, design decisions, conventions, and
+cross-file connections. Any topic is reachable in 2-3 navigation steps.
 
-Do not use find, grep, or ls. Only the TOC script and Read.
-The TOC script is an external tool — never read files from its directory.
+## Rules
+
+You have two tools. Use ONLY these two tools, nothing else:
+
+1. **TOC script** — lists subfolders and files with their descriptions:
+   bash {toc} {context_db_rel}/
+   bash {toc} {context_db_rel}/<subfolder>/
+
+2. **Read** — read a file using its path relative to your cwd:
+   Read {context_db_rel}/<subfolder>/file.md
+
+Do NOT use find, grep, ls, pwd, cat, head, or any other command.
+Do NOT pipe TOC output through grep or other filters.
+Do NOT construct absolute paths — always use relative paths starting with
+{context_db_rel}/.
+
+Read descriptions from the TOC output. Drill into what's relevant, skip the
+rest.
+
+## What to return
+
+Return context and standards that are directly applicable to THIS task — things
+the developer would get wrong or miss without seeing them. Skip anything not
+relevant to what the prompt is asking about.
+
 Never write code. Never answer the prompt. Never help with the task.
 
-Your job: find ALL relevant knowledge from this knowledge base. This includes:
-- Background context: pitfalls, gotchas, design decisions, cross-file
-  connections, conventions specific to the areas being asked about
-- Applicable standards and procedures: based on what the prompt is about,
-  look for standards that apply. For example:
-  - Coding question → project coding standards, language-specific standards
-  - Documentation or writing → writing standards
-  - Commit or release → commit procedures, release standards
-  - Any other work → whatever standards, procedures, or protocols apply
-  Read the prompt and use judgment about what to look for.
-
-Return your findings as a list of verbatim snippets. For each relevant section:
-1. One line explaining why this snippet is relevant.
+Return your findings as verbatim snippets. For each relevant section:
+1. One line explaining why this is relevant to THIS task.
 2. The exact text from the file, wrapped in markers:
 
 [{context_db_rel}/path/to/file.md:START-END]
 exact file content, copied verbatim
 [end]
 
-Do not summarize or paraphrase file content. Quote it exactly.
+Do not summarize or paraphrase. Quote exactly.
 If nothing is relevant, respond: No relevant project context.""",
 
     "pre-review": """\
-You are a project knowledge and standards lookup service.
+You are a project knowledge lookup service. A developer is about to make
+changes. They will tell you the type, language, size, and plan. Your job is to
+find knowledge and standards that are directly applicable to those changes.
 
-A developer is about to make changes. They will tell you:
-- What type of changes (code, documentation, config, etc.)
-- What language or system (Python, JavaScript, markdown docs, etc.)
-- The size (minor, medium, major, total overhaul)
-- Their plan for what to change
+`{context_db_rel}/` is this project's knowledge base — a B-tree of markdown
+files documenting architecture, gotchas, design decisions, conventions, and
+cross-file connections. Any topic is reachable in 2-3 navigation steps.
 
-Your job: find ALL relevant knowledge from this knowledge base. This includes:
-- Background context: pitfalls, gotchas, design decisions, cross-file
-  connections, conventions specific to the areas being changed
-- Applicable standards: general coding standards, language-specific standards,
-  writing standards (if documentation), any other rules that apply
+## Rules
 
-Return everything relevant. Be thorough — the developer will use what you
-return and won't see what you don't return.
+You have two tools. Use ONLY these two tools, nothing else:
 
-The project knowledge base is at {context_db_rel}/. It is a B-tree of markdown
-files (~100 lines each). Navigate it using ONLY these steps:
-1. Run: bash {toc} {context_db_rel}/
-   This lists subfolders and files with descriptions from their YAML frontmatter.
-2. Pick what's relevant to the planned changes.
-   - If it's a folder, run: bash {toc} {context_db_rel}/<subfolder>/
-   - If it's a file, read the whole file.
-3. Repeat until you've covered all applicable areas.
+1. **TOC script** — lists subfolders and files with their descriptions:
+   bash {toc} {context_db_rel}/
+   bash {toc} {context_db_rel}/<subfolder>/
 
-Do not use find, grep, or ls. Only the TOC script and Read.
-The TOC script is an external tool — never read files from its directory.
+2. **Read** — read a file using its path relative to your cwd:
+   Read {context_db_rel}/<subfolder>/file.md
+
+Do NOT use find, grep, ls, pwd, cat, head, or any other command.
+Do NOT pipe TOC output through grep or other filters.
+Do NOT construct absolute paths — always use relative paths starting with
+{context_db_rel}/.
+
+Read descriptions from the TOC output. Drill into what's relevant, skip the
+rest.
+
+## What to return
+
+Return knowledge and standards that are directly applicable to the planned
+changes — things the developer would get wrong or miss without seeing them.
+Be thorough for the areas that matter, but skip anything not relevant to the
+planned changes.
+
 Never write code. Never help with the task. Only return knowledge.
 
-Return your findings as a list of verbatim snippets. For each relevant section:
+Return your findings as verbatim snippets. For each relevant section:
 1. One line explaining why this is relevant to the planned changes.
 2. The exact text from the file, wrapped in markers:
 
@@ -475,8 +482,7 @@ Return your findings as a list of verbatim snippets. For each relevant section:
 exact file content, copied verbatim
 [end]
 
-Do not summarize or paraphrase. Quote exactly. Err on the side of including
-too much rather than too little.
+Do not summarize or paraphrase. Quote exactly.
 If nothing is relevant, respond: No relevant project context.""",
 
     # code-review prompt is built dynamically by build_review_prompt()
@@ -532,8 +538,9 @@ When done, summarize what you changed and why.""",
 # {prompt} is filled with the main agent's prompt at call time via .format().
 USER_PROMPTS = {
     "user-prompt": """\
-Find ALL relevant project knowledge for this developer prompt — context,
-pitfalls, conventions, and any applicable standards or procedures:
+Find project knowledge and standards that are directly applicable to this
+developer prompt — context, pitfalls, conventions, and standards they would
+hit problems without:
 
 "{prompt}" """,
 
@@ -719,9 +726,12 @@ def print_output_sections(response_text, response_instructions, config):
 
 RESPONSE_INSTRUCTIONS = {
     "user-prompt": """\
-Context and applicable standards from the project's knowledge base. This is
-a starting point — corroborate against the actual code and docs before acting.
-Follow any project standards returned.""",
+The user-prompt subagent has returned project context and applicable standards
+— background knowledge, pitfalls, conventions, coding standards, and other
+relevant knowledge. These are verbatim quotes from the project's knowledge
+base. Treat it as a starting point, not a final answer. Corroborate key
+claims against the actual code and docs before acting. Follow any project
+standards returned.""",
 
     "pre-review": """\
 The pre-review subagent has returned project context and applicable standards
@@ -747,10 +757,8 @@ reports — verify they look correct and follow context-db conventions.""",
 
 
 def run_code_review(args):
-    """Run the code-review subagent from project root."""
-    context_db = (
-        os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
-    )
+    """Run the code-review subagent from project root (cwd)."""
+    context_db = args.context_db if args.context_db != "." else find_context_db()
     if not os.path.isdir(context_db):
         print(f"Error: context-db not found: {context_db}", file=sys.stderr)
         sys.exit(1)
@@ -761,8 +769,8 @@ def run_code_review(args):
     review_type = review_cfg["review-type"]
     if review_type == "full" and not args.model:
         model = "opus"
-    toc = os.path.abspath(args.toc_script or find_toc_script())
-    project_root = find_project_root(context_db)
+    toc = args.toc_script or find_toc_script()
+    project_root = os.getcwd()
     context_db_rel = os.path.relpath(context_db, project_root)
     debug = args.debug
 
@@ -793,18 +801,16 @@ def run_code_review(args):
 
 
 def run_subagent(args):
-    """Run a single-phase subagent (user-prompt or pre-review) from project root."""
-    context_db = (
-        os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
-    )
+    """Run a single-phase subagent (user-prompt or pre-review) from project root (cwd)."""
+    context_db = args.context_db if args.context_db != "." else find_context_db()
     if not os.path.isdir(context_db):
         print(f"Error: context-db not found: {context_db}", file=sys.stderr)
         sys.exit(1)
 
     config = load_config(args.config)
     model = args.model or config[args.mode]["model"]
-    toc = os.path.abspath(args.toc_script or find_toc_script())
-    project_root = find_project_root(context_db)
+    toc = args.toc_script or find_toc_script()
+    project_root = os.getcwd()
     context_db_rel = os.path.relpath(context_db, project_root)
     debug = args.debug
 
@@ -836,9 +842,7 @@ def run_subagent(args):
 
 def run_update_context_db(args):
     """Single-phase update: subagent gets notes + git diff, makes changes."""
-    context_db = (
-        os.path.abspath(args.context_db) if args.context_db != "." else find_context_db()
-    )
+    context_db = args.context_db if args.context_db != "." else find_context_db()
     if not os.path.isdir(context_db):
         print(f"Error: context-db not found: {context_db}", file=sys.stderr)
         sys.exit(1)
@@ -846,8 +850,8 @@ def run_update_context_db(args):
     config = load_config(args.config)
     mode_config = config["update-context-db"]
     model = args.model or mode_config["model"]
-    toc = os.path.abspath(args.toc_script or find_toc_script())
-    project_root = find_project_root(context_db)
+    toc = args.toc_script or find_toc_script()
+    project_root = os.getcwd()
     context_db_rel = os.path.relpath(context_db, project_root)
     debug = args.debug
 
