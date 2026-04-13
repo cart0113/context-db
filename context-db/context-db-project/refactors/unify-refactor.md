@@ -38,10 +38,25 @@ Two scripts:
 All prompts externalized as `.md` templates in `scripts/prompts/`. Python TOC
 script replaces bash.
 
+## Progress
+
+- Step 1: Branch + structure — done (scaffold all files)
+- Step 2: Python TOC script — done (72/72 tests, identical to bash)
+- Step 3: Prompt templates — done (20 templates extracted)
+- Step 4: context-db-main-agent.py — done (dispatcher with mode routing)
+- Step 5: context-db-sub-agent.py — done (claude -p spawner)
+- Step 6: SKILL.md + wiring — done (rule, hook, config template)
+- Step 7: Testing — partial (TOC tested, end-to-end pending)
+- Step 8: Migration + cleanup — not started (old skills still exist)
+
 ## Key decisions
 
 - User-initiated, not auto-firing. `init` stubbed for later.
 - Re-instruct on every call (handles context rot).
+- Two scripts: `context-db-main-agent.py` (dispatcher) and
+  `context-db-sub-agent.py` (claude -p spawner).
 - Mode per command: `sub-agent` | `main-agent` | `ask`.
 - Config: JSON with `defaults` section + per-command overrides.
+- Prompts externalized as editable `.md` templates in `scripts/prompts/`.
+- Python TOC replaces bash TOC (identical output, 72/72 tests pass).
 - Consistent hyphenation: `sub-agent`, `main-agent`, `pre-review`.
