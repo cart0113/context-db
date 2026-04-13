@@ -8,9 +8,11 @@ description:
 
 ## The decision
 
-The only optional frontmatter field is `status` (values: `draft`, `stable`,
-`deprecated`; default when omitted: `stable`). All other proposed metadata
-fields were rejected.
+The only optional frontmatter field is `status` (default when omitted:
+`stable`). All other proposed metadata fields were rejected.
+
+Values: `draft`, `stable`, `deprecated`, `experiment`, `work-in-progress`,
+`refactor`.
 
 ## Why status
 
@@ -22,8 +24,10 @@ reorganization.
 
 An agent seeing `[deprecated]` in a TOC entry knows not to trust that document
 for current behavior. An agent seeing `[draft]` knows the content is tentative.
-This changes agent behavior at zero cost — the field is only surfaced in the TOC
-when it's not stable.
+An agent seeing `[experiment]` or `[work-in-progress]` knows the content is
+active but not finalized. `[refactor]` marks content about in-progress
+architectural changes. This changes agent behavior at zero cost — the field is
+only surfaced in the TOC when it's not stable.
 
 ## Why not other fields
 

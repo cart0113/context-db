@@ -1,3 +1,19 @@
 {
-  "user-prompt": { "model": "haiku", "when": "major" }
+  "defaults": {
+    "mode": "sub-agent",
+    "model": "haiku"
+  },
+  "prompt": {},
+  "pre-review": {},
+  "review": {
+    "model": "sonnet",
+    "review-type": "context-db"
+  },
+  "update": {
+    "mode": "main-agent",
+    "model": "sonnet"
+  },
+  "maintain": {
+    "mode": "main-agent"
+  }
 }
