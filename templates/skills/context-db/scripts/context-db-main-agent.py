@@ -142,15 +142,13 @@ def print_section(tag, content):
 
 
 def cmd_init(args, config):
-    """Print startup instructions for the main agent."""
-    print(load_template("init-instructions").strip())
+    """Print templates listed in config init."""
+    toc = find_toc_script()
+    context_db_rel = find_context_db()
 
-    init_config = config.get("init", {})
-    load_manual = init_config.get("load-manual", False)
-    if load_manual:
-        scope = load_manual if isinstance(load_manual, str) else "all"
-        print()
-        _print_load_manual(scope)
+    templates = config.get("init", [])
+    for name in templates:
+        print_template(name, toc=toc, context_db_rel=context_db_rel)
 
 
 def cmd_load_manual(args):
@@ -174,7 +172,7 @@ def _print_load_manual(scope):
         print_template("context-usage")
 
     if scope in ("all", "write"):
-        print_template("write-file-format", toc=toc,
+        print_template("write-mechanics", toc=toc,
                         context_db_rel=context_db_rel)
         print_template("write-content-guide")
 
@@ -192,9 +190,7 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
     if command == "update":
         print_template("write-mechanics", toc=toc,
                         context_db_rel=context_db_rel)
-        print_template("write-file-format", toc=toc,
-                        context_db_rel=context_db_rel)
-        print_template("memory-not-vendor")
+        print_template("persist-to-context-db")
         print_template("update-general",
                         context_db_rel=context_db_rel)
         if prompt:
@@ -262,7 +258,6 @@ def cmd_maintain(args, config):
     target_path = args.path if args.path else f"{context_db_rel}/"
 
     print_template("write-mechanics", toc=toc, context_db_rel=context_db_rel)
-    print_template("write-file-format", toc=toc, context_db_rel=context_db_rel)
     print_template("write-content-guide")
     print_template("maintain-instructions", toc=toc,
                     context_db_rel=context_db_rel, target_path=target_path)
