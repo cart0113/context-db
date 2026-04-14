@@ -16,6 +16,7 @@ context-db/using-bruha
 context-db/agent-behavior
 context-db/context-db-project/overview.md
 context-db/using-context-db
+context-db/git-standards
 context-db/local-repos-to-update/
 bin/sync-to-repos.sh
 
