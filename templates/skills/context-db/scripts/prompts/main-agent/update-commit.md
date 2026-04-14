@@ -16,4 +16,6 @@ The context-db update already made you think about what's important. Distill
 that into the commit message so the version history becomes a free record of
 project learning alongside context-db itself.
 
+Be concise and if there are not major notes, just commit with a simple message.
+
 [end update-commit]

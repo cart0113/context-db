@@ -17,9 +17,15 @@ What belongs — things the next agent would get wrong or miss:
 - Conventions, corrections from the user, pitfalls, design rationale, domain
   knowledge
 
+Prefer cross-references over duplication — two sources of truth will drift:
+
+- Code and config: never restate. The agent can read them.
+- Docs: point to them when they cover a topic well, but make the context-db
+  entry self-contained enough to be useful if the link breaks. State the insight
+  briefly, link the source, add what the source doesn't say.
+
 What does NOT belong:
 
-- Code state, step-by-step instructions, anything derivable in 30 seconds with
-  ls/grep/read
+- Code state, step-by-step instructions, anything derivable from project assets
 
 [end write-content-guide]

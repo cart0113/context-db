@@ -18,9 +18,11 @@ folder descriptors, sharpen vague descriptions.
 Phase 2 — Content freshness: Use git log and git diff. Verify referenced
 files/functions still exist. Fix outdated content directly.
 
-Phase 3 — Content value: Cut anything the agent could learn faster by reading
-project assets. Code summaries, property lists, module layouts, step-by-step
-instructions.
+Phase 3 — Content value: Cut content that restates what's in the code — CLI
+flags, function signatures, file layouts, property lists, step-by-step
+instructions. But do not remove real knowledge (decisions, rationale, gotchas,
+conventions) just because it could be shorter. If the detail would be lost, keep
+it.
 
 Phase 4 — Coverage gaps: Check recent git history for corrections, reverts,
 pitfalls. Add only genuinely non-obvious entries.
@@ -35,8 +37,9 @@ Phase 7 — Reindex: Re-read every file, update all description fields to match
 current content. Work bottom-up (deepest folders first). Run TOC on every
 changed folder.
 
-The default posture is to cut. An audit should leave context-db smaller and
-sharper, not larger.
+The default posture is to cut bloat — code summaries, derivable facts, stale
+references. But an audit should leave context-db sharper, not just smaller.
+Preserve details that carry real knowledge the next agent would miss.
 
 Do not run /context-db maintain yourself. The user invokes this.
 
