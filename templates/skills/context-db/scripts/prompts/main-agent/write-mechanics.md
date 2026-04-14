@@ -1,7 +1,8 @@
 [write-mechanics]
 
-`{context_db_rel}/` is this project's knowledge base. To see which folders and
-files you can edit, use the TOC script with --no-external-symlinks:
+`{context_db_rel}/` is this project's knowledge base. When writing the db, to
+see which folders and files you can edit, use the TOC script with
+--no-external-symlinks:
 
 python3 {toc} --no-external-symlinks {context_db_rel}/
 

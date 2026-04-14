@@ -12,14 +12,20 @@ script calls `print_template("read-mechanics", ...)` — load, fill, print.
 
 Main-agent output composes these templates:
 
-- `read-mechanics.md` — TOC navigation (all commands)
+- `read-mechanics.md` — TOC navigation (read commands; also update with
+  --commit)
 - `context-usage.md` — "starting point, verify against project" (read commands)
-- `write-file-format.md` — frontmatter, structure (write commands)
+- `write-mechanics.md` — frontmatter, structure, TOC flags (write commands)
 - `write-content-guide.md` — what belongs, brevity (write commands)
-- `main-agent-{command}.md` — command-specific, includes don't-self-invoke
+- `persist-to-context-db.md` — memory-system directive (update)
+- `update-general.md` — session-first thinking, brevity (update)
+- `update-commit.md` — commit instructions (update with --commit only)
+- `prompt.md`, `pre-review.md`, `review.md` — command-specific instructions
+- `maintain-instructions.md` — audit workflow (maintain)
+
+Conditional templates: `update-commit.md` only prints when `--commit` flag is
+set. `read-mechanics.md` prints for update only with `--commit` (so the agent
+can look up commit standards from context-db).
 
 No markdown headers in templates. No reminder blocks. User instructions always
 last.
-
-Sub-agent templates (`system-*.md`, `user-*.md`) still use the old pattern —
-rework pending after main-agent testing.

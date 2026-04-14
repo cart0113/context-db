@@ -224,6 +224,10 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
         print(f"toc: {toc}")
 
     if command == "update":
+        commit = cmd_config.get("commit", False)
+        if commit:
+            print_template("read-mechanics", toc=toc,
+                            context_db_rel=context_db_rel)
         print_template("write-mechanics", toc=toc,
                         context_db_rel=context_db_rel)
         print_template("persist-to-context-db")
@@ -231,6 +235,8 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
                         context_db_rel=context_db_rel)
         if prompt:
             print_section("update-user-instructions", prompt)
+        if commit:
+            print_template("update-commit")
     else:
         # Read commands: prompt, pre-review, review
         print_template("read-mechanics", toc=toc, context_db_rel=context_db_rel)
@@ -348,6 +354,8 @@ def dispatch_command(args, config):
         cmd_config["model"] = args.model
     if hasattr(args, "review_type") and args.review_type:
         cmd_config["review-type"] = args.review_type
+    if hasattr(args, "commit") and args.commit:
+        cmd_config["commit"] = True
 
     mode = cmd_config["mode"]
 
@@ -398,6 +406,8 @@ def main():
     # update
     up = subs.add_parser("update", help="File learnings into context-db")
     up.add_argument("instruction", nargs="?", default="")
+    up.add_argument("--commit", action="store_true",
+                    help="Commit affected files after updating context-db")
     add_mode_flags(up)
 
     # maintain

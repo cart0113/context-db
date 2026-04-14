@@ -58,6 +58,9 @@ script replaces bash.
   `context-db-sub-agent.py` (claude -p spawner).
 - Mode per command: `sub-agent` | `main-agent` | `ask`.
 - Config: JSON with `defaults` section + per-command overrides.
+- `update --commit` flag: after context-db writes, commits all affected files
+  with a message distilled from the same learnings. Makes `git log` a parallel
+  record of project knowledge alongside context-db.
 - Prompts externalized as editable `.md` templates in `scripts/prompts/`.
 - Python TOC replaces bash TOC (identical output, 72/72 tests pass).
 - Consistent hyphenation: `sub-agent`, `main-agent`, `pre-review`.
