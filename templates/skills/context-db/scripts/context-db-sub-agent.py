@@ -31,7 +31,9 @@ import time
 from pathlib import Path
 
 
-# Tools granted to each command's sub-agent
+# Tools granted to each command's sub-agent.
+# Read-only commands get Bash+Read (run TOC script, read files).
+# update also gets Write+Edit since it modifies context-db files.
 COMMAND_TOOLS = {
     "prompt": "Bash,Read",
     "pre-review": "Bash,Read",
@@ -41,6 +43,7 @@ COMMAND_TOOLS = {
 
 
 # ── Path discovery ──────────────────────────────────────────────────────────
+# Same search logic as main-agent — relative paths, no symlink resolution.
 
 
 def find_toc_script():
@@ -65,6 +68,11 @@ def find_context_db():
 
 
 # ── Template loading ────────────────────────────────────────────────────────
+# Sub-agent templates are in prompts/ (not prompts/main-agent/).
+# Three template types per command:
+#   system-<cmd>.md  — system prompt for the sub-agent
+#   user-<cmd>.md    — user message with {prompt} placeholder
+#   response-<cmd>.md — instructions for the main agent on how to use the output
 
 
 def load_template(name):
@@ -87,24 +95,26 @@ def fill_template(template, **kwargs):
 
 
 def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
-    """Run claude -p subprocess and return (response_text, cost_usd, elapsed)."""
+    """Run claude -p subprocess and return (response_text, cost_usd, elapsed).
+
+    Uses stream-json output format so we can show debug progress (which files
+    the sub-agent reads) without waiting for the full response. The final
+    "result" event contains the sub-agent's answer text and cost.
+    """
     cmd = [
         "claude",
-        "-p",
-        "--model",
-        model,
-        "--tools",
-        tools,
-        "--output-format",
-        "stream-json",
+        "-p",                        # pipe mode: stdin=user msg, stdout=output
+        "--model", model,
+        "--tools", tools,
+        "--output-format", "stream-json",  # one JSON event per line
         "--verbose",
-        "--no-session-persistence",
-        "--permission-mode",
-        "bypassPermissions",
-        "--system-prompt",
-        system_prompt,
+        "--no-session-persistence",        # ephemeral — no session state saved
+        "--permission-mode", "bypassPermissions",  # sub-agent runs unattended
+        "--system-prompt", system_prompt,
     ]
 
+    # Strip ANTHROPIC_API_KEY so claude CLI uses its own auth.
+    # Set CONTEXT_DB_SUBAGENT=1 so hooks/scripts can detect sub-agent context.
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     env["CONTEXT_DB_SUBAGENT"] = "1"
     start = time.time()
@@ -124,6 +134,7 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
         proc.stdin.write(user_msg)
         proc.stdin.close()
 
+        # Stream JSON events line-by-line as the sub-agent works
         for line in proc.stdout:
             line = line.strip()
             if not line:
@@ -134,6 +145,8 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
                 continue
 
             etype = event.get("type", "")
+
+            # In debug mode, print each tool call so the user sees progress
             if etype == "assistant" and debug:
                 for block in event.get("message", {}).get("content", []):
                     if block.get("type") == "tool_use":
@@ -151,6 +164,8 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
                         elif tool == "Edit":
                             print(f"  editing: {inp.get('file_path', '')}",
                                   flush=True)
+
+            # Final event — contains the sub-agent's text response and cost
             elif etype == "result":
                 final_text = event.get("result", "")
                 cost_usd = event.get("total_cost_usd", 0.0)
@@ -170,6 +185,9 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
+# Assembles system prompt + user message from templates, spawns claude -p,
+# then wraps the sub-agent's response in [response] tags so the main agent
+# can parse and act on it.
 
 
 def main():
@@ -194,7 +212,9 @@ def main():
     cwd = os.getcwd()
     debug = args.debug
 
-    # Load system prompt template
+    # Assemble the two prompt halves from templates:
+    #   system prompt — role + read-mechanics + TOC instructions
+    #   user message  — the user's actual request
     if args.command == "review" and args.review_type == "full":
         system_template = load_template("system-review-full")
     else:
@@ -203,11 +223,10 @@ def main():
     system_prompt = fill_template(system_template, toc=toc,
                                   context_db_rel=context_db_rel)
 
-    # Load user message template
     user_template = load_template(f"user-{args.command}")
     user_msg = fill_template(user_template, prompt=args.prompt)
 
-    # Load response instructions
+    # response-<cmd>.md tells the *main* agent how to use the sub-agent's output
     response_instructions = load_template(f"response-{args.command}")
 
     if debug:
@@ -225,6 +244,7 @@ def main():
     if text is None:
         sys.exit("Error: sub-agent timed out")
 
+    # Output format: tagged sections the main agent parses
     print(f"\n[response]")
     print(text.strip())
     print(f"[end response]")

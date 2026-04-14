@@ -32,6 +32,9 @@ import sys
 
 # ── Frontmatter parsing ─────────────────────────────────────────────────────
 
+# Matches YAML block scalar indicators: >, >-, >+, |, |-, |+, >2, etc.
+# When a description value is one of these, the real content is on the next
+# indented lines — so we treat the indicator line as "found but empty."
 BLOCK_SCALAR_RE = re.compile(r"^[>|][-+0-9]*\s*$")
 
 
@@ -41,6 +44,11 @@ def read_field(filepath, field):
     Handles: single-line values, multi-line continuation, block scalar
     indicators (>, >-, >+, |, |-, |+, >2, etc.), quoted values, and
     fenced YAML fallback.
+
+    This is a hand-rolled parser (no PyYAML dependency) because:
+    1. stdlib-only — no pip install in the skill runtime
+    2. We only need `description` and `status`, not full YAML
+    3. LLMs produce every YAML scalar style; we must handle them all
     """
     try:
         with open(filepath, "r") as f:
@@ -48,6 +56,7 @@ def read_field(filepath, field):
     except (OSError, UnicodeDecodeError):
         return ""
 
+    # Try standard --- frontmatter first, fall back to ```yaml description fence
     val = _parse_frontmatter(lines, field)
     if not val:
         val = _parse_fenced_yaml(lines, field)
@@ -55,7 +64,12 @@ def read_field(filepath, field):
 
 
 def _parse_frontmatter(lines, field):
-    """Parse standard YAML frontmatter (between --- delimiters)."""
+    """Parse standard YAML frontmatter (between --- delimiters).
+
+    State machine: track fence_count (0=before, 1=inside, 2=after) and
+    found (whether we've seen our field and are collecting continuation lines).
+    Multi-line values are joined with spaces (folded style).
+    """
     fence_count = 0
     found = False
     val_parts = []
@@ -63,11 +77,12 @@ def _parse_frontmatter(lines, field):
     for line in lines:
         stripped = line.rstrip("\n")
 
+        # --- delimiter tracking
         if stripped == "---":
             fence_count += 1
             if fence_count == 1:
-                continue
-            if fence_count >= 2:
+                continue  # opening fence
+            if fence_count >= 2:  # closing fence
                 if found:
                     return _clean_value(" ".join(val_parts))
                 return ""
@@ -75,35 +90,40 @@ def _parse_frontmatter(lines, field):
         if fence_count != 1:
             continue
 
-        # Inside frontmatter
+        # Inside frontmatter — collecting continuation lines for our field
         if found:
-            # Continuation line (indented)
-            if line[0:1] in (" ", "\t"):
+            if line[0:1] in (" ", "\t"):  # indented = continuation
                 val_parts.append(stripped.strip())
                 continue
-            # Non-indented line = next field, we're done
+            # Non-indented = next field, stop collecting
             return _clean_value(" ".join(val_parts))
 
-        # Look for our field
+        # Look for the target field (e.g. "description:")
         if stripped.startswith(field + ":"):
             rest = stripped[len(field) + 1 :].strip()
-            # Block scalar indicator — treat as empty value, content follows
             if BLOCK_SCALAR_RE.match(rest):
+                # Block scalar indicator (>, |, >-, etc.) — skip it,
+                # real content is on the next indented lines
                 found = True
                 continue
             if rest:
-                return _clean_value(rest)
-            # Empty value — content on next indented lines
+                return _clean_value(rest)  # inline value
+            # Bare "field:" with nothing after — multi-line follows
             found = True
 
-    # End of file while still collecting
+    # Hit EOF while still collecting (malformed but recoverable)
     if found:
         return _clean_value(" ".join(val_parts))
     return ""
 
 
 def _parse_fenced_yaml(lines, field):
-    """Fallback: parse YAML from ```yaml description fenced blocks."""
+    """Fallback: parse YAML from ```yaml description fenced blocks.
+
+    Some files use a ```yaml description code fence instead of ---
+    frontmatter. Same parsing logic as _parse_frontmatter, just different
+    delimiters.
+    """
     in_block = False
     found = False
     val_parts = []
@@ -174,6 +194,10 @@ def generate_toc(directory, local_only=False):
     If local_only=True, skip entries whose paths resolve outside the project
     root (external symlinks). Project root is discovered by walking up from
     the target directory.
+
+    Output is YAML-ish list consumed by the LLM, not parsed by code.
+    Two sections: ## Subfolders (dirs with <name>/<name>.md descriptor)
+    and ## Files (standalone .md files with description frontmatter).
     """
     directory = directory.rstrip("/")
 
@@ -182,15 +206,16 @@ def generate_toc(directory, local_only=False):
         sys.exit(1)
 
     project_root = find_project_root(directory) if local_only else None
+    # dirname used to identify the folder's own descriptor file (skip it)
     dirname = os.path.basename(os.path.realpath(directory))
 
-    # Subfolder entries
     folder_lines = []
     try:
         entries = sorted(os.listdir(directory))
     except OSError:
         entries = []
 
+    # ── Subfolders: only listed if they have a <name>/<name>.md descriptor ──
     for name in entries:
         subdir = os.path.join(directory, name)
         if not os.path.isdir(subdir):
@@ -212,7 +237,7 @@ def generate_toc(directory, local_only=False):
         folder_lines.append(f"- description: {desc}")
         folder_lines.append(f"  path: {name}/")
 
-    # File entries
+    # ── Files: standalone .md files (not the folder descriptor itself) ──
     file_lines = []
     for name in entries:
         filepath = os.path.join(directory, name)
@@ -224,8 +249,7 @@ def generate_toc(directory, local_only=False):
             continue
         if local_only and not is_project_local(filepath, project_root):
             continue
-        # Skip folder descriptor
-        if name == f"{dirname}.md":
+        if name == f"{dirname}.md":  # folder descriptor — already used above
             continue
 
         desc = read_desc(filepath)
@@ -239,7 +263,7 @@ def generate_toc(directory, local_only=False):
         file_lines.append(f"- description: {desc}")
         file_lines.append(f"  path: {name}")
 
-    # Output — match bash format: header, blank line, entries
+    # Assemble output — matches the original bash script's format exactly
     parts = []
     if folder_lines:
         parts.append("## Subfolders\n\n" + "\n".join(folder_lines))
@@ -255,7 +279,8 @@ def generate_toc(directory, local_only=False):
 def find_project_root(start_path):
     """Walk up from start_path looking for .git, context-db.json, or context-db/.
 
-    Returns the project root directory. Exits with error if none found.
+    Used by --no-external-symlinks to determine the boundary. Anything
+    resolving outside this root is excluded from the TOC.
     """
     current = os.path.realpath(start_path)
     if os.path.isfile(current):
@@ -284,6 +309,8 @@ def is_project_local(path, project_root):
 
 
 def main():
+    # Manual arg parsing (no argparse) to keep startup fast — this script
+    # is called frequently by the agent during TOC browsing.
     if len(sys.argv) < 2:
         print("Usage: context-db-generate-toc.py [--no-external-symlinks] "
               "<directory>", file=sys.stderr)

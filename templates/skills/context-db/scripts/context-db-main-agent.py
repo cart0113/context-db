@@ -18,6 +18,15 @@ from pathlib import Path
 
 
 # ── Config ──────────────────────────────────────────────────────────────────
+#
+# Two execution modes:
+#   main-agent — prints tagged prompt sections that the calling agent follows
+#                directly (agent navigates context-db itself)
+#   sub-agent  — prints instructions telling the calling agent to spawn
+#                context-db-sub-agent.py (isolated claude -p lookup)
+#
+# Per-command defaults below can be overridden by context-db.json in the
+# project root, and further overridden by CLI flags (--mode, --model).
 
 COMMANDS = ["prompt", "pre-review", "review", "update", "maintain"]
 
@@ -29,22 +38,26 @@ DEFAULT_CONFIG = {
     "prompt": {},
     "pre-review": {},
     "review": {
-        "model": "sonnet",
+        "model": "sonnet",        # reviews need more reasoning
         "review-type": "context-db",
     },
     "update": {
-        "mode": "main-agent",
+        "mode": "main-agent",     # writes files — must run in main agent
         "model": "sonnet",
     },
     "maintain": {
-        "mode": "main-agent",
+        "mode": "main-agent",     # writes files — must run in main agent
     },
 }
 
 
 def load_config(config_path):
-    """Load context-db.json, merge with defaults."""
-    config = json.loads(json.dumps(DEFAULT_CONFIG))
+    """Load context-db.json, merge with defaults.
+
+    Merge strategy: user values override defaults at each level.
+    Deep-copy via JSON round-trip so DEFAULT_CONFIG stays immutable.
+    """
+    config = json.loads(json.dumps(DEFAULT_CONFIG))  # deep copy
     if os.path.exists(config_path):
         with open(config_path) as f:
             user = json.load(f)
@@ -54,18 +67,24 @@ def load_config(config_path):
             if cmd in user:
                 config[cmd].update(user[cmd])
         if "init" in user:
-            config["init"] = user["init"]
+            config["init"] = user["init"]  # init is a list, not merged
     return config
 
 
 def get_command_config(config, command):
-    """Get effective config for a command (defaults merged with command-specific)."""
+    """Get effective config for a command (defaults merged with command-specific).
+
+    Layering: DEFAULT_CONFIG defaults → user defaults → command overrides.
+    """
     effective = dict(config["defaults"])
     effective.update(config[command])
     return effective
 
 
 # ── Path discovery ──────────────────────────────────────────────────────────
+# All paths returned relative to cwd so the agent's Bash/Read calls work
+# without absolute-path issues (see feedback_paths_relative.md).
+# Search order: standard .claude/ location → parent dir → __file__ fallback.
 
 
 def find_toc_script():
@@ -104,6 +123,9 @@ def find_context_db():
 
 
 # ── Template loading ────────────────────────────────────────────────────────
+# Prompt templates live in prompts/main-agent/*.md. Each is a self-contained
+# tagged section (e.g. [read-mechanics]...[end read-mechanics]) that gets
+# printed into the agent's context. Variables use {name} syntax.
 
 
 def load_template(name):
@@ -123,6 +145,9 @@ def fill_template(template, **kwargs):
 
 
 # ── Output helpers ─────────────────────────────────────────────────────────
+# Everything this script prints goes directly into the agent's context.
+# Tags like [read-mechanics] are how the agent knows which instructions
+# apply — they're the protocol between this script and the LLM.
 
 
 def print_template(name, **kwargs):
@@ -132,17 +157,24 @@ def print_template(name, **kwargs):
 
 
 def print_section(tag, content):
-    """Print a dynamically tagged section (for content not from templates)."""
+    """Print a dynamically tagged section (for content not from templates).
+
+    Used for user instructions and other dynamic content that doesn't
+    have its own template file.
+    """
     print(f"\n[{tag}]\n")
     print(content.strip())
     print(f"\n[end {tag}]")
 
 
 # ── Command handlers ────────────────────────────────────────────────────────
+# Each handler assembles the right combination of templates for its command.
+# Read commands (prompt, pre-review, review) get read-mechanics + context-usage.
+# Write commands (update, maintain) get write-mechanics + write-content-guide.
 
 
 def cmd_init(args, config):
-    """Print templates listed in config init."""
+    """Print templates listed in config init (session-start hook calls this)."""
     toc = find_toc_script()
     context_db_rel = find_context_db()
 
@@ -178,7 +210,11 @@ def _print_load_manual(scope):
 
 
 def cmd_main_agent(command, prompt, cmd_config, debug=False):
-    """Print instructions for the main agent to navigate context-db directly."""
+    """Print tagged prompt sections so the calling agent navigates context-db itself.
+
+    This is the "main-agent" mode — no sub-process, the agent uses its own
+    tools (Read, Bash) to browse the TOC and read files.
+    """
     toc = find_toc_script()
     context_db_rel = find_context_db()
 
@@ -205,10 +241,16 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
 
 
 def cmd_sub_agent(command, prompt, cmd_config, debug=False):
-    """Print instructions telling the main agent to call the sub-agent script."""
+    """Print instructions telling the main agent to shell out to the sub-agent.
+
+    The main agent will run the printed command via Bash, which spawns an
+    isolated claude -p process (context-db-sub-agent.py). This keeps the
+    context-db lookup out of the main agent's context window.
+    """
     sub_agent = find_sub_agent_script()
     model = cmd_config["model"]
 
+    # Build the shell command the main agent will run
     cmd_parts = [f"python3 {sub_agent} {command}"]
     cmd_parts.append(f'"{prompt}"')
     cmd_parts.append(f"--model {model}")
@@ -219,6 +261,7 @@ def cmd_sub_agent(command, prompt, cmd_config, debug=False):
 
     run_cmd = " ".join(cmd_parts)
 
+    # response-<command>.md tells the main agent how to use the sub-agent's output
     response_template = load_template(f"response-{command}")
 
     instructions = (
@@ -252,7 +295,7 @@ def cmd_ask_mode(command, prompt, cmd_config, debug=False):
 
 
 def cmd_maintain(args, config):
-    """Print the full 7-phase maintain instructions."""
+    """Print instructions for the maintain workflow (audit + fix context-db)."""
     toc = find_toc_script()
     context_db_rel = find_context_db()
     target_path = args.path if args.path else f"{context_db_rel}/"
@@ -265,6 +308,9 @@ def cmd_maintain(args, config):
 
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
+# Subparsers mirror the COMMANDS list. Each read/write command gets --mode,
+# --model, --debug, --config flags via add_mode_flags(). "init", "load-manual",
+# and "maintain" have their own argument shapes.
 
 MODE_CHOICES = ["sub-agent", "main-agent", "ask"]
 MODEL_CHOICES = ["haiku", "sonnet", "opus", "ask"]
@@ -279,16 +325,21 @@ def add_mode_flags(sub):
 
 
 def dispatch_command(args, config):
-    """Route a prompt/pre-review/review/update command by mode."""
+    """Route a prompt/pre-review/review/update command by mode.
+
+    Config layering: DEFAULT_CONFIG → context-db.json → CLI flags.
+    Final "mode" value determines which handler runs.
+    """
     command = args.command
     prompt = args.instruction
 
     if not prompt and command != "update":
         print(f"No instruction provided. Ask the user what they want to "
               f"{command}.")
-    
+
         return
 
+    # Build effective config: defaults ← command overrides ← CLI flags
     cmd_config = get_command_config(config, command)
 
     if args.mode:
