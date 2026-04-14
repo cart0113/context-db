@@ -1,15 +1,10 @@
 ---
 name: context-db
-description:
-  'Project knowledge base {read-manual, prompt, pre-review, review, update,
-  maintain}'
+description: 'Type --help for sub-commands or <command> --help for details'
 allowed-tools: Bash,Read,Write,Edit,Glob,Grep
 ---
 
-Run the dispatcher with the user's sub-command and arguments:
+python3 .claude/skills/context-db/scripts/context-db-main-agent.py <args>
 
-```
-python3 .claude/skills/context-db/scripts/context-db-main-agent.py <command> [args]
-```
-
-Commands: {read-manual, prompt, pre-review, review, update, maintain}
+Run with the user's arguments. If output contains [instructions], follow them.
+Otherwise print the output for the user.

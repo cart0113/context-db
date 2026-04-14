@@ -21,8 +21,9 @@ Using the developer's notes AND the git diff, update {context_db_rel}/:
 
 ## What belongs in context-db
 
-Only file what the code can't tell you. Ask: "Would removing this cause the next
-agent to make a mistake, even after reading the code?" If not, skip it.
+Only file what the project assets (code, configs, docs, etc.) can't tell you.
+Ask: "Would removing this cause the next agent to make a mistake, even after
+reading the project assets?" If not, skip it.
 
 Good content: conventions, corrections from the user, pitfalls (ripple effects,
 files that must change together but aren't linked by imports), design rationale

@@ -168,14 +168,20 @@ def should_skip(name):
 # ── TOC generation ───────────────────────────────────────────────────────────
 
 
-def generate_toc(directory):
-    """Generate TOC for a directory. Returns the output string."""
+def generate_toc(directory, local_only=False):
+    """Generate TOC for a directory. Returns the output string.
+
+    If local_only=True, skip entries whose paths resolve outside the project
+    root (external symlinks). Project root is discovered by walking up from
+    the target directory.
+    """
     directory = directory.rstrip("/")
 
     if not os.path.isdir(directory):
         print(f"Error: '{directory}' is not a directory", file=sys.stderr)
         sys.exit(1)
 
+    project_root = find_project_root(directory) if local_only else None
     dirname = os.path.basename(os.path.realpath(directory))
 
     # Subfolder entries
@@ -190,6 +196,8 @@ def generate_toc(directory):
         if not os.path.isdir(subdir):
             continue
         if should_skip(name):
+            continue
+        if local_only and not is_project_local(subdir, project_root):
             continue
 
         descriptor = os.path.join(subdir, f"{name}.md")
@@ -213,6 +221,8 @@ def generate_toc(directory):
         if not name.endswith(".md"):
             continue
         if should_skip(name):
+            continue
+        if local_only and not is_project_local(filepath, project_root):
             continue
         # Skip folder descriptor
         if name == f"{dirname}.md":
@@ -239,17 +249,32 @@ def generate_toc(directory):
     return "\n\n".join(parts) + "\n" if parts else ""
 
 
-# ── Project-local check (absorbs context-db-list-files.sh) ───────────────────
+# ── Project root discovery and local-only filtering ──────────────────────────
 
 
-def is_project_local(path, project_root=None):
-    """Check if a path resolves to within the project root.
+def find_project_root(start_path):
+    """Walk up from start_path looking for .git, context-db.json, or context-db/.
 
-    Used to skip symlinks pointing outside the project (they belong to
-    another repo).
+    Returns the project root directory. Exits with error if none found.
     """
-    if project_root is None:
-        project_root = os.getcwd()
+    current = os.path.realpath(start_path)
+    if os.path.isfile(current):
+        current = os.path.dirname(current)
+    while True:
+        if (os.path.exists(os.path.join(current, ".git"))
+                or os.path.exists(os.path.join(current, "context-db.json"))
+                or os.path.isdir(os.path.join(current, "context-db"))):
+            return current
+        parent = os.path.dirname(current)
+        if parent == current:
+            print("Error: could not find project root (.git, context-db.json, "
+                  "or context-db/ directory)", file=sys.stderr)
+            sys.exit(1)
+        current = parent
+
+
+def is_project_local(path, project_root):
+    """Check if a path resolves to within the project root."""
     real = os.path.realpath(path)
     root = os.path.realpath(project_root)
     return real.startswith(root + os.sep) or real == root
@@ -260,11 +285,22 @@ def is_project_local(path, project_root=None):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: context-db-generate-toc.py <directory>", file=sys.stderr)
+        print("Usage: context-db-generate-toc.py [--no-external-symlinks] "
+              "<directory>", file=sys.stderr)
         sys.exit(1)
 
-    directory = sys.argv[1]
-    output = generate_toc(directory)
+    local_only = False
+    args = sys.argv[1:]
+    if "--no-external-symlinks" in args:
+        local_only = True
+        args.remove("--no-external-symlinks")
+
+    if not args:
+        print("Usage: context-db-generate-toc.py [--no-external-symlinks] "
+              "<directory>", file=sys.stderr)
+        sys.exit(1)
+
+    output = generate_toc(args[0], local_only=local_only)
     if output:
         print(output, end="")
 

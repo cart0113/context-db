@@ -2,7 +2,7 @@
 description:
   context-db-specific coding standards — overrides and additions to
   general-coding-standards. No shims, no defensive .get(), triple-quote editable
-  text blocks.
+  text blocks, "project assets" framing.
 ---
 
 # context-db Project Coding Standards
@@ -25,6 +25,13 @@ Do not use `dict.get(key, default)` as a defensive measure against missing keys.
 If a key is required, access it directly — let the KeyError surface. If a key is
 genuinely optional, document why in a comment. Defensive `.get()` hides bugs and
 makes required fields appear optional.
+
+## "Project assets" framing — never just "code"
+
+When templates or prompts tell the agent to verify context-db findings, say
+"project assets (code, configs, docs, etc.)" — not just "code." When expressing
+trust priority, say "trust the project's assets, especially project code." Code
+is still primary, but the framing should acknowledge the full project.
 
 ## Triple-quote all editable text blocks
 
