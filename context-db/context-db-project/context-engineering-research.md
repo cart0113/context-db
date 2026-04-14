@@ -9,41 +9,13 @@ description:
 
 ## How AI Coding Tools Handle Context
 
-The major AI coding tools use fundamentally different architectures for
-providing codebase context to LLMs.
-
-### RAG-Based (Cursor, Windsurf)
-
-**Cursor** indexes the codebase by splitting files into semantic chunks using
-AST-based parsing (functions, classes, ~500 token blocks), then converts them to
-vector embeddings. When you query with `@Codebase`, it performs semantic search
-against this index. The embedding model is trained on actual agent sessions.
-Cursor also has `.cursor/rules/` with glob-based scoping and rule types (Always,
-Auto Attached, Agent Requested). Their semantic search reportedly improves agent
-accuracy by 12.5%.
-
-**Windsurf** uses a proprietary approach called "M-Query." It builds an
-AST-based semantic index, indexing code entities (functions, methods, classes)
-rather than raw file chunks. Their context assembly pipeline loads rules first,
-then persistent Memories from prior sessions, then open files (active file gets
-highest weight), then runs M-Query retrieval, then reads recent actions (edits,
-terminal commands, navigation history).
-
-### Tool-Based On-Demand (Claude Code)
-
-Claude Code does not pre-index or embed the codebase. It uses tool calls (Bash,
-Grep, Glob, Read) to search and read files on demand. It relies on `CLAUDE.md`
-files as structured context, `.claude/rules/` for path-specific rules, and
-subagents with isolated context windows for delegation. It has a much larger
-effective context window (200K tokens, or 1M with Opus), which lets it hold more
-code in working memory at once.
-
-### Key Tradeoff
-
-RAG is faster for lookup but can miss context that wasn't well-embedded.
-Tool-based retrieval is slower per step but can be more precise and adaptive.
-Anthropic's own engineering blog notes that vector/RAG retrieval "flattens rich
-structure into undifferentiated chunks, destroying critical relationships."
+Three architectures: **RAG-based** (Cursor, Windsurf) — AST/semantic indexing
+with vector embeddings, fast lookup but can miss context that wasn't
+well-embedded. **Tool-based on-demand** (Claude Code) — no pre-indexing, uses
+Bash/Grep/Read to search files, relies on CLAUDE.md and rules for structured
+context. **Key tradeoff**: RAG is faster for lookup; tool-based is more precise
+and adaptive. Anthropic notes that RAG "flattens rich structure into
+undifferentiated chunks, destroying critical relationships."
 
 ## Structured vs. Unstructured Context: Evidence
 
@@ -85,40 +57,24 @@ The most directly relevant experimental evidence:
 - LongCodeZip (2025) achieved up to 5.6x compression with hierarchical
   function-level chunking without sacrificing task performance
 
-## Arguments For Curated Context
-
-- **Martin Fowler (Feb 2026):** CLAUDE.md is "the single most important context
-  engineering artifact" — context engineering separates 10x from 2x value
-- **Spotify's Honk system (1,500+ merged PRs):** careful context engineering
-  essential for reliable, mergeable PRs; different agents need different
-  prompting styles
-- **HumanLayer's ACE methodology:** handles 300K LOC Rust codebases using
-  spec-driven development where specs become source of truth
-- **Anthropic's best practices:** "Your CLAUDE.md file should contain as few
-  instructions as possible — ideally only ones which are universally applicable"
-- **ACE paper (arXiv:2510.04618):** A smaller open-source model (DeepSeek-V3.1)
-  using structured, evolving context matched production-level performance, even
-  surpassing it on harder splits
-
-## Arguments Against Curated Context
-
-- **ETH Zurich:** context files that are too detailed hurt performance — agents
-  are "too obedient" and follow unnecessary instructions
-- **Context rot:** even well-structured context consumes tokens that contribute
-  to performance degradation
-- **Staleness:** code snippets in context files become out-of-date quickly
-- **Cost:** context files increase inference costs 20%+ with marginal quality
-  benefit
-- **Redundancy:** agents can discover project structure, build commands, and
-  file layouts on their own
-
-## Emerging Consensus
+## The Emerging Consensus
 
 Curated context files are valuable **only when they contain information the
-agent genuinely cannot infer on its own**. High-value content: custom build
-commands, non-obvious architectural decisions, team-specific conventions,
-unusual tooling. Low-value or counterproductive: directory listings, generic
-best practices, obvious patterns.
+agent genuinely cannot infer on its own**.
+
+**For:** Martin Fowler calls CLAUDE.md "the single most important context
+engineering artifact." Spotify's Honk (1,500+ merged PRs) depends on careful
+context engineering. ACE paper: a smaller model (DeepSeek-V3.1) with structured
+context matched production-level models. Anthropic: "as few instructions as
+possible — ideally only ones which are universally applicable."
+
+**Against:** ETH Zurich finds agents are "too obedient" — detailed context
+constrains their search space harmfully. Context rot degrades performance at
+every token increment. Code snippets go stale. Agents discover project structure
+on their own.
+
+High-value: non-obvious decisions, team conventions, unusual tooling.
+Counterproductive: directory listings, generic patterns, derivable facts.
 
 ## Smaller Models and Structured Context
 
@@ -162,76 +118,33 @@ itself.
 
 ## Context Window Utilization
 
-- Models hit a performance ceiling around 1M tokens regardless of advertised
-  window size (SWE-rebench data)
-- Accuracy drops 10–20+ percentage points when relevant info sits in the middle
-  of long contexts
-- Claude Code uses 5.5x fewer tokens than Cursor for equivalent tasks, partly
-  due to better context management
-- HumanLayer recommends keeping context utilization in the 40–60% range through
-  frequent intentional compaction
-
-Practical strategies: subagent isolation, observation masking (hiding verbose
-tool output), rolling compression, tool-based retrieval over pre-loading,
-.claudeignore.
+Models hit a performance ceiling around 1M tokens regardless of advertised
+window size. Accuracy drops 10-20+ points when relevant info sits in the middle.
+HumanLayer recommends 40-60% utilization with frequent compaction. Practical
+strategies: subagent isolation, observation masking, tool-based retrieval over
+pre-loading.
 
 ## Implications for context-db
 
-1. **Agent-navigable TOCs are the right pattern.** Letting the agent decide what
-   to read based on descriptions is better than dumping everything. This is what
-   `context-db-generate-toc.sh` + description-based filtering does.
-
-2. **Descriptions are the critical mechanism.** The ETH Zurich study says agents
-   waste tokens on irrelevant pre-loaded structure. context-db's
-   descriptions-as-filter approach is closer to the "load on demand" pattern
-   that Anthropic recommends.
-
-3. **Minimal, high-signal content only.** Anthropic's guidance, ETH Zurich, and
-   the context rot research all converge: less is more. Only include what the
-   agent cannot infer from the code.
-
-4. **Strongest use case is large codebases** where full RAG indexing is
-   impractical or where the project has non-obvious architectural decisions that
-   semantic search would not surface.
-
-5. **Risk to test for:** if context documents contain information agents could
-   discover on their own (file structure, obvious patterns), they consume tokens
-   that degrade performance.
-
-6. **Smaller models may benefit disproportionately** from the progressive
-   disclosure pattern, since they are more sensitive to context noise.
+1. **Agent-navigable TOCs are the right pattern.** Let the agent decide what to
+   load based on descriptions — don't dump everything.
+2. **Descriptions are the critical mechanism.** context-db's
+   descriptions-as-filter approach matches the "load on demand" pattern.
+3. **Minimal, high-signal content only.** All research converges: less is more.
+   Only include what the agent cannot infer from code.
+4. **Strongest use case is large codebases** with non-obvious decisions that
+   semantic search wouldn't surface.
+5. **Smaller models benefit disproportionately** from progressive disclosure —
+   they're more sensitive to context noise.
 
 For deeper analysis of these implications — including the three failure modes of
 context delivery and a subagent-based alternative — see
 [context-db-theory/context-delivery-problem.md](context-db-theory/context-delivery-problem.md).
 
-## Sources
+## Key Sources
 
-- [Spotify: Context Engineering (Honk, Part 2)](https://engineering.atspotify.com/2025/11/context-engineering-background-coding-agents-part-2)
-- [Martin Fowler: Context Engineering for Coding Agents](https://martinfowler.com/articles/exploring-gen-ai/context-engineering-coding-agents.html)
-- [Chroma Research: Context Rot](https://research.trychroma.com/context-rot)
-- [ETH Zurich / InfoQ: Value of AGENTS.md Files](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
-- [MarkTechPost: ETH Zurich on AGENTS.md](https://www.marktechpost.com/2026/02/25/new-eth-zurich-study-proves-your-ai-coding-agents-are-failing-because-your-agents-md-files-are-too-detailed/)
-- [Morph: Context Engineering: Why More Tokens Makes Agents Worse](https://www.morphllm.com/context-engineering)
-- [Factory.ai: The Context Window Problem](https://factory.ai/news/context-window-problem)
-- [HumanLayer: Advanced Context Engineering](https://github.com/humanlayer/advanced-context-engineering-for-coding-agents)
-- [ACE Paper (arXiv:2510.04618)](https://arxiv.org/abs/2510.04618)
-- [LongCodeZip (arXiv:2510.00446)](https://arxiv.org/html/2510.00446v1)
-- [Cursor Docs: Codebase Indexing](https://cursor.com/docs/context/codebase-indexing)
-- [Windsurf Docs: Context Awareness](https://docs.windsurf.com/context-awareness/overview)
-- [LangChain: Context Engineering in Agents](https://docs.langchain.com/oss/python/langchain/context-engineering)
-- [Engineer's Codex: Your Agents.md Might Be Making AI Worse](https://www.engineerscodex.com/agents-md-making-ai-worse)
-- [JetBrains Research: Smarter Context Management](https://blog.jetbrains.com/research/2025/12/efficient-context-management/)
-- [Lance Martin: Context Engineering for Agents](https://rlancemartin.github.io/2025/06/23/context_engineering/)
-- [Anthropic: Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
-- [Anthropic: Effective Context Engineering for AI Agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents)
-- [OpenAI: The Instruction Hierarchy (2024)](https://openai.com/index/the-instruction-hierarchy/)
-- [MemGPT: Towards LLMs as Operating Systems (arXiv:2310.08560)](https://arxiv.org/abs/2310.08560)
-- [Letta: Benchmarking AI Agent Memory](https://www.letta.com/blog/benchmarking-ai-agent-memory)
-- [ContextBench: Context Retrieval in Coding Agents (arXiv:2602.05892)](https://arxiv.org/html/2602.05892)
-- [MAST: Multi-Agent Systems Failure Taxonomy](https://towardsdatascience.com/the-multi-agent-trap/)
-- [Karpathy: LLM Wiki / Knowledge Base Architecture](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
-- [Claude Code Source Leak Analysis (VentureBeat)](https://venturebeat.com/technology/claude-codes-source-code-appears-to-have-leaked-heres-what-we-know)
-- [Claude Code System Prompt Architecture (dbreunig)](https://www.dbreunig.com/2026/04/04/how-claude-code-builds-a-system-prompt.html)
-- [Controlled Benchmark: AI Memory in Coding Agents](https://medium.com/@mrsandelin/the-first-controlled-benchmark-of-ai-memory-in-coding-agents-8e0bb776d39e)
-- [Lost in the Middle (TACL 2024)](https://direct.mit.edu/tacl/article/doi/10.1162/tacl_a_00638/119630/)
+Chroma "Context Rot" (2025), ETH Zurich AGENTS.md study (2026), ACE paper
+(arXiv:2510.04618), Anthropic context engineering blog posts, Spotify Honk
+series, Martin Fowler context engineering article, MemGPT (arXiv:2310.08560),
+Lost in the Middle (TACL 2024), ContextBench (arXiv:2602.05892), Claude Code
+system prompt analysis (dbreunig, VentureBeat).

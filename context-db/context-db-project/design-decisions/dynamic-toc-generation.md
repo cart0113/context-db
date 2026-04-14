@@ -1,13 +1,13 @@
 ---
 description:
-  Why static -toc.md files were replaced with context-db-generate-toc.sh that
-  generates TOC on stdout — solves the cross-project symlink problem
+  Why static -toc.md files were replaced with a script that generates TOC on
+  stdout — solves the cross-project symlink problem
 ---
 
 # Dynamic TOC Generation
 
 Static, committed `-toc.md` files were replaced with
-`context-db-generate-toc.sh`, a script that generates the TOC for any context-db
+`context-db-generate-toc.py`, a script that generates the TOC for any context-db
 folder on the fly and prints it to stdout.
 
 ## Problem
@@ -23,54 +23,10 @@ There is no clean way to have a committed file reflect per-user symlinks.
 
 ## Solution
 
-`context-db-generate-toc.sh` takes a context-db folder path and prints the TOC
-to stdout. No files written, nothing to commit.
+The TOC script takes a context-db folder path and prints the TOC to stdout. No
+files written, nothing to commit. The agent runs it on the root, then
+recursively on subfolders as it navigates deeper.
 
-```bash
-bin/context-db-generate-toc.sh context-db/
-# Prints the TOC for the root context-db folder
-
-bin/context-db-generate-toc.sh context-db/my-project/
-# Prints the TOC for that subfolder
-```
-
-### Agent Interaction
-
-The agent runs `bin/context-db-generate-toc.sh context-db/` as its entry point,
-then recursively calls it on subfolders as it navigates deeper — the same
-browsing pattern as reading static files, but with a shell command instead of a
-file read.
-
-The output format is the same `## Subfolders` / `## Files` structure with
-`description:` / `path:` entries that the old static files used.
-
-### Why This Works with Agent Systems
-
-Every major agent framework supports running shell commands and reading stdout:
-
-- **Claude Code**: `Bash` tool
-- **Cursor / Windsurf**: Terminal tool
-- **Codex**: Shell execution
-- **MCP servers**: Can wrap the script as a tool
-- **Custom agents**: Subprocess execution is universal
-
-A script that returns text on stdout is the simplest possible interface.
-
-## What Changed
-
-| Aspect                 | Before (static)       | After (dynamic)                        |
-| ---------------------- | --------------------- | -------------------------------------- |
-| TOC retrieval          | Read `-toc.md` file   | Run `context-db-generate-toc.sh <dir>` |
-| TOC storage            | Committed files       | None — generated on demand             |
-| Cross-project symlinks | TOC mismatch problem  | Just works                             |
-| Pre-commit hook        | Regenerated TOC files | Not needed for TOCs                    |
-| Agent instructions     | "read this file"      | "run this command"                     |
-| Output format          | Same                  | Same                                   |
-
-## What Stayed the Same
-
-- Folder structure, naming convention, `<foldername>.md` description files
-- YAML frontmatter with `description` and `status` fields
-- Documents are still plain markdown — agents read them directly
-- Static TOC generation was removed — `context-db-generate-toc.sh` covers all
-  use cases
+This works with every major agent framework — Claude Code (Bash tool), Cursor
+(Terminal tool), MCP servers, custom agents. A script that returns text on
+stdout is the simplest possible interface.

@@ -17,6 +17,5 @@ Each folder's description file is named `<folder>.md` (or
   easy to search for.
 - **Generalizes beyond context-db/.** The convention works for any directory. A
   `docs/api/` directory uses `api.md`.
-- **Script simplicity.** `context-db-generate-toc.sh` computes
-  `foldername=$(basename "$dir")` and knows exactly which description file to
-  look for. No special-casing.
+- **Script simplicity.** The TOC script computes the folder basename and knows
+  exactly which description file to look for. No special-casing.

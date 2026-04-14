@@ -31,33 +31,17 @@ only surfaced in the TOC when it's not stable.
 
 ## Why not other fields
 
-Several other frontmatter fields were considered and rejected for the same
-reason: they either duplicate information available from the filesystem/git, or
-they add maintenance burden that outweighs the benefit.
+All rejected for the same reasons: duplicate filesystem/git data, or maintenance
+burden exceeds benefit.
 
-**`last-modified` / `date-created`** — Derivable from file modification time
-(`stat`) and git history (`git log --follow --diff-filter=A`). Putting
-timestamps in frontmatter means they drift — LLMs are unreliable with timestamps
-and humans forget to update them. If timestamps are needed in the TOC,
-`context-db-generate-toc.sh` can compute them at runtime from the filesystem.
-
-**`last-reviewed`** — The only non-derivable timestamp (when a human last
-verified accuracy against the codebase). But an unmaintained `last-reviewed`
-field is worse than no field at all — it creates a false confidence signal. The
-maintenance discipline required outweighs the benefit.
-
-**`related` (list of paths)** — Cross-folder relationships between documents.
-Useful in theory, but adds a maintenance burden (links break when files move)
-and bloats the instructions agents must read. An agent that needs
-cross-references can find them in the document body.
-
-**`tags`** — Secondary categorization orthogonal to folder hierarchy. Requires
-consistent vocabulary to be useful, adds another axis agents must parse, and the
-folder hierarchy already provides the primary organizational axis.
-
-**`aliases`** — Alternative names for discovery. Marginal value when
-descriptions are well-written, since a good description naturally includes the
-key terms an agent would search for.
+- **`last-modified` / `date-created`** — derivable from `stat`/`git log`. LLMs
+  are unreliable with timestamps, humans forget to update them.
+- **`last-reviewed`** — only non-derivable timestamp, but unmaintained
+  `last-reviewed` creates false confidence. Worse than no field.
+- **`related`** — links break when files move. Use "See also" in the body.
+- **`tags`** — requires consistent vocabulary. The description field and folder
+  hierarchy already cover discovery.
+- **`aliases`** — marginal value when descriptions are well-written.
 
 ## Principle
 

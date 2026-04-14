@@ -1,6 +1,6 @@
 ---
 description:
-  context-db project knowledge — TOC script internals, cross-project sharing,
-  context engineering research, design decisions, sub-agent delivery mode,
-  documentation maintenance, and active refactors
+  context-db project knowledge — TOC script, cross-project sharing, context
+  engineering research, design decisions, context delivery lessons,
+  documentation maintenance, and refactors
 ---

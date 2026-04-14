@@ -1,4 +1,5 @@
 ---
 description:
-  Major refactors — tracking docs for in-progress architectural changes
+  Major refactors — tracking docs for completed and in-progress architectural
+  changes
 ---

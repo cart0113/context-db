@@ -2,7 +2,7 @@
 description:
   Unify refactor — consolidating 5 skills, 2 hooks, 2 rules into a single
   /context-db skill with sub-commands
-status: work-in-progress
+status: stable
 ---
 
 # Unify Refactor

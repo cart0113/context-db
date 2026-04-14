@@ -13,13 +13,13 @@ across projects at three levels of visibility, and mix them freely.
 ## How It Works
 
 Every approach ends the same way: a folder appears inside your `context-db/`
-directory, and `context-db-generate-toc.sh` picks it up automatically. The
-difference is how that folder gets there and who else sees it.
+directory, and the TOC script picks it up automatically. The difference is how
+that folder gets there and who else sees it.
 
-Because `context-db-generate-toc.sh` generates the TOC on the fly, there are no
-static files to get out of sync. If you symlink in a private folder and
-`.gitignore` it, your agent sees it in the TOC but nothing changes in git. Other
-users' agents see only their own folders.
+Because the TOC script generates the TOC on the fly, there are no static files
+to get out of sync. If you symlink in a private folder and `.gitignore` it, your
+agent sees it in the TOC but nothing changes in git. Other users' agents see
+only their own folders.
 
 ## Committed Folders (Whole Team)
 
@@ -49,10 +49,9 @@ ln -s ~/workspace/OTHER_PROJECT/context-db/coding-standards coding-standards
 context-db/coding-standards
 ```
 
-Your agent runs `context-db-generate-toc.sh context-db/` and sees
-`coding-standards/` in the TOC. A teammate's agent does the same and doesn't —
-because the symlink isn't there for them. No broken references, no dirty working
-tree.
+Your agent runs the TOC script on `context-db/` and sees `coding-standards/` in
+the TOC. A teammate's agent does the same and doesn't — because the symlink
+isn't there for them. No broken references, no dirty working tree.
 
 **Best for:** Personal reference context. Quick access to another project's
 knowledge without any setup for the team.
@@ -124,16 +123,5 @@ or where you only want a subset of the external repo.
 | **Extra tooling**    | None       | None                 | None                   | git-sync                      |
 | **Update mechanism** | `git pull` | Manual               | `git submodule update` | `git-sync sync` / hooks       |
 
-## Mixing Approaches
-
-These approaches compose. A typical setup might look like:
-
-```
-context-db/
-  my-project/              # committed — project knowledge
-  coding-standards/        # submodule — org-wide standards
-  personal-notes/          # symlink + .gitignore — just for you
-```
-
-`context-db-generate-toc.sh context-db/` shows all three. Each teammate sees
-committed folders plus whatever they've symlinked in locally.
+These approaches compose freely — committed + submodule + private symlinks in
+the same `context-db/`. The TOC script shows all of them.

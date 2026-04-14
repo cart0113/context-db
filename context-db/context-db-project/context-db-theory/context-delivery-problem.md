@@ -112,53 +112,29 @@ Weaknesses that remain:
 
 ## Evidence from production systems
 
-The Claude Code source leak (March 2026) provides direct evidence that current
-harnesses suffer from these failure modes in practice:
+Claude Code (source leak, March 2026) confirms these failure modes in practice:
+system-reminders re-inject repeatedly (15-30% of context window consumed),
+ToolSearch deferred all tool schemas behind on-demand loading and had to be
+partially reverted when agents stopped finding tools (the serendipity problem at
+scale), and the system names "context entropy" as the gradual degradation in
+long sessions with five compaction strategies as countermeasures.
 
-- **Skill descriptions are loaded into the main agent's context.** Every skill's
-  name and one-line description sits in the system prompt (~100 tokens each).
-  Full SKILL.md content loads into the main window on trigger — no subagent
-  isolation.
-- **CLAUDE.md is injected as a system-reminder in a user message,** not the
-  system prompt. But it's still in the main conversation context, subject to all
-  three failure modes.
-- **System-reminders re-inject repeatedly.** Issue #17601: one user documented
-  10,577 hidden system-reminder injections over 32 days, consuming 15-30% of the
-  context window. Issue #27599: infinite re-injection in headless mode.
-- **The ToolSearch experiment failed.** v2.1.69 deferred ALL built-in tool
-  schemas behind on-demand loading. The model stopped reliably finding tools it
-  needed. Partially reverted in v2.1.72. This is the serendipity problem at
-  scale — hiding things behind on-demand loading means agents miss things they
-  don't know to look for.
-- **Claude Code names this problem.** "Context entropy" — the gradual
-  degradation of agent performance in long-running sessions. Five compaction
-  strategies and an `autoDream` nightly consolidation process are
-  countermeasures.
-
-**If subagent isolation is better for context delivery, then the harnesses
-should work this way natively.** The fact that Claude Code loads context into
-the main window — and documents the resulting problems — suggests this is a
-platform limitation, not something individual projects should work around.
+**If subagent isolation is better for context delivery, harnesses should work
+this way natively.** This is a platform limitation, not something individual
+projects should work around.
 
 ## What needs to change at the model/harness level
 
-1. **A "reference" vs "instruction" distinction in prompts.** Context tiers
-   where the model knows "this is background knowledge, not directives."
-   OpenAI's Instruction Hierarchy paper (2024) establishes tool outputs at
-   lowest authority (Priority 30) vs system messages at highest (Priority 0).
-   But this is a binary security distinction, not a nuanced "treat this as
-   background" signal.
-2. **Context scoring in harnesses.** Track which context entries agents actually
-   use vs. ignore, and prune automatically.
-3. **Confidence/freshness metadata that models respect.** Train models to weight
-   context by reliability signals, not just position. Research on positional
-   bias shows primacy degrades past 50% context fill; recency stays stable.
-4. **Subagent isolation as default architecture.** Give each subtask a fresh
-   agent with only the relevant context slice. But the ToolSearch revert shows
-   this trades obedience poisoning for serendipity loss.
-5. **Proactive compaction against the 35-minute wall.** All agents degrade after
-   ~35 minutes. Either compact proactively or reset working memory while
-   retaining project knowledge.
+1. **"Reference" vs "instruction" distinction.** Models need context tiers —
+   background knowledge vs directives. OpenAI's Instruction Hierarchy (2024) is
+   binary (security), not nuanced enough.
+2. **Context scoring.** Track which entries agents use vs ignore, prune
+   automatically.
+3. **Subagent isolation as default.** Fresh agent per subtask with relevant
+   context slice. But ToolSearch revert shows this trades obedience poisoning
+   for serendipity loss.
+4. **Proactive compaction.** All agents degrade after ~35 minutes. Compact
+   working memory while retaining project knowledge.
 
 ## The core tension
 

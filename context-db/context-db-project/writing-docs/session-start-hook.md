@@ -43,22 +43,9 @@ agent gets two reinforcing signals.
 
 ### If the rule is still not followed
 
-If the agent skips context-db loading despite the hook and rule:
+1. Check the hook fires — run the script manually.
+2. Check `settings.local.json` references the correct script path.
+3. Escalate the rule language ("MANDATORY", "BLOCKING").
+4. Add a project-level `CLAUDE.md` as a third reinforcement layer.
 
-1. **Check the hook fires.** Run the script manually:
-   `templates/hooks/session-start-context-db.sh` — it should print the
-   directive.
-2. **Check settings.local.json.** The `hooks.SessionStart` entry must reference
-   the correct script path.
-3. **Escalate in the rule.** Make the language in
-   `templates/rules/context-db.md` more direct — "MANDATORY", "BLOCKING", "do
-   not respond until complete".
-4. **Add a project-level CLAUDE.md.** Create `.claude/CLAUDE.md` or a root
-   `CLAUDE.md` as a third reinforcement layer. Project-level CLAUDE.md has
-   higher priority than `~/.claude/CLAUDE.md`.
-5. **Correct the agent and save feedback memory.** Tell the agent it failed to
-   follow the rule. If auto-memory is enabled, the correction gets saved and
-   reinforces future sessions.
-
-The combination of hook + rule + correction memory is the strongest enforcement
-available in Claude Code today.
+Hook + rule is the strongest enforcement available in Claude Code today.

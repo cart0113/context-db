@@ -38,5 +38,5 @@ kept for backward compatibility.
 
 **Why not a separate YAML file?** An earlier version used `CONTEXT.yml`. Merging
 metadata into the `.md` file means each context node is just one file:
-`<folder>.md` (human-authored). TOCs are generated on demand by
-`context-db-generate-toc.sh`, not stored as files.
+`<folder>.md` (human-authored). TOCs are generated on demand by the TOC script,
+not stored as files.
