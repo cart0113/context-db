@@ -25,7 +25,7 @@ from pathlib import Path
 #   sub-agent  — prints instructions telling the calling agent to spawn
 #                context-db-sub-agent.py (isolated claude -p lookup)
 #
-# Per-command defaults below can be overridden by context-db.json in the
+# Per-command defaults below can be overridden by .context-db.json in the
 # project root, and further overridden by CLI flags (--mode, --model).
 
 COMMANDS = ["prompt", "pre-review", "review", "update", "maintain"]
@@ -35,6 +35,10 @@ DEFAULT_CONFIG = {
         "mode": "sub-agent",
         "model": "haiku",
     },
+    "load-manual": [
+        "main-agent/read-mechanics",
+        "main-agent/persist-to-context-db",
+    ],
     "prompt": {},
     "pre-review": {},
     "review": {
@@ -51,7 +55,7 @@ DEFAULT_CONFIG = {
 
 
 def load_config(config_path):
-    """Load context-db.json, merge with defaults.
+    """Load .context-db.json, merge with defaults.
 
     Merge strategy: user values override defaults at each level.
     Deep-copy via JSON round-trip so DEFAULT_CONFIG stays immutable.
@@ -65,8 +69,8 @@ def load_config(config_path):
         for cmd in COMMANDS:
             if cmd in user:
                 config[cmd].update(user[cmd])
-        if "init" in user:
-            config["init"] = user["init"]  # init is a list, not merged
+        if "load-manual" in user:
+            config["load-manual"] = user["load-manual"]  # list, replaced not merged
     return config
 
 
@@ -172,40 +176,32 @@ def print_section(tag, content):
 # Write commands (update, maintain) get write-mechanics + write-content-guide.
 
 
-def cmd_init(args, config):
-    """Print templates listed in config init (session-start hook calls this)."""
+def cmd_load_manual(args, config):
+    """Concatenate and print instruction templates.
+
+    Uses template refs from CLI if given, otherwise falls back to the
+    load-manual list in config. Each ref is directory/name — e.g.
+    main-agent/read-mechanics, sub-agent/role-review.
+    """
     toc = find_toc_script()
     context_db_rel = find_context_db()
 
-    templates = config.get("init", [])
-    for name in templates:
-        print_template(name, toc=toc, context_db_rel=context_db_rel)
+    templates = args.templates if args.templates else config.get("load-manual", [])
 
+    if not templates:
+        print("No templates configured. Add a 'load-manual' list to "
+              ".context-db.json or pass template paths as arguments.")
+        return
 
-def cmd_load_manual(args):
-    """Print context-db reading/writing instructions into the agent's context."""
-    if args.read and not args.write:
-        scope = "read"
-    elif args.write and not args.read:
-        scope = "write"
-    else:
-        scope = "all"
-    _print_load_manual(scope)
-
-
-def _print_load_manual(scope):
-    """Print load-manual content for the given scope."""
-    toc = find_toc_script()
-    context_db_rel = find_context_db()
-
-    if scope in ("all", "read"):
-        print_template("read-mechanics", toc=toc, context_db_rel=context_db_rel)
-        print_template("context-usage")
-
-    if scope in ("all", "write"):
-        print_template("write-mechanics", toc=toc,
-                        context_db_rel=context_db_rel)
-        print_template("write-content-guide")
+    for ref in templates:
+        parts = ref.split("/", 1)
+        if len(parts) != 2:
+            print(f"Error: template ref must be directory/name, got: {ref}",
+                  file=sys.stderr)
+            sys.exit(1)
+        subdir, name = parts
+        print_template(name, subdir=subdir, toc=toc,
+                       context_db_rel=context_db_rel)
 
 
 def cmd_main_agent(command, prompt, cmd_config, debug=False):
@@ -300,6 +296,16 @@ def cmd_ask_mode(command, prompt, cmd_config, debug=False):
 
 
 
+def cmd_read_all(args):
+    """Print instructions to exhaustively read a context-db folder."""
+    toc = find_toc_script()
+    context_db_rel = find_context_db()
+    target_path = args.folder if args.folder else f"{context_db_rel}/"
+
+    print_template("read-all", toc=toc, context_db_rel=context_db_rel,
+                    target_path=target_path)
+
+
 def cmd_maintain(args, config):
     """Print instructions for the maintain workflow (audit + fix context-db)."""
     toc = find_toc_script()
@@ -315,8 +321,8 @@ def cmd_maintain(args, config):
 
 # ── CLI ─────────────────────────────────────────────────────────────────────
 # Subparsers mirror the COMMANDS list. Each read/write command gets --mode,
-# --model, --debug, --config flags via add_mode_flags(). "init", "load-manual",
-# and "maintain" have their own argument shapes.
+# --model, --debug, --config flags via add_mode_flags(). "load-manual" and
+# "maintain" have their own argument shapes.
 
 MODE_CHOICES = ["sub-agent", "main-agent", "ask"]
 MODEL_CHOICES = ["haiku", "sonnet", "opus", "ask"]
@@ -326,14 +332,14 @@ def add_mode_flags(sub):
     """Add --mode, --model, --debug, --config to a subparser."""
     sub.add_argument("--mode", choices=MODE_CHOICES)
     sub.add_argument("--model", choices=MODEL_CHOICES)
-    sub.add_argument("--config", default="context-db.json")
+    sub.add_argument("--config", default=".context-db.json")
     sub.add_argument("--debug", action="store_true")
 
 
 def dispatch_command(args, config):
     """Route a prompt/pre-review/review/update command by mode.
 
-    Config layering: DEFAULT_CONFIG → context-db.json → CLI flags.
+    Config layering: DEFAULT_CONFIG → .context-db.json → CLI flags.
     Final "mode" value determines which handler runs.
     """
     command = args.command
@@ -374,16 +380,12 @@ def main():
     )
     subs = parser.add_subparsers(dest="command")
 
-    # init
-    subs.add_parser("init", help="Startup instructions")
-
     # load-manual
     lm = subs.add_parser("load-manual",
-                         help="Load reading/writing instructions into context")
-    lm.add_argument("--read", action="store_true",
-                    help="Only reading instructions")
-    lm.add_argument("--write", action="store_true",
-                    help="Only writing instructions")
+                         help="Load instruction templates into context")
+    lm.add_argument("templates", nargs="*",
+                    help="Template refs (directory/name). Overrides config.")
+    lm.add_argument("--config", default=".context-db.json")
 
     # prompt
     p = subs.add_parser("prompt", help="Consult knowledge base")
@@ -411,10 +413,15 @@ def main():
                     help="Commit affected files after updating context-db")
     add_mode_flags(up)
 
+    # read-all
+    ra = subs.add_parser("read-all",
+                         help="Exhaustively read everything under a folder")
+    ra.add_argument("folder", nargs="?", default="")
+
     # maintain
     mt = subs.add_parser("maintain", help="Audit and maintain context-db")
     mt.add_argument("path", nargs="?", default="")
-    mt.add_argument("--config", default="context-db.json")
+    mt.add_argument("--config", default=".context-db.json")
 
     args = parser.parse_args()
 
@@ -423,13 +430,13 @@ def main():
         return
 
     config = load_config(
-        args.config if hasattr(args, "config") else "context-db.json"
+        args.config if hasattr(args, "config") else ".context-db.json"
     )
 
-    if args.command == "init":
-        cmd_init(args, config)
-    elif args.command == "load-manual":
-        cmd_load_manual(args)
+    if args.command == "load-manual":
+        cmd_load_manual(args, config)
+    elif args.command == "read-all":
+        cmd_read_all(args)
     elif args.command == "maintain":
         cmd_maintain(args, config)
     else:

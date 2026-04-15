@@ -311,18 +311,25 @@ def main():
     if suffix.strip():
         print(suffix)
 
-    # Optionally reload init templates after response
+    # Optionally reload load-manual templates after response
     if args.rerun_init:
-        config_path = os.path.join(cwd, "context-db.json")
-        init_templates = ["read-mechanics", "persist-to-context-db"]
+        config_path = os.path.join(cwd, ".context-db.json")
+        default_templates = [
+            "main-agent/read-mechanics",
+            "main-agent/persist-to-context-db",
+        ]
+        load_manual_templates = default_templates
         if os.path.exists(config_path):
             with open(config_path) as f:
                 config = json.load(f)
-            init_templates = config.get("init", init_templates)
-        for name in init_templates:
-            template = load_template("main-agent", name)
-            print(fill_template(template, toc=toc,
-                                context_db_rel=context_db_rel))
+            load_manual_templates = config.get("load-manual", default_templates)
+        for ref in load_manual_templates:
+            parts = ref.split("/", 1)
+            if len(parts) == 2:
+                directory, name = parts
+                template = load_template(directory, name)
+                print(fill_template(template, toc=toc,
+                                    context_db_rel=context_db_rel))
 
     if args.debug:
         print(f"\nmodel: {args.model} | cost: ${cost_usd:.4f} "

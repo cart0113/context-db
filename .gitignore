@@ -7,15 +7,13 @@ __pycache__/
 
 .claude
 .cursor
-.contextdb.json
+.context-db.json
 .playwright-mcp/
 node_modules/
 
 context-db/context-db.md
-context-db/general-coding-standards
 context-db/writing-standards
 context-db/using-bruha
-context-db/agent-behavior
 context-db/context-db-project/overview.md
 context-db/using-context-db
 context-db/local-repos-to-update/
@@ -27,3 +25,5 @@ context-db/writing-effective-skills
 
 fast-api-test/
 build/
+context-db/general-standards
+context-db/general-coding-standards
