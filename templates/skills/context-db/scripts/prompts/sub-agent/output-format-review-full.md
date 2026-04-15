@@ -1,4 +1,4 @@
-[sub-agent-output-format-review-full]
+# Sub Agent Output Format Review Full
 
 Write a review report in two sections:
 
@@ -20,5 +20,3 @@ your own expertise -- regardless of whether it appears in context-db.
 
 Never suggest fixes -- only identify problems. If a section has no issues, say
 so clearly.
-
-[end sub-agent-output-format-review-full]

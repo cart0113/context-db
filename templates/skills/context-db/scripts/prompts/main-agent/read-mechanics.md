@@ -1,4 +1,4 @@
-[read-mechanics]
+# Read Mechanics
 
 `{context_db_rel}/` is this project's knowledge base. Browse what's available
 with the TOC script:
@@ -17,5 +17,3 @@ Read descriptions and:
 If `{context_db_rel}/general-standards/` exists, always read every file in it
 before starting any task. These are global standards that apply to all work —
 like a CLAUDE.md.
-
-[end read-mechanics]

@@ -1,4 +1,4 @@
-[write-mechanics]
+# Write Mechanics
 
 `{context_db_rel}/` is this project's knowledge base. When writing the db, to
 see which folders and files you can edit, use the TOC script with
@@ -36,5 +36,3 @@ omitted), `deprecated`, `experiment`, `work-in-progress`, `refactor`.
 After changes, run the TOC script to verify YAML frontmatter is correct:
 
 python3 {toc} <sub-folder-that-was-altered>/
-
-[end write-mechanics]

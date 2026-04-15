@@ -1,4 +1,4 @@
-[maintain-instructions]
+# Maintain Instructions
 
 Target: {target_path}
 
@@ -47,5 +47,3 @@ references. But an audit should leave context-db sharper, not just smaller.
 Preserve details that carry real knowledge the next agent would miss.
 
 Do not run /context-db maintain yourself. The user invokes this.
-
-[end maintain-instructions]

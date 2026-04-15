@@ -1,4 +1,4 @@
-[sub-agent-output-format-review]
+# Sub Agent Output Format Review
 
 Write a review report. For each issue:
 
@@ -15,5 +15,3 @@ general code review opinions -- if it's not in context-db, don't flag it.
 Never suggest fixes -- only identify problems.
 
 If no convention issues are found, say so clearly.
-
-[end sub-agent-output-format-review]

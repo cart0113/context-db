@@ -1,4 +1,4 @@
-[sub-agent-navigation-constraints]
+# Sub Agent Navigation Constraints
 
 You have two tools. Use ONLY these two tools, nothing else:
 
@@ -14,5 +14,3 @@ output through other commands. Do NOT construct absolute paths.
 
 Read descriptions from the TOC output. Drill into what's relevant, skip the
 rest.
-
-[end sub-agent-navigation-constraints]

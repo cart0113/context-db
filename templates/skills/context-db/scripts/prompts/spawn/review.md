@@ -1,4 +1,4 @@
-[spawn-context-db-review]
+# Spawn Context Db Review
 
 Run this command and wait for the response:
 
@@ -7,5 +7,3 @@ Run this command and wait for the response:
 The command returns a review of your changes against project conventions in
 context-db. Evaluate each item yourself, fix real issues, and use your judgment
 on edge cases.
-
-[end spawn-context-db-review]

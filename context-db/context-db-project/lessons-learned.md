@@ -22,7 +22,7 @@ Let the agent navigate the hierarchy.
 
 Haiku ignores "do NOT help with the task" — it treats the user's prompt as its
 own task. Fix: structured output format ("respond with ONLY verbatim snippets")
-and framing the prompt as data in the system prompt (`[main-user-prompt]`).
+and framing the prompt as data in the system prompt (`# Main Prompt`).
 
 ## Positive-first role framing for sub-agents
 
@@ -37,11 +37,11 @@ what it shouldn't.
 
 Splitting identity, task description, and navigation constraints across separate
 tagged blocks caused coherence issues — the model lost the connection between
-"what I am" and "what I'm supposed to do." One combined `[sub-agent-role]` block
-per command, containing identity + task + constraints, keeps the sub-agent on
-track. Per-command variants are needed because "what to find" differs (prompt:
-applicable context, pre-review: applicable standards, review: convention
-violations).
+"what I am" and "what I'm supposed to do." One combined `# Sub Agent Role`
+section per command, containing identity + task + constraints, keeps the
+sub-agent on track. Per-command variants are needed because "what to find"
+differs (prompt: applicable context, pre-review: applicable standards, review:
+convention violations).
 
 ## Content-first ordering matters
 
@@ -49,12 +49,11 @@ Prompt before navigation instructions produces better results. The model reads
 what it needs context for, then navigates with that filter in mind.
 
 For sub-agents, this means injecting the developer's prompt into the system
-prompt as a labeled data block (`[main-user-prompt]`) before the role
-instructions. The role then references it: "find context for the
-[main-user-prompt] above." This frames the prompt as a search query — the model
-sees what to look up before being told how. Without this, cheap models treat the
-prompt as a task and execute it (e.g. running `git commit` when the prompt says
-"Commit").
+prompt as a labeled data block (`# Main Prompt`) before the role instructions.
+The role then references it: "find context for the `# Main Prompt` above." This
+frames the prompt as a search query — the model sees what to look up before
+being told how. Without this, cheap models treat the prompt as a task and
+execute it (e.g. running `git commit` when the prompt says "Commit").
 
 ## Review sub-agents need different constraints than lookup sub-agents
 
@@ -67,9 +66,9 @@ lookup lets haiku run wild.
 ## Self-review catches real bugs
 
 Running the review sub-agent against its own changes (with sonnet) caught an
-IndexError bug where the `[main-user-prompt]` injection split failed when the
-role template was the first in the composition. Sonnet is the right model for
-review — haiku lacks the reasoning depth to compare code against conventions.
+IndexError bug where the `# Main Prompt` injection split failed when the role
+template was the first in the composition. Sonnet is the right model for review
+— haiku lacks the reasoning depth to compare code against conventions.
 
 ## The rule file is the durable anchor
 
@@ -96,6 +95,14 @@ fetch standards _immediately before starting edits_ — a structural fix.
 
 Frame sub-agent responses as "additional context" — not advice from a junior to
 a senior. The goal is to inform, not establish hierarchy.
+
+## H1 markdown headers work as well as custom bracket tags
+
+No performance difference between `[tag-name]...[end tag-name]` and `# Tag Name`
+for section delimitation. LLMs are trained extensively on markdown — H1 headers
+are among the most common structural tokens in training data. H1 headers are
+more human-readable, need no closing tag, and use standard formatting. One H1
+per template file; sub-sections use H2/H3.
 
 ## Self-reference guard
 

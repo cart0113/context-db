@@ -1,4 +1,4 @@
-[review-command-instructions]
+# Review Command Instructions
 
 Review your recent changes against the project's context-db knowledge base.
 
@@ -11,5 +11,3 @@ Do not run /context-db review again yourself. The user will invoke it if needed.
 If you need more context from context-db later, use the read mechanics above
 directly. If you need to write to context-db, use the read mechanics to navigate
 and the write-file-format from /context-db load-manual --write.
-
-[end review-command-instructions]

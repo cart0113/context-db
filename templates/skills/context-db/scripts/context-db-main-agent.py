@@ -122,9 +122,9 @@ def find_context_db():
 
 
 # ── Template loading ────────────────────────────────────────────────────────
-# Prompt templates live in prompts/main-agent/*.md. Each is a self-contained
-# tagged section (e.g. [read-mechanics]...[end read-mechanics]) that gets
-# printed into the agent's context. Variables use {name} syntax.
+# Prompt templates live in prompts/main-agent/*.md. Each has a single H1
+# header (e.g. # Read Mechanics) as its section delimiter. Variables use
+# {name} syntax.
 
 
 def load_template(name, subdir="main-agent"):
@@ -145,25 +145,25 @@ def fill_template(template, **kwargs):
 
 # ── Output helpers ─────────────────────────────────────────────────────────
 # Everything this script prints goes directly into the agent's context.
-# Tags like [read-mechanics] are how the agent knows which instructions
-# apply — they're the protocol between this script and the LLM.
+# H1 headers (# Read Mechanics) delimit sections — they're the protocol
+# between this script and the LLM.
 
 
 def print_template(name, subdir="main-agent", **kwargs):
-    """Load a template, fill variables, and print. Tags are in the file."""
+    """Load a template, fill variables, and print. H1 header is in the file."""
     print()
     print(fill_template(load_template(name, subdir), **kwargs))
 
 
 def print_section(tag, content):
-    """Print a dynamically tagged section (for content not from templates).
+    """Print a dynamically H1-delimited section (for content not from templates).
 
     Used for user instructions and other dynamic content that doesn't
-    have its own template file.
+    have its own template file. Converts kebab-case tag to Title Case H1.
     """
-    print(f"\n[{tag}]\n")
+    title = tag.replace("-", " ").title()
+    print(f"\n# {title}\n")
     print(content.strip())
-    print(f"\n[end {tag}]")
 
 
 # ── Command handlers ────────────────────────────────────────────────────────

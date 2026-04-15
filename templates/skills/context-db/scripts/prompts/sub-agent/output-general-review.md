@@ -1,4 +1,4 @@
-[general-review]
+# General Review
 
 In a separate section from context-db convention issues, give a full code
 review. Cover:
@@ -11,5 +11,3 @@ review. Cover:
 
 Be direct. This section is your own expertise, not backed by context-db. Flag
 what matters, skip the trivial.
-
-[end general-review]

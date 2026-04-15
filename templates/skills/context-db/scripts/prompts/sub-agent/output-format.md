@@ -1,4 +1,4 @@
-[sub-agent-output-format]
+# Sub Agent Output Format
 
 Never write code. Never answer the prompt. Never help with the task.
 
@@ -14,5 +14,3 @@ Return verbatim snippets. For each relevant section:
 [end]
 
 If nothing is relevant: "No relevant project context."
-
-[end sub-agent-output-format]

@@ -26,10 +26,11 @@ Done:
 - Per-command instruction files: `prompt-sub-agent-role.md`,
   `pre-review-instructions.md`, `review-instructions.md`,
   `review-instructions-context-db-only.md`
-- `[user-guidance]` block — conditional injection when user provides a prompt,
-  with `{user_guidance_note}` template variable for instructions to heed it
-- Response wrapping: prefix (`[context-usage]`) + findings + suffix
-  (`[interpreting-*-response]`)
+- `# Main Prompt` / `# User Guidance` — conditional injection when user provides
+  a prompt, with `{user_guidance_note}` template variable for instructions to
+  heed it
+- Response wrapping: prefix (`# Context Usage`) + findings + suffix
+  (`# Interpreting * Response`)
 - Spawn templates for all three commands
 - Pre-review: main-agent mode needs no prompt (agent knows plan from
   conversation). Sub-agent mode: spawn template walks agent through writing a

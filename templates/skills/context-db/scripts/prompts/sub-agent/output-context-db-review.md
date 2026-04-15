@@ -1,4 +1,4 @@
-[context-db-review]
+# Context Db Review
 
 For each issue supported by project conventions found in context-db:
 
@@ -11,5 +11,3 @@ For each issue supported by project conventions found in context-db:
 
 Only flag issues backed by conventions in the knowledge base. If no convention
 issues are found, say so clearly.
-
-[end context-db-review]

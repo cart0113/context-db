@@ -3,8 +3,8 @@
 context-db-sub-agent.py — spawns claude -p for isolated context-db lookups.
 
 Composes system prompt from main-agent templates (shared) + sub-agent templates
-(additional constraints for cheap models). Wraps the response in tagged blocks
-for the main agent.
+(additional constraints for cheap models). Wraps the response in H1-delimited
+sections for the main agent.
 
 Sub-commands:
   prompt        Consult context-db for knowledge/standards
@@ -56,7 +56,7 @@ SYSTEM_TEMPLATES = {
     ],
 }
 
-# Blocks prepended to the sub-agent's response before [context-db-findings].
+# Blocks prepended to the sub-agent's response before # Context Db Findings.
 RESPONSE_PREFIX = {
     "prompt": [("main-agent", "context-usage")],
     "pre-review": [],
@@ -64,7 +64,7 @@ RESPONSE_PREFIX = {
     "context-db-only-review": [],
 }
 
-# Blocks appended after [context-db-findings] — tells the main agent how to
+# Blocks appended after # Context Db Findings — tells the main agent how to
 # interpret the sub-agent's response.
 RESPONSE_SUFFIX = {
     "prompt": [],
@@ -199,10 +199,10 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
                         inp = block.get("input", {})
                         if tool == "Read":
                             print(f"  reading: {inp.get('file_path', '')}",
-                                  flush=True)
+                                  file=sys.stderr, flush=True)
                         elif tool == "Bash":
                             print(f"  running: {inp.get('command', '')}",
-                                  flush=True)
+                                  file=sys.stderr, flush=True)
 
             elif etype == "result":
                 final_text = event.get("result", "")
@@ -216,8 +216,13 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
         sys.exit("Error: 'claude' CLI not found")
 
     if proc.returncode != 0:
-        stderr = proc.stderr.read()
-        sys.exit(f"Error: {stderr}")
+        stderr_text = proc.stderr.read().strip()
+        if stderr_text:
+            print(stderr_text, file=sys.stderr)
+        else:
+            print(f"sub-agent exited with code {proc.returncode}",
+                  file=sys.stderr)
+        sys.exit(1)
 
     return final_text, cost_usd, time.time() - start
 
@@ -253,37 +258,33 @@ def main():
     user_guidance_note = ""
     if args.prompt:
         user_guidance_note = (
-            "Take the user's instructions in [user-guidance] into account "
+            "Take the user's instructions in User Guidance into account "
             "when conducting your review.\n\n"
         )
 
-    # Compose system prompt from templates
-    templates_text = compose_templates(
-        SYSTEM_TEMPLATES[key], toc=toc, context_db_rel=context_db_rel,
-        user_guidance_note=user_guidance_note,
-    )
+    # Compose system prompt from templates, injecting prompt after read-mechanics
+    # (content-first ordering — model sees what to look up before being told how)
+    template_vars = dict(toc=toc, context_db_rel=context_db_rel,
+                         user_guidance_note=user_guidance_note)
+    parts = []
+    for directory, name in SYSTEM_TEMPLATES[key]:
+        template = load_template(directory, name)
+        parts.append(fill_template(template, **template_vars))
+        # Inject prompt block after read-mechanics
+        if name == "read-mechanics" and args.prompt:
+            header = "Main Prompt" if args.command == "prompt" else "User Guidance"
+            parts.append(f"\n# {header}\n\n{args.prompt}\n")
 
-    # Inject [user-guidance] right after [end read-mechanics] when prompt exists
-    if args.prompt:
-        marker = "[end read-mechanics]"
-        parts = templates_text.split(marker, 1)
-        prompt_block = (
-            f"\n\n[user-guidance]\n\n{args.prompt}\n\n"
-            f"[end user-guidance]"
-        )
-        system_prompt = parts[0] + marker + prompt_block + parts[1]
-    else:
-        system_prompt = templates_text
+    system_prompt = "\n".join(parts)
 
     # claude -p requires stdin; system prompt has everything
     user_msg = "."
 
     if args.debug:
-        print(f"cwd: {cwd}")
-        print(f"context-db: {context_db_rel}/")
-        print(f"model: {args.model}")
-        print(f"\n[sub-agent-system-prompt]\n{system_prompt}\n"
-              f"[end sub-agent-system-prompt]\n")
+        print(f"cwd: {cwd}", file=sys.stderr)
+        print(f"context-db: {context_db_rel}/", file=sys.stderr)
+        print(f"model: {args.model}", file=sys.stderr)
+        print(f"\n{system_prompt}\n", file=sys.stderr)
 
     text, cost_usd, elapsed = spawn_claude(
         system_prompt, user_msg, args.model,
@@ -300,9 +301,8 @@ def main():
     if prefix.strip():
         print(prefix)
 
-    print(f"\n[context-db-findings]\n")
+    print(f"\n# Context Db Findings\n")
     print(text.strip())
-    print(f"\n[end context-db-findings]")
 
     # Suffix blocks — tells the main agent how to interpret the response
     suffix = compose_templates(
@@ -325,10 +325,8 @@ def main():
                                 context_db_rel=context_db_rel))
 
     if args.debug:
-        print(f"\n[sub-agent-metadata]")
-        print(f"model: {args.model} | cost: ${cost_usd:.4f} "
-              f"| time: {elapsed:.1f}s")
-        print(f"[end sub-agent-metadata]")
+        print(f"\nmodel: {args.model} | cost: ${cost_usd:.4f} "
+              f"| time: {elapsed:.1f}s", file=sys.stderr)
 
 
 if __name__ == "__main__":

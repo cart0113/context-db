@@ -1,4 +1,4 @@
-[write-content-guide]
+# Write Content Guide
 
 Update context-db only if you encountered something that would mislead the next
 agent — a non-obvious dependency, a constraint invisible in the project assets,
@@ -27,5 +27,3 @@ Prefer cross-references over duplication — two sources of truth will drift:
 What does NOT belong:
 
 - Code state, step-by-step instructions, anything derivable from project assets
-
-[end write-content-guide]
