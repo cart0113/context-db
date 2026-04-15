@@ -7,7 +7,6 @@ __pycache__/
 
 .claude
 .cursor
-.context-db.json
 .playwright-mcp/
 node_modules/
 

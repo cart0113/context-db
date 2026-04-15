@@ -277,7 +277,7 @@ def generate_toc(directory, local_only=False):
 
 
 def find_project_root(start_path):
-    """Walk up from start_path looking for .git, context-db.json, or context-db/.
+    """Walk up from start_path looking for .git, .context-db.json, or context-db/.
 
     Used by --no-external-symlinks to determine the boundary. Anything
     resolving outside this root is excluded from the TOC.
@@ -287,12 +287,12 @@ def find_project_root(start_path):
         current = os.path.dirname(current)
     while True:
         if (os.path.exists(os.path.join(current, ".git"))
-                or os.path.exists(os.path.join(current, "context-db.json"))
+                or os.path.exists(os.path.join(current, ".context-db.json"))
                 or os.path.isdir(os.path.join(current, "context-db"))):
             return current
         parent = os.path.dirname(current)
         if parent == current:
-            print("Error: could not find project root (.git, context-db.json, "
+            print("Error: could not find project root (.git, .context-db.json, "
                   "or context-db/ directory)", file=sys.stderr)
             sys.exit(1)
         current = parent

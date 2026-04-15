@@ -1,15 +1,14 @@
 {
-  "_doc": "context-db.json — configuration for /context-db skill",
+  "_doc": ".context-db.json — configuration for /context-db skill",
 
   "init": ["read-mechanics", "persist-to-context-db"],
   "_doc_init": "List of template names to load on session start. Available: read-mechanics, context-usage, write-mechanics, write-content-guide, persist-to-context-db",
 
   "defaults": {
     "mode": "main-agent",
-    "model": "haiku",
-    "rerun-init": false
+    "model": "haiku"
   },
-  "_doc_defaults": "mode: main-agent | sub-agent | ask. model: haiku | sonnet | opus | ask. rerun-init: reload init templates after sub-agent returns (default false). Per-command sections override defaults.",
+  "_doc_defaults": "mode: main-agent | sub-agent | ask. model: haiku | sonnet | opus | ask. Per-command sections override defaults.",
 
   "prompt": {
     "mode": "main-agent",
@@ -23,9 +22,10 @@
 
   "review": {
     "mode": "main-agent",
-    "model": "sonnet"
+    "model": "sonnet",
+    "review-type": "context-db"
   },
-  "_doc_review": "Add context-db-only-review: true to only flag convention issues",
+  "_doc_review": "review-type: context-db | full",
 
   "update": {
     "mode": "main-agent",
