@@ -15,7 +15,9 @@ Three template directories in `prompts/`:
 - `main-agent/` — core templates used by main-agent mode and reused by
   sub-agent. Read commands, write commands, command-specific instructions.
 - `sub-agent/` — additional templates for the isolated `claude -p` sub-agent.
-  Navigation constraints (hard DO NOT rules for cheap models), output format.
+  Per-command role files (`role-prompt.md`, etc.) that combine identity, task
+  description, and navigation constraints in one `[sub-agent-role]` block.
+  Output format templates for each command type.
 - `spawn/` — what the main agent sees to trigger the sub-agent. Per-command
   templates with the run command and usage instructions.
 

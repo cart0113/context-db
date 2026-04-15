@@ -39,23 +39,25 @@ from pathlib import Path
 SYSTEM_TEMPLATES = {
     "prompt": [
         ("main-agent", "read-mechanics"),
-        ("main-agent", "prompt"),
-        ("sub-agent", "navigation-constraints"),
+        ("sub-agent", "role-prompt"),
         ("sub-agent", "output-format"),
     ],
     "pre-review": [
+        ("sub-agent", "role"),
         ("main-agent", "read-mechanics"),
         ("main-agent", "pre-review"),
         ("sub-agent", "navigation-constraints"),
         ("sub-agent", "output-format"),
     ],
     "review": [
+        ("sub-agent", "role"),
         ("main-agent", "read-mechanics"),
         ("main-agent", "review"),
         ("sub-agent", "navigation-constraints"),
         ("sub-agent", "output-format-review"),
     ],
     "review-full": [
+        ("sub-agent", "role"),
         ("main-agent", "read-mechanics"),
         ("main-agent", "review"),
         ("sub-agent", "navigation-constraints"),
@@ -248,14 +250,22 @@ def main():
     cwd = os.getcwd()
     key = template_key(args.command, args.review_type)
 
-    # Compose system prompt from main-agent + sub-agent templates
-    system_prompt = compose_templates(
+    # Compose system prompt: templates + user prompt injected as data
+    # The prompt goes into the system prompt as [main-user-prompt] so the
+    # sub-agent sees it as content to look up, not a task to perform.
+    templates_text = compose_templates(
         SYSTEM_TEMPLATES[key], toc=toc, context_db_rel=context_db_rel,
     )
+    # Insert [main-user-prompt] after the first template (read-mechanics)
+    # so the model sees: what context-db is → what to look up → its role
+    parts = templates_text.split("\n[sub-agent-role]", 1)
+    prompt_block = (
+        f"\n[main-user-prompt]\n\n{args.prompt}\n\n[end main-user-prompt]\n"
+    )
+    system_prompt = parts[0] + prompt_block + "\n[sub-agent-role]" + parts[1]
 
-    # User message — prompt in a tagged block, same tag main-agent mode uses
-    tag = f"{args.command}-user-instructions"
-    user_msg = f"[{tag}]\n\n{args.prompt}\n\n[end {tag}]"
+    # User message — simple trigger, the real prompt is in the system prompt
+    user_msg = "Find relevant context from context-db for the prompt above."
 
     if args.debug:
         print(f"cwd: {cwd}")

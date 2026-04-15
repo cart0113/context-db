@@ -14,22 +14,28 @@ multi-skill folder structure. Needs syncing with the updated
 the 2026-04-14 maintain pass — the context-db version is now a standalone file
 with frontmatter as it should have been.
 
-## Sub-agent system needs overhaul
+## Sub-agent system overhaul — in progress
 
-`context-db-sub-agent.py` spawns `claude -p` for isolated context-db lookups.
-The architecture works but the implementation needs rethinking:
+Sub-agent architecture rebuilt with composable templates. Three template
+directories: `main-agent/` (core, reused), `sub-agent/` (role + constraints),
+`spawn/` (dispatch instructions). Config `rerun-init` flag replaces old
+`response-*.md` remind templates.
 
-- Prompt engineering from the old subagent era (pre-unify) may not match current
-  template structure
-- The sub-agent modes (user-prompt, pre-review, code-review) were designed
-  around the old multi-skill system — need to verify they still make sense as
-  sub-commands of the unified skill
-- No real-world testing since the unify refactor
-- Lessons from `lessons-learned.md` (cheap model constraints, content-first
-  ordering, navigation constraints) need to be verified against current prompts
+Done:
 
-The sub-agent is not currently invoked by default — main-agent mode handles all
-commands. Sub-agent mode is opt-in via config.
+- `prompt` command — role-prompt.md tested with haiku, working
+- Prompt-as-data pattern (`[main-user-prompt]` in system prompt)
+- Response wrapping (`[context-usage]` + `[context-db-findings]`)
+- Spawn templates for all three commands
+
+Remaining:
+
+- `pre-review` command — needs `role-pre-review.md`
+- `review` command — needs `role-review.md`
+- Clean up deprecated files (`role.md`, `navigation-constraints.md` — superseded
+  by per-command role files)
+- Test pre-review and review with haiku
+- Delete `old-prompts/` once all commands are verified
 
 ## Main-agent skill is working well
 
