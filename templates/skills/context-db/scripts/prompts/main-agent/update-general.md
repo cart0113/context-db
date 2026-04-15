@@ -11,6 +11,10 @@ what's already documented. Update existing files when they cover the topic.
 Create new files only for genuinely new topics. You can use other tools — like
 running git diff — to provide additional context on what to store.
 
+Project-specific knowledge — decisions, conventions, architecture — typically
+belongs in the project's `<name>-project/` folder. Other top-level folders hold
+broader standards shared across projects. Route accordingly, but use judgement.
+
 Do not persist things derivable from the code — CLI flags, function signatures,
 file layouts. The code is the source of truth for those.
 

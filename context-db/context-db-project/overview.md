@@ -49,6 +49,7 @@ your-project/
     │   ├── <project-name>-project.md      ← folder description (frontmatter only)
     │   ├── architecture.md                ← document (frontmatter + body)
     │   └── data-model/
+    ├── general-standards/                 ← always loaded (like a CLAUDE.md)
     ├── coding-standards/                  ← project-agnostic (often symlinked)
     └── writing-standards/                 ← project-agnostic (often symlinked)
 ```
@@ -56,6 +57,10 @@ your-project/
 The `<project-name>-project/` folder holds project-specific knowledge. Folders
 parallel to it (like `coding-standards/`) are project-agnostic and often
 symlinked from a shared standards repo.
+
+`general-standards/` is special-cased: the agent reads every file in it before
+any task. Use it for standards that apply universally — agent behavior, coding
+rules, language conventions.
 
 ## Wiring It In
 

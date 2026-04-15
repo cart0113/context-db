@@ -14,4 +14,8 @@ Read descriptions and:
   repeat this recursive process, reading all files and subfolders you think are
   relevant and necessary.
 
+If `{context_db_rel}/general-standards/` exists, always read every file in it
+before starting any task. These are global standards that apply to all work —
+like a CLAUDE.md.
+
 [end read-mechanics]

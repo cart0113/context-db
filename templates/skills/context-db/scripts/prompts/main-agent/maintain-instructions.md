@@ -11,6 +11,11 @@ Before starting, ask the user how they want to run this:
 
 Wait for their answer before proceeding.
 
+Phase 0 — Top-level convention: context-db should contain a `<name>-project/`
+folder for knowledge specific to this project. Other top-level folders are
+broader standards or symlinks shared across projects. If no project folder
+exists, ask the user whether to create one.
+
 Phase 1 — Structural health: 5-10 items per folder, 50-150 lines per file, 2-3
 levels deep max. Split oversized files/folders, merge tiny ones, fill missing
 folder descriptors, sharpen vague descriptions.
