@@ -239,7 +239,8 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
     else:
         # Read commands: prompt, pre-review, review
         print_template("read-mechanics", toc=toc, context_db_rel=context_db_rel)
-        print_template("context-usage")
+        if command == "prompt":
+            print_template("context-usage")
         print_template(command)
         if prompt:
             print_section(f"{command}-user-instructions", prompt)
@@ -256,9 +257,13 @@ def cmd_sub_agent(command, prompt, cmd_config, debug=False):
     model = cmd_config["model"]
     rerun_init = cmd_config.get("rerun-init", False)
 
-    # Build the shell command the main agent will run
+    # Build the shell command the main agent will run.
+    # For pre-review, the agent fills in the plan; for others, prompt is baked in.
     cmd_parts = [f"python3 {sub_agent} {command}"]
-    cmd_parts.append(f'"{prompt}"')
+    if command == "pre-review":
+        cmd_parts.append('"<PLAN>"')
+    else:
+        cmd_parts.append(f'"{prompt}"')
     cmd_parts.append(f"--model {model}")
     if command == "review" and cmd_config.get("context-db-only-review"):
         cmd_parts.append("--context-db-only-review")
@@ -274,6 +279,11 @@ def cmd_sub_agent(command, prompt, cmd_config, debug=False):
         print(f"model: {model}")
 
     print_template(command, subdir="spawn", run_cmd=run_cmd)
+
+    # For pre-review, print user instructions separately so the agent
+    # incorporates them into the plan it sends to the sub-agent
+    if command == "pre-review" and prompt:
+        print_section("pre-review-user-instructions", prompt)
 
 
 
@@ -329,7 +339,7 @@ def dispatch_command(args, config):
     command = args.command
     prompt = args.instruction
 
-    if not prompt and command != "update":
+    if not prompt and command not in ("update", "pre-review", "review"):
         print(f"No instruction provided. Ask the user what they want to "
               f"{command}.")
 

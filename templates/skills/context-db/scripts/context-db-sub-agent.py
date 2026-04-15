@@ -39,22 +39,19 @@ from pathlib import Path
 SYSTEM_TEMPLATES = {
     "prompt": [
         ("main-agent", "read-mechanics"),
-        ("sub-agent", "role-prompt"),
+        ("sub-agent", "prompt-sub-agent-role"),
         ("sub-agent", "output-format"),
     ],
     "pre-review": [
         ("main-agent", "read-mechanics"),
-        ("sub-agent", "role-pre-review"),
-        ("sub-agent", "output-format"),
+        ("sub-agent", "pre-review-instructions"),
     ],
     "review": [
         ("main-agent", "read-mechanics"),
-        ("sub-agent", "role-review"),
         ("sub-agent", "review-instructions"),
     ],
     "context-db-only-review": [
         ("main-agent", "read-mechanics"),
-        ("sub-agent", "role-review"),
         ("sub-agent", "review-instructions-context-db-only"),
     ],
 }
@@ -62,7 +59,7 @@ SYSTEM_TEMPLATES = {
 # Blocks prepended to the sub-agent's response before [context-db-findings].
 RESPONSE_PREFIX = {
     "prompt": [("main-agent", "context-usage")],
-    "pre-review": [("main-agent", "context-usage")],
+    "pre-review": [],
     "review": [],
     "context-db-only-review": [],
 }
@@ -252,34 +249,41 @@ def main():
     cwd = os.getcwd()
     key = template_key(args.command, getattr(args, "context_db_only_review", False))
 
+    # Conditional template variables based on whether a prompt exists
+    user_guidance_note = ""
+    if args.prompt:
+        user_guidance_note = (
+            "Take the user's instructions in [user-guidance] into account "
+            "when conducting your review.\n\n"
+        )
+
     # Compose system prompt from templates
     templates_text = compose_templates(
         SYSTEM_TEMPLATES[key], toc=toc, context_db_rel=context_db_rel,
+        user_guidance_note=user_guidance_note,
     )
 
-    # Inject [main-user-prompt] before [sub-agent-role] when a prompt exists.
-    # This frames the prompt as data (what to look up / focus on), not a task.
+    # Inject [user-guidance] right after [end read-mechanics] when prompt exists
     if args.prompt:
-        parts = templates_text.split("\n[sub-agent-role]", 1)
+        marker = "[end read-mechanics]"
+        parts = templates_text.split(marker, 1)
         prompt_block = (
-            f"\n[main-user-prompt]\n\n{args.prompt}\n\n"
-            f"[end main-user-prompt]\n"
+            f"\n\n[user-guidance]\n\n{args.prompt}\n\n"
+            f"[end user-guidance]"
         )
-        system_prompt = (
-            parts[0] + prompt_block + "\n[sub-agent-role]" + parts[1]
-        )
-        user_msg = args.prompt
+        system_prompt = parts[0] + marker + prompt_block + parts[1]
     else:
         system_prompt = templates_text
-        user_msg = "Review the changes."
+
+    # claude -p requires stdin; system prompt has everything
+    user_msg = "."
 
     if args.debug:
         print(f"cwd: {cwd}")
         print(f"context-db: {context_db_rel}/")
         print(f"model: {args.model}")
         print(f"\n[sub-agent-system-prompt]\n{system_prompt}\n"
-              f"[end sub-agent-system-prompt]")
-        print(f"\nuser message: {user_msg}\n")
+              f"[end sub-agent-system-prompt]\n")
 
     text, cost_usd, elapsed = spawn_claude(
         system_prompt, user_msg, args.model,
