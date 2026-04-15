@@ -30,14 +30,27 @@ from pathlib import Path
 
 COMMANDS = ["prompt", "pre-review", "review", "update", "maintain"]
 
+# Canonical section order for load-manual. Each entry is (name, description).
+# Output is always emitted in this order regardless of flag order.
+LOAD_MANUAL_SECTIONS = [
+    ("read-mechanics",      "How to navigate context-db via TOC script"),
+    ("prompt",              "Instructions for prompt command"),
+    ("context-usage",       "Context-db is a map, not truth — verify against code"),
+    ("write-mechanics",     "How to edit context-db files"),
+    ("write-content-guide", "What belongs in context-db"),
+    ("pre-review",          "Check plan against standards before implementing"),
+    ("review",              "Review changes against conventions"),
+    ("update-general",      "File learnings into context-db"),
+    ("update-commit",       "How to write commit messages"),
+]
+
 DEFAULT_CONFIG = {
     "defaults": {
         "mode": "sub-agent",
         "model": "haiku",
     },
     "load-manual": [
-        "main-agent/read-mechanics",
-        "main-agent/persist-to-context-db",
+        "main-agent/on-demand",
     ],
     "prompt": {},
     "pre-review": {},
@@ -54,8 +67,14 @@ DEFAULT_CONFIG = {
 }
 
 
+def strip_jsonc_comments(text):
+    """Strip // comments from JSONC text. Ignores // inside strings."""
+    import re
+    return re.sub(r'(?<!:)//.*', '', text)
+
+
 def load_config(config_path):
-    """Load .context-db.json, merge with defaults.
+    """Load .context-db.json (JSONC — // comments allowed), merge with defaults.
 
     Merge strategy: user values override defaults at each level.
     Deep-copy via JSON round-trip so DEFAULT_CONFIG stays immutable.
@@ -63,14 +82,15 @@ def load_config(config_path):
     config = json.loads(json.dumps(DEFAULT_CONFIG))  # deep copy
     if os.path.exists(config_path):
         with open(config_path) as f:
-            user = json.load(f)
+            raw = f.read()
+        user = json.loads(strip_jsonc_comments(raw))
         if "defaults" in user:
             config["defaults"].update(user["defaults"])
         for cmd in COMMANDS:
             if cmd in user:
                 config[cmd].update(user[cmd])
         if "load-manual" in user:
-            config["load-manual"] = user["load-manual"]  # list, replaced not merged
+            config["load-manual"] = user["load-manual"]
     return config
 
 
@@ -179,28 +199,40 @@ def print_section(tag, content):
 def cmd_load_manual(args, config):
     """Concatenate and print instruction templates.
 
-    Uses template refs from CLI if given, otherwise falls back to the
-    load-manual list in config. Each ref is directory/name — e.g.
-    main-agent/read-mechanics, sub-agent/role-review.
+    With no flags: uses the load-manual list from .context-db.json.
+    With flags: prints only the flagged sections, in canonical order.
     """
     toc = find_toc_script()
     context_db_rel = find_context_db()
+    section_names = [name for name, _ in LOAD_MANUAL_SECTIONS]
 
-    templates = args.templates if args.templates else config.get("load-manual", [])
+    # Any flag given → use only those; otherwise fall back to config
+    flagged = [
+        name for name in section_names
+        if getattr(args, name.replace("-", "_"), False)
+    ]
+    on_demand = getattr(args, "on_demand", False)
 
-    if not templates:
-        print("No templates configured. Add a 'load-manual' list to "
-              ".context-db.json or pass template paths as arguments.")
+    if on_demand and flagged:
+        print("Error: --on-demand cannot be combined with other sections.",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if on_demand:
+        selected = ["on-demand"]
+    elif flagged:
+        selected = flagged
+    else:
+        config_refs = config.get("load-manual", [])
+        selected = [ref.split("/", 1)[-1] for ref in config_refs]
+
+    print("\nThis project uses a `context-db/` knowledge database.\n")
+
+    if not selected:
         return
 
-    for ref in templates:
-        parts = ref.split("/", 1)
-        if len(parts) != 2:
-            print(f"Error: template ref must be directory/name, got: {ref}",
-                  file=sys.stderr)
-            sys.exit(1)
-        subdir, name = parts
-        print_template(name, subdir=subdir, toc=toc,
+    for name in selected:
+        print_template(name, subdir="main-agent", toc=toc,
                        context_db_rel=context_db_rel)
 
 
@@ -381,11 +413,34 @@ def main():
     subs = parser.add_subparsers(dest="command")
 
     # load-manual
-    lm = subs.add_parser("load-manual",
-                         help="Load instruction templates into context")
-    lm.add_argument("templates", nargs="*",
-                    help="Template refs (directory/name). Overrides config.")
+    section_order_help = "\n".join(
+        f"  {i+1:>2}. --{name:<22s}{desc}"
+        for i, (name, desc) in enumerate(LOAD_MANUAL_SECTIONS)
+    )
+    lm = subs.add_parser(
+        "load-manual",
+        help="Load instruction templates into context",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "With no flags, uses the load-manual list from .context-db.json.\n"
+            "With section flags, loads only those sections in this order:\n\n"
+            f"{section_order_help}\n\n"
+            "--on-demand is special: it cannot be combined with other sections.\n"
+            "It tells the agent not to browse context-db on its own."
+        ),
+    )
     lm.add_argument("--config", default=".context-db.json")
+    lm.add_argument("--on-demand", action="store_true", default=False,
+                    help="Don't browse context-db — wait for /context-db commands. "
+                         "Cannot be combined with other sections.")
+    for name, desc in LOAD_MANUAL_SECTIONS:
+        lm.add_argument(
+            f"--{name}",
+            dest=name.replace("-", "_"),
+            action="store_true",
+            default=False,
+            help=desc,
+        )
 
     # prompt
     p = subs.add_parser("prompt", help="Consult knowledge base")

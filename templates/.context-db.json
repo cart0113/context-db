@@ -1,37 +1,43 @@
 {
-  "_doc": ".context-db.json — configuration for /context-db skill",
+  // Sections loaded on session start (load-manual command).
+  // With no flags, these are loaded in the order listed.
+  // With flags, only flagged sections load (in canonical order).
+  //
+  // Available sections (canonical order):
+  //   main-agent/on-demand            — don't browse context-db, wait for /context-db (default)
+  //   main-agent/read-mechanics       — how to navigate context-db via TOC script
+  //   main-agent/prompt               — instructions for prompt command
+  //   main-agent/context-usage        — context-db is a map, not truth
+  //   main-agent/write-mechanics      — how to edit context-db files
+  //   main-agent/write-content-guide  — what belongs in context-db
+  //   main-agent/pre-review           — check plan against standards
+  //   main-agent/review               — review changes against conventions
+  //   main-agent/update-general       — file learnings into context-db
+  //   main-agent/update-commit        — how to write commit messages
+  "load-manual": ["main-agent/on-demand"],
 
-  "init": ["read-mechanics", "persist-to-context-db"],
-  "_doc_init": "List of template names to load on session start. Available: read-mechanics, context-usage, write-mechanics, write-content-guide, persist-to-context-db",
-
+  // mode: main-agent | sub-agent | ask
+  // model: haiku | sonnet | opus | ask
   "defaults": {
     "mode": "main-agent",
     "model": "haiku"
   },
-  "_doc_defaults": "mode: main-agent | sub-agent | ask. model: haiku | sonnet | opus | ask. Per-command sections override defaults.",
 
-  "prompt": {
-    "mode": "main-agent",
-    "model": "haiku"
-  },
+  "prompt": {},
+  "pre-review": {},
 
-  "pre-review": {
-    "mode": "main-agent",
-    "model": "haiku"
-  },
-
+  // reviews default to sonnet for deeper reasoning
   "review": {
-    "mode": "main-agent",
-    "model": "sonnet",
-    "review-type": "context-db"
+    "model": "sonnet"
   },
-  "_doc_review": "review-type: context-db | full",
 
+  // update always runs in main-agent (writes files)
   "update": {
     "mode": "main-agent",
     "model": "sonnet"
   },
 
+  // maintain always runs in main-agent (writes files)
   "maintain": {
     "mode": "main-agent"
   }

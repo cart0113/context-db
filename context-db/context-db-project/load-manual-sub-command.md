@@ -1,39 +1,57 @@
 ---
 description:
   load-manual subcommand — concatenates instruction templates into agent
-  context. Replaces init. Configured by .context-db.json, overridden by CLI
-  args.
+  context. Configured by .context-db.json, overridden by CLI flags.
 ---
 
 ## What it does
 
-`load-manual` stitches together any combination of prompt template files and
-prints them as a single block. Templates can come from any directory —
-`main-agent/`, `sub-agent/`, `spawn/`. The session-start hook calls it with no
-args (uses config defaults). Users can call it manually after compaction or
-whenever the agent needs instructions reloaded.
+`load-manual` stitches together prompt template files and prints them as a
+single block. The session-start hook calls it with no flags (uses config
+defaults). Users can call it manually after compaction or whenever the agent
+needs instructions reloaded.
 
-Replaces the old `init` subcommand. `init` was limited to main-agent templates
-and had a separate config key. `load-manual` is the universal version.
+Always prints: `This project uses a context-db/ knowledge database.`
 
-## How it works
+## CLI flags
 
-Template refs use `directory/name` format — e.g. `main-agent/read-mechanics`,
-`sub-agent/role-review`. The directory maps to `prompts/<directory>/` and the
-name maps to `<name>.md`.
+Each template is a named flag. With no flags, uses the `load-manual` list from
+`.context-db.json`. With flags, loads only those sections in canonical order:
 
-Resolution order:
+1. `--read-mechanics` — how to navigate context-db via TOC script
+2. `--prompt` — instructions for prompt command
+3. `--context-usage` — context-db is a map, not truth
+4. `--write-mechanics` — how to edit context-db files
+5. `--write-content-guide` — what belongs in context-db
+6. `--pre-review` — check plan against standards
+7. `--review` — review changes against conventions
+8. `--update-general` — file learnings into context-db
+9. `--update-commit` — how to write commit messages
 
-1. CLI args given — use those, ignore config entirely
-2. No CLI args — use the `load-manual` list from `.context-db.json`
-3. No config file — use hardcoded defaults (read-mechanics +
-   persist-to-context-db)
+`--on-demand` is special: tells the agent not to browse context-db on its own,
+wait for explicit `/context-db` commands. Cannot be combined with other flags.
+This is the default configuration.
 
 ## Config file
 
-`.context-db.json` in the project root. Gitignored (per-machine config).
+`.context-db.json` in the project root. Supports `//` comments (JSONC). The
+`load-manual` key is a list of `directory/name` template refs:
+
+```json
+{
+  "load-manual": ["main-agent/on-demand"]
+}
+```
 
 ## Example configurations
+
+### On-demand only (default) — agent knows context-db exists but won't touch it
+
+```json
+{
+  "load-manual": ["main-agent/on-demand"]
+}
+```
 
 ### Read + respond to prompts (main agent handles everything)
 
@@ -47,50 +65,26 @@ Resolution order:
 }
 ```
 
-### Read + prompt via main agent, review/pre-review via sub-agent spawn
+### Full read + write instructions loaded at session start
 
 ```json
 {
   "load-manual": [
     "main-agent/read-mechanics",
-    "main-agent/context-usage",
     "main-agent/prompt",
-    "spawn/pre-review",
-    "spawn/review"
+    "main-agent/context-usage",
+    "main-agent/write-mechanics",
+    "main-agent/write-content-guide",
+    "main-agent/update-general"
   ]
 }
 ```
-
-### Prompt, pre-review, review all via sub-agent
-
-```json
-{
-  "load-manual": [
-    "main-agent/read-mechanics",
-    "spawn/prompt",
-    "spawn/pre-review",
-    "spawn/review"
-  ]
-}
-```
-
-## CLI override
-
-Pass template refs directly to skip config:
-
-```
-python3 .../context-db-main-agent.py load-manual main-agent/read-mechanics main-agent/write-mechanics
-```
-
-Useful for one-off reloads — e.g. after compaction, load just the write
-instructions you need for the current task.
 
 ## Design rationale
 
-- **Why replace init?** init was a separate code path that did the same thing
-  (concatenate templates) but only supported main-agent templates and used a
-  different config key. One command, one config key, any template directory.
-- **Why CLI override?** Users reload instructions mid-session. Editing config
-  just to reload different templates is friction. Positional args are simpler.
-- **Why no --all flag?** The config IS the "all" — it defines the default set.
-  An --all flag would need its own hardcoded list, duplicating the config.
+- **Why flags instead of positional args?** `--help` becomes self-documenting —
+  shows every available section and the order they emit in.
+- **Why canonical order?** Sections build on each other (read before write,
+  etc). Flags can be given in any order; output is always correct.
+- **Why --on-demand?** Most sessions don't need context-db loaded. The agent
+  should know it exists but stay out until asked.
