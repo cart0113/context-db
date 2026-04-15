@@ -56,6 +56,21 @@ sees what to look up before being told how. Without this, cheap models treat the
 prompt as a task and execute it (e.g. running `git commit` when the prompt says
 "Commit").
 
+## Review sub-agents need different constraints than lookup sub-agents
+
+Prompt and pre-review sub-agents are pure knowledge lookups — lock them to TOC
+script + Read only. Review sub-agents need to read source files, run git diff,
+and potentially grep for patterns. Only ban destructive commands (git add,
+commit, push, reset). Over-constraining review breaks it; under-constraining
+lookup lets haiku run wild.
+
+## Self-review catches real bugs
+
+Running the review sub-agent against its own changes (with sonnet) caught an
+IndexError bug where the `[main-user-prompt]` injection split failed when the
+role template was the first in the composition. Sonnet is the right model for
+review — haiku lacks the reasoning depth to compare code against conventions.
+
 ## The rule file is the durable anchor
 
 The session-start hook fires once. SKILL.md loads on demand. The rule file stays

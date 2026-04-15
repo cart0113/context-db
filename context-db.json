@@ -23,10 +23,9 @@
 
   "review": {
     "mode": "main-agent",
-    "model": "sonnet",
-    "review-type": "context-db"
+    "model": "sonnet"
   },
-  "_doc_review": "review-type: context-db | full",
+  "_doc_review": "Add context-db-only-review: true to only flag convention issues",
 
   "update": {
     "mode": "main-agent",

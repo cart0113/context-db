@@ -43,35 +43,37 @@ SYSTEM_TEMPLATES = {
         ("sub-agent", "output-format"),
     ],
     "pre-review": [
-        ("sub-agent", "role"),
         ("main-agent", "read-mechanics"),
-        ("main-agent", "pre-review"),
-        ("sub-agent", "navigation-constraints"),
+        ("sub-agent", "role-pre-review"),
         ("sub-agent", "output-format"),
     ],
     "review": [
-        ("sub-agent", "role"),
         ("main-agent", "read-mechanics"),
-        ("main-agent", "review"),
-        ("sub-agent", "navigation-constraints"),
-        ("sub-agent", "output-format-review"),
+        ("sub-agent", "role-review"),
+        ("sub-agent", "review-instructions"),
     ],
-    "review-full": [
-        ("sub-agent", "role"),
+    "context-db-only-review": [
         ("main-agent", "read-mechanics"),
-        ("main-agent", "review"),
-        ("sub-agent", "navigation-constraints"),
-        ("sub-agent", "output-format-review-full"),
+        ("sub-agent", "role-review"),
+        ("sub-agent", "review-instructions-context-db-only"),
     ],
 }
 
 # Blocks prepended to the sub-agent's response before [context-db-findings].
-# These are main-agent templates the calling agent needs as framing.
 RESPONSE_PREFIX = {
     "prompt": [("main-agent", "context-usage")],
     "pre-review": [("main-agent", "context-usage")],
     "review": [],
-    "review-full": [],
+    "context-db-only-review": [],
+}
+
+# Blocks appended after [context-db-findings] — tells the main agent how to
+# interpret the sub-agent's response.
+RESPONSE_SUFFIX = {
+    "prompt": [],
+    "pre-review": [("sub-agent", "interpreting-pre-review-response")],
+    "review": [("sub-agent", "interpreting-review-response")],
+    "context-db-only-review": [("sub-agent", "interpreting-review-response")],
 }
 
 # Tools granted to each command's sub-agent.
@@ -135,10 +137,10 @@ def compose_templates(template_list, **kwargs):
     return "\n".join(parts)
 
 
-def template_key(command, review_type):
-    """Map command + review_type to a SYSTEM_TEMPLATES key."""
-    if command == "review" and review_type == "full":
-        return "review-full"
+def template_key(command, context_db_only_review=False):
+    """Map command + flags to a SYSTEM_TEMPLATES key."""
+    if command == "review" and context_db_only_review:
+        return "context-db-only-review"
     return command
 
 
@@ -234,45 +236,50 @@ def main():
     )
     parser.add_argument("prompt", nargs="?", default="")
     parser.add_argument("--model", default="haiku")
-    parser.add_argument("--review-type", default="context-db",
-                        choices=["context-db", "full"])
+    parser.add_argument("--context-db-only-review", action="store_true",
+                        help="Review only flags convention issues from context-db")
     parser.add_argument("--rerun-init", action="store_true",
                         help="Reload init templates after response")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
 
-    if not args.prompt:
+    if not args.prompt and args.command not in ("review",):
         parser.error(f"{args.command} requires a prompt")
 
     toc = find_toc_script()
     context_db_rel = find_context_db()
     cwd = os.getcwd()
-    key = template_key(args.command, args.review_type)
+    key = template_key(args.command, getattr(args, "context_db_only_review", False))
 
-    # Compose system prompt: templates + user prompt injected as data
-    # The prompt goes into the system prompt as [main-user-prompt] so the
-    # sub-agent sees it as content to look up, not a task to perform.
+    # Compose system prompt from templates
     templates_text = compose_templates(
         SYSTEM_TEMPLATES[key], toc=toc, context_db_rel=context_db_rel,
     )
-    # Insert [main-user-prompt] after the first template (read-mechanics)
-    # so the model sees: what context-db is → what to look up → its role
-    parts = templates_text.split("\n[sub-agent-role]", 1)
-    prompt_block = (
-        f"\n[main-user-prompt]\n\n{args.prompt}\n\n[end main-user-prompt]\n"
-    )
-    system_prompt = parts[0] + prompt_block + "\n[sub-agent-role]" + parts[1]
 
-    # User message — simple trigger, the real prompt is in the system prompt
-    user_msg = "Find relevant context from context-db for the prompt above."
+    # Inject [main-user-prompt] before [sub-agent-role] when a prompt exists.
+    # This frames the prompt as data (what to look up / focus on), not a task.
+    if args.prompt:
+        parts = templates_text.split("\n[sub-agent-role]", 1)
+        prompt_block = (
+            f"\n[main-user-prompt]\n\n{args.prompt}\n\n"
+            f"[end main-user-prompt]\n"
+        )
+        system_prompt = (
+            parts[0] + prompt_block + "\n[sub-agent-role]" + parts[1]
+        )
+        user_msg = args.prompt
+    else:
+        system_prompt = templates_text
+        user_msg = "Review the changes."
 
     if args.debug:
         print(f"cwd: {cwd}")
         print(f"context-db: {context_db_rel}/")
         print(f"model: {args.model}")
-        print(f"\n[system-prompt]\n{system_prompt}\n[end system-prompt]")
-        print(f"\n[user-message]\n{user_msg}\n[end user-message]\n")
+        print(f"\n[sub-agent-system-prompt]\n{system_prompt}\n"
+              f"[end sub-agent-system-prompt]")
+        print(f"\nuser message: {user_msg}\n")
 
     text, cost_usd, elapsed = spawn_claude(
         system_prompt, user_msg, args.model,
@@ -292,6 +299,13 @@ def main():
     print(f"\n[context-db-findings]\n")
     print(text.strip())
     print(f"\n[end context-db-findings]")
+
+    # Suffix blocks — tells the main agent how to interpret the response
+    suffix = compose_templates(
+        RESPONSE_SUFFIX[key], toc=toc, context_db_rel=context_db_rel,
+    )
+    if suffix.strip():
+        print(suffix)
 
     # Optionally reload init templates after response
     if args.rerun_init:

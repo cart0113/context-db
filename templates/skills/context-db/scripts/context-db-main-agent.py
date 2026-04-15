@@ -39,7 +39,6 @@ DEFAULT_CONFIG = {
     "pre-review": {},
     "review": {
         "model": "sonnet",        # reviews need more reasoning
-        "review-type": "context-db",
     },
     "update": {
         "mode": "main-agent",     # writes files — must run in main agent
@@ -261,8 +260,8 @@ def cmd_sub_agent(command, prompt, cmd_config, debug=False):
     cmd_parts = [f"python3 {sub_agent} {command}"]
     cmd_parts.append(f'"{prompt}"')
     cmd_parts.append(f"--model {model}")
-    if command == "review" and "review-type" in cmd_config:
-        cmd_parts.append(f"--review-type {cmd_config['review-type']}")
+    if command == "review" and cmd_config.get("context-db-only-review"):
+        cmd_parts.append("--context-db-only-review")
     if rerun_init:
         cmd_parts.append("--rerun-init")
     if debug:
@@ -343,8 +342,8 @@ def dispatch_command(args, config):
         cmd_config["mode"] = args.mode
     if args.model:
         cmd_config["model"] = args.model
-    if hasattr(args, "review_type") and args.review_type:
-        cmd_config["review-type"] = args.review_type
+    if hasattr(args, "context_db_only_review") and args.context_db_only_review:
+        cmd_config["context-db-only-review"] = True
     if hasattr(args, "commit") and args.commit:
         cmd_config["commit"] = True
 
@@ -391,7 +390,8 @@ def main():
     rv = subs.add_parser("review",
                          help="Review changes against conventions")
     rv.add_argument("instruction", nargs="?", default="")
-    rv.add_argument("--review-type", choices=["context-db", "full"])
+    rv.add_argument("--context-db-only-review", action="store_true",
+                    help="Only flag issues backed by context-db conventions")
     add_mode_flags(rv)
 
     # update

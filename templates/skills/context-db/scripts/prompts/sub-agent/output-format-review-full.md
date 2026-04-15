@@ -2,9 +2,9 @@
 
 Write a review report in two sections:
 
-## Convention Issues (from context-db)
+## Convention Issues
 
-For each issue supported by knowledge base conventions:
+For each issue supported by project conventions found in context-db:
 
 - Describe the problem clearly.
 - Quote the relevant convention with its source path:
@@ -13,11 +13,12 @@ For each issue supported by knowledge base conventions:
 
   > exact quoted text from the convention file
 
-## General Review
+## General Code Review
 
-Flag anything that looks wrong, risky, or could be improved -- regardless of
-whether it appears in the knowledge base.
+Separately, flag anything that looks wrong, risky, or could be improved based on
+your own expertise -- regardless of whether it appears in context-db.
 
-Never suggest fixes -- only identify problems.
+Never suggest fixes -- only identify problems. If a section has no issues, say
+so clearly.
 
 [end sub-agent-output-format-review-full]

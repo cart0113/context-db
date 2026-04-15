@@ -23,19 +23,25 @@ directories: `main-agent/` (core, reused), `sub-agent/` (role + constraints),
 
 Done:
 
-- `prompt` command — role-prompt.md tested with haiku, working
+- All three per-command role files: `role-prompt.md`, `role-pre-review.md`,
+  `role-review.md`
 - Prompt-as-data pattern (`[main-user-prompt]` in system prompt)
-- Response wrapping (`[context-usage]` + `[context-db-findings]`)
+- Response wrapping: prefix (`[context-usage]`) + findings + suffix
+  (`[interpreting-*-response]`)
 - Spawn templates for all three commands
+- Review: full review is default, `--context-db-only-review` flag for rare case
+- Review: composable instructions (`review-instructions.md` +
+  `review-instructions-context-db-only.md`)
 
 Remaining:
 
-- `pre-review` command — needs `role-pre-review.md`
-- `review` command — needs `role-review.md`
-- Clean up deprecated files (`role.md`, `navigation-constraints.md` — superseded
-  by per-command role files)
-- Test pre-review and review with haiku
+- Clean up deprecated files (`role.md`, `navigation-constraints.md`,
+  `output-format.md`, `output-format-review.md`, `output-format-review-full.md`
+  — superseded by per-command role files and review-instructions)
+- Test pre-review with haiku
 - Delete `old-prompts/` once all commands are verified
+- Consider cleaning up unused output-context-db-review.md and
+  output-general-review.md (superseded by review-instructions.md)
 
 ## Main-agent skill is working well
 
