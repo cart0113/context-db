@@ -104,6 +104,17 @@ are among the most common structural tokens in training data. H1 headers are
 more human-readable, need no closing tag, and use standard formatting. One H1
 per template file; sub-sections use H2/H3.
 
+## general-standards needs triple-reinforcement for cheap models
+
+A single "always read general-standards/" instruction in read-mechanics gets
+overridden by later selectivity filters ("skip anything not relevant"). Haiku
+browses the folder but skips reading files whose descriptions seem unrelated to
+the task. Fix: reinforce the mandatory-read instruction at three points —
+read-mechanics (read layer), sub-agent role (decision layer), and output format
+(return layer). Each uses MUST/DO NOT language. Canonical folder name
+(`general-standards/`) is hardcoded like CLAUDE.md — concrete targets work
+better for cheap models than generalized "find any global folder" mechanisms.
+
 ## Self-reference guard
 
 Without scope filtering, the subagent returns information about context-db

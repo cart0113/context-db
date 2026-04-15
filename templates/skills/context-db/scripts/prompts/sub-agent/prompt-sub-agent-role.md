@@ -23,3 +23,9 @@ output through other commands. Do NOT construct absolute paths.
 
 Read descriptions from the TOC output. Drill into what's relevant, skip the
 rest.
+
+## Rules
+
+- MUST read and return ALL files from `{context_db_rel}/general-standards/`. Do
+  NOT skip them. Do NOT filter them by relevance. They apply to every task.
+- Return general-standards content FIRST, before task-specific content.

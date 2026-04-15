@@ -14,6 +14,7 @@ Read descriptions and:
   repeat this recursive process, reading all files and subfolders you think are
   relevant and necessary.
 
-If `{context_db_rel}/general-standards/` exists, always read every file in it
-before starting any task. These are global standards that apply to all work —
-like a CLAUDE.md.
+If `{context_db_rel}/general-standards/` exists, you MUST read every file in it.
+These are global standards that apply to ALL tasks — like a CLAUDE.md. Do NOT
+skip them. Do NOT filter them by relevance. Read them first, before anything
+else.
