@@ -128,9 +128,9 @@ def find_context_db():
 # printed into the agent's context. Variables use {name} syntax.
 
 
-def load_template(name):
-    """Load a prompt template from the prompts/main-agent/ directory."""
-    prompts_dir = Path(__file__).resolve().parent / "prompts" / "main-agent"
+def load_template(name, subdir="main-agent"):
+    """Load a prompt template from prompts/<subdir>/<name>.md."""
+    prompts_dir = Path(__file__).resolve().parent / "prompts" / subdir
     path = prompts_dir / f"{name}.md"
     if not path.exists():
         sys.exit(f"Error: template not found: {path}")
@@ -150,10 +150,10 @@ def fill_template(template, **kwargs):
 # apply — they're the protocol between this script and the LLM.
 
 
-def print_template(name, **kwargs):
+def print_template(name, subdir="main-agent", **kwargs):
     """Load a template, fill variables, and print. Tags are in the file."""
     print()
-    print(fill_template(load_template(name), **kwargs))
+    print(fill_template(load_template(name, subdir), **kwargs))
 
 
 def print_section(tag, content):
@@ -247,14 +247,15 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
 
 
 def cmd_sub_agent(command, prompt, cmd_config, debug=False):
-    """Print instructions telling the main agent to shell out to the sub-agent.
+    """Print spawn instructions telling the main agent to invoke the sub-agent.
 
     The main agent will run the printed command via Bash, which spawns an
-    isolated claude -p process (context-db-sub-agent.py). This keeps the
-    context-db lookup out of the main agent's context window.
+    isolated claude -p process (context-db-sub-agent.py). The sub-agent's
+    response comes back as tagged blocks the main agent can use directly.
     """
     sub_agent = find_sub_agent_script()
     model = cmd_config["model"]
+    rerun_init = cmd_config.get("rerun-init", False)
 
     # Build the shell command the main agent will run
     cmd_parts = [f"python3 {sub_agent} {command}"]
@@ -262,28 +263,18 @@ def cmd_sub_agent(command, prompt, cmd_config, debug=False):
     cmd_parts.append(f"--model {model}")
     if command == "review" and "review-type" in cmd_config:
         cmd_parts.append(f"--review-type {cmd_config['review-type']}")
+    if rerun_init:
+        cmd_parts.append("--rerun-init")
     if debug:
         cmd_parts.append("--debug")
 
     run_cmd = " ".join(cmd_parts)
 
-    # response-<command>.md tells the main agent how to use the sub-agent's output
-    response_template = load_template(f"response-{command}")
-
-    instructions = (
-        f"Run the following command and wait for the response:\n\n"
-        f"  {run_cmd}\n\n"
-        f"The command will output a [response] section with findings from the\n"
-        f"project's context-db knowledge base.\n\n"
-        f"When it returns:\n"
-        f"{response_template.strip()}"
-    )
-
     if debug:
         print(f"mode: sub-agent")
         print(f"model: {model}")
 
-    print_section("instructions", instructions)
+    print_template(command, subdir="spawn", run_cmd=run_cmd)
 
 
 

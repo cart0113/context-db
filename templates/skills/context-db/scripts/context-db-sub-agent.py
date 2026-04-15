@@ -2,17 +2,14 @@
 """
 context-db-sub-agent.py — spawns claude -p for isolated context-db lookups.
 
-Only called when mode=sub-agent. The main agent calls this based on
-instructions from context-db-main-agent.py.
-
-Spawns claude -p with system prompt + user message from prompts/ templates.
-Parses stream-json output. Returns [response] + [response-instructions].
+Composes system prompt from main-agent templates (shared) + sub-agent templates
+(additional constraints for cheap models). Wraps the response in tagged blocks
+for the main agent.
 
 Sub-commands:
   prompt        Consult context-db for knowledge/standards
   pre-review    Check plan against standards before implementing
   review        Review changes against conventions
-  update        File learnings into context-db
 
 Usage:
   context-db-sub-agent.py prompt "user instruction"
@@ -31,19 +28,60 @@ import time
 from pathlib import Path
 
 
+# ── Template composition per command ──────────────────────────────────────
+#
+# System prompt = main-agent templates + sub-agent templates.
+# Each entry is (directory, template_name).
+#
+# Main-agent templates provide navigation mechanics and command instructions.
+# Sub-agent templates add hard constraints for cheap models and output format.
+
+SYSTEM_TEMPLATES = {
+    "prompt": [
+        ("main-agent", "read-mechanics"),
+        ("main-agent", "prompt"),
+        ("sub-agent", "navigation-constraints"),
+        ("sub-agent", "output-format"),
+    ],
+    "pre-review": [
+        ("main-agent", "read-mechanics"),
+        ("main-agent", "pre-review"),
+        ("sub-agent", "navigation-constraints"),
+        ("sub-agent", "output-format"),
+    ],
+    "review": [
+        ("main-agent", "read-mechanics"),
+        ("main-agent", "review"),
+        ("sub-agent", "navigation-constraints"),
+        ("sub-agent", "output-format-review"),
+    ],
+    "review-full": [
+        ("main-agent", "read-mechanics"),
+        ("main-agent", "review"),
+        ("sub-agent", "navigation-constraints"),
+        ("sub-agent", "output-format-review-full"),
+    ],
+}
+
+# Blocks prepended to the sub-agent's response before [context-db-findings].
+# These are main-agent templates the calling agent needs as framing.
+RESPONSE_PREFIX = {
+    "prompt": [("main-agent", "context-usage")],
+    "pre-review": [("main-agent", "context-usage")],
+    "review": [],
+    "review-full": [],
+}
+
 # Tools granted to each command's sub-agent.
-# Read-only commands get Bash+Read (run TOC script, read files).
-# update also gets Write+Edit since it modifies context-db files.
 COMMAND_TOOLS = {
     "prompt": "Bash,Read",
     "pre-review": "Bash,Read",
     "review": "Bash,Read",
-    "update": "Bash,Read,Write,Edit",
 }
 
 
-# ── Path discovery ──────────────────────────────────────────────────────────
-# Same search logic as main-agent — relative paths, no symlink resolution.
+# ── Path discovery ────────────────────────────────────────────────────────
+# All paths relative to cwd — no symlink resolution, no absolute paths.
 
 
 def find_toc_script():
@@ -67,17 +105,12 @@ def find_context_db():
     return "."
 
 
-# ── Template loading ────────────────────────────────────────────────────────
-# Sub-agent templates are in prompts/ (not prompts/main-agent/).
-# Three template types per command:
-#   system-<cmd>.md  — system prompt for the sub-agent
-#   user-<cmd>.md    — user message with {prompt} placeholder
-#   response-<cmd>.md — instructions for the main agent on how to use the output
+# ── Template loading ──────────────────────────────────────────────────────
 
 
-def load_template(name):
-    """Load a prompt template from the prompts/ directory."""
-    prompts_dir = Path(__file__).resolve().parent / "prompts"
+def load_template(directory, name):
+    """Load a prompt template from prompts/<directory>/<name>.md."""
+    prompts_dir = Path(__file__).resolve().parent / "prompts" / directory
     path = prompts_dir / f"{name}.md"
     if not path.exists():
         sys.exit(f"Error: template not found: {path}")
@@ -91,30 +124,43 @@ def fill_template(template, **kwargs):
     return template
 
 
-# ── Sub-agent execution ─────────────────────────────────────────────────────
+def compose_templates(template_list, **kwargs):
+    """Load and fill a list of (directory, name) templates, join with newlines."""
+    parts = []
+    for directory, name in template_list:
+        template = load_template(directory, name)
+        parts.append(fill_template(template, **kwargs))
+    return "\n".join(parts)
+
+
+def template_key(command, review_type):
+    """Map command + review_type to a SYSTEM_TEMPLATES key."""
+    if command == "review" and review_type == "full":
+        return "review-full"
+    return command
+
+
+# ── Sub-agent execution ──────────────────────────────────────────────────
 
 
 def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
     """Run claude -p subprocess and return (response_text, cost_usd, elapsed).
 
     Uses stream-json output format so we can show debug progress (which files
-    the sub-agent reads) without waiting for the full response. The final
-    "result" event contains the sub-agent's answer text and cost.
+    the sub-agent reads) without waiting for the full response.
     """
     cmd = [
         "claude",
-        "-p",                        # pipe mode: stdin=user msg, stdout=output
+        "-p",
         "--model", model,
         "--tools", tools,
-        "--output-format", "stream-json",  # one JSON event per line
+        "--output-format", "stream-json",
         "--verbose",
-        "--no-session-persistence",        # ephemeral — no session state saved
-        "--permission-mode", "bypassPermissions",  # sub-agent runs unattended
+        "--no-session-persistence",
+        "--permission-mode", "bypassPermissions",
         "--system-prompt", system_prompt,
     ]
 
-    # Strip ANTHROPIC_API_KEY so claude CLI uses its own auth.
-    # Set CONTEXT_DB_SUBAGENT=1 so hooks/scripts can detect sub-agent context.
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     env["CONTEXT_DB_SUBAGENT"] = "1"
     start = time.time()
@@ -134,7 +180,6 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
         proc.stdin.write(user_msg)
         proc.stdin.close()
 
-        # Stream JSON events line-by-line as the sub-agent works
         for line in proc.stdout:
             line = line.strip()
             if not line:
@@ -146,7 +191,6 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
 
             etype = event.get("type", "")
 
-            # In debug mode, print each tool call so the user sees progress
             if etype == "assistant" and debug:
                 for block in event.get("message", {}).get("content", []):
                     if block.get("type") == "tool_use":
@@ -158,14 +202,7 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
                         elif tool == "Bash":
                             print(f"  running: {inp.get('command', '')}",
                                   flush=True)
-                        elif tool == "Write":
-                            print(f"  writing: {inp.get('file_path', '')}",
-                                  flush=True)
-                        elif tool == "Edit":
-                            print(f"  editing: {inp.get('file_path', '')}",
-                                  flush=True)
 
-            # Final event — contains the sub-agent's text response and cost
             elif etype == "result":
                 final_text = event.get("result", "")
                 cost_usd = event.get("total_cost_usd", 0.0)
@@ -184,22 +221,21 @@ def spawn_claude(system_prompt, user_msg, model, tools, cwd, debug=False):
     return final_text, cost_usd, time.time() - start
 
 
-# ── Main ────────────────────────────────────────────────────────────────────
-# Assembles system prompt + user message from templates, spawns claude -p,
-# then wraps the sub-agent's response in [response] tags so the main agent
-# can parse and act on it.
+# ── Main ─────────────────────────────────────────────────────────────────
 
 
 def main():
     parser = argparse.ArgumentParser(description="context-db sub-agent")
     parser.add_argument(
         "command",
-        choices=["prompt", "pre-review", "review", "update"],
+        choices=["prompt", "pre-review", "review"],
     )
     parser.add_argument("prompt", nargs="?", default="")
     parser.add_argument("--model", default="haiku")
     parser.add_argument("--review-type", default="context-db",
                         choices=["context-db", "full"])
+    parser.add_argument("--rerun-init", action="store_true",
+                        help="Reload init templates after response")
     parser.add_argument("--debug", action="store_true")
 
     args = parser.parse_args()
@@ -210,52 +246,61 @@ def main():
     toc = find_toc_script()
     context_db_rel = find_context_db()
     cwd = os.getcwd()
-    debug = args.debug
+    key = template_key(args.command, args.review_type)
 
-    # Assemble the two prompt halves from templates:
-    #   system prompt — role + read-mechanics + TOC instructions
-    #   user message  — the user's actual request
-    if args.command == "review" and args.review_type == "full":
-        system_template = load_template("system-review-full")
-    else:
-        system_template = load_template(f"system-{args.command}")
+    # Compose system prompt from main-agent + sub-agent templates
+    system_prompt = compose_templates(
+        SYSTEM_TEMPLATES[key], toc=toc, context_db_rel=context_db_rel,
+    )
 
-    system_prompt = fill_template(system_template, toc=toc,
-                                  context_db_rel=context_db_rel)
+    # User message — prompt in a tagged block, same tag main-agent mode uses
+    tag = f"{args.command}-user-instructions"
+    user_msg = f"[{tag}]\n\n{args.prompt}\n\n[end {tag}]"
 
-    user_template = load_template(f"user-{args.command}")
-    user_msg = fill_template(user_template, prompt=args.prompt)
-
-    # response-<cmd>.md tells the *main* agent how to use the sub-agent's output
-    response_instructions = load_template(f"response-{args.command}")
-
-    if debug:
+    if args.debug:
         print(f"cwd: {cwd}")
         print(f"context-db: {context_db_rel}/")
         print(f"model: {args.model}")
-        print(f"\n[system prompt]\n{system_prompt}\n[end]")
-        print(f"\n[user message]\n{user_msg}\n[end]\n")
+        print(f"\n[system-prompt]\n{system_prompt}\n[end system-prompt]")
+        print(f"\n[user-message]\n{user_msg}\n[end user-message]\n")
 
     text, cost_usd, elapsed = spawn_claude(
         system_prompt, user_msg, args.model,
-        COMMAND_TOOLS[args.command], cwd, debug,
+        COMMAND_TOOLS[args.command], cwd, args.debug,
     )
 
     if text is None:
         sys.exit("Error: sub-agent timed out")
 
-    # Output format: tagged sections the main agent parses
-    print(f"\n[response]")
+    # Response: prefix blocks (e.g. context-usage) + findings
+    prefix = compose_templates(
+        RESPONSE_PREFIX[key], toc=toc, context_db_rel=context_db_rel,
+    )
+    if prefix.strip():
+        print(prefix)
+
+    print(f"\n[context-db-findings]\n")
     print(text.strip())
-    print(f"[end response]")
+    print(f"\n[end context-db-findings]")
 
-    print(f"\n[response-instructions]")
-    print(response_instructions.strip())
-    print(f"[end response-instructions]")
+    # Optionally reload init templates after response
+    if args.rerun_init:
+        config_path = os.path.join(cwd, "context-db.json")
+        init_templates = ["read-mechanics", "persist-to-context-db"]
+        if os.path.exists(config_path):
+            with open(config_path) as f:
+                config = json.load(f)
+            init_templates = config.get("init", init_templates)
+        for name in init_templates:
+            template = load_template("main-agent", name)
+            print(fill_template(template, toc=toc,
+                                context_db_rel=context_db_rel))
 
-    if debug:
-        print(f"\n[metadata]")
-        print(f"model: {args.model} | cost: ${cost_usd:.4f} | time: {elapsed:.1f}s")
+    if args.debug:
+        print(f"\n[sub-agent-metadata]")
+        print(f"model: {args.model} | cost: ${cost_usd:.4f} "
+              f"| time: {elapsed:.1f}s")
+        print(f"[end sub-agent-metadata]")
 
 
 if __name__ == "__main__":

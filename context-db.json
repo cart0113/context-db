@@ -6,9 +6,10 @@
 
   "defaults": {
     "mode": "main-agent",
-    "model": "haiku"
+    "model": "haiku",
+    "rerun-init": false
   },
-  "_doc_defaults": "mode: main-agent | sub-agent | ask. model: haiku | sonnet | opus | ask. Per-command sections override defaults.",
+  "_doc_defaults": "mode: main-agent | sub-agent | ask. model: haiku | sonnet | opus | ask. rerun-init: reload init templates after sub-agent returns (default false). Per-command sections override defaults.",
 
   "prompt": {
     "mode": "main-agent",

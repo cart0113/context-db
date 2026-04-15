@@ -10,18 +10,17 @@ script calls `print_template("read-mechanics", ...)` — load, fill, print.
 `print_section()` exists only for dynamic content (e.g. wrapping user text in
 `[update-user-instructions]`).
 
-Main-agent output composes these templates:
+Three template directories in `prompts/`:
 
-- `read-mechanics.md` — TOC navigation (read commands; also update with
-  --commit)
-- `context-usage.md` — "starting point, verify against project" (read commands)
-- `write-mechanics.md` — frontmatter, structure, TOC flags (write commands)
-- `write-content-guide.md` — what belongs, brevity (write commands)
-- `persist-to-context-db.md` — memory-system directive (update)
-- `update-general.md` — session-first thinking, brevity (update)
-- `update-commit.md` — commit instructions (update with --commit only)
-- `prompt.md`, `pre-review.md`, `review.md` — command-specific instructions
-- `maintain-instructions.md` — audit workflow (maintain)
+- `main-agent/` — core templates used by main-agent mode and reused by
+  sub-agent. Read commands, write commands, command-specific instructions.
+- `sub-agent/` — additional templates for the isolated `claude -p` sub-agent.
+  Navigation constraints (hard DO NOT rules for cheap models), output format.
+- `spawn/` — what the main agent sees to trigger the sub-agent. Per-command
+  templates with the run command and usage instructions.
+
+The sub-agent composes its system prompt from main-agent + sub-agent templates.
+See `descriptive-tag-names.md` for tag naming convention.
 
 Conditional templates: `update-commit.md` only prints when `--commit` flag is
 set. `read-mechanics.md` prints for update only with `--commit` (so the agent
