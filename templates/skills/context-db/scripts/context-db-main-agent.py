@@ -264,6 +264,8 @@ def cmd_main_agent(command, prompt, cmd_config, debug=False):
             print_section("update-user-instructions", prompt)
         if commit:
             print_template("update-commit")
+        if cmd_config.get("push", False):
+            print_template("update-push")
     else:
         # Read commands: prompt, pre-review, review
         print_template("read-mechanics", toc=toc, context_db_rel=context_db_rel)
@@ -394,6 +396,9 @@ def dispatch_command(args, config):
         cmd_config["context-db-only-review"] = True
     if hasattr(args, "commit") and args.commit:
         cmd_config["commit"] = True
+    if hasattr(args, "push") and args.push:
+        cmd_config["push"] = True
+        cmd_config["commit"] = True  # --push implies --commit
 
     mode = cmd_config["mode"]
 
@@ -466,6 +471,8 @@ def main():
     up.add_argument("instruction", nargs="?", default="")
     up.add_argument("--commit", action="store_true",
                     help="Commit affected files after updating context-db")
+    up.add_argument("--push", action="store_true",
+                    help="Push after committing (implies --commit)")
     add_mode_flags(up)
 
     # read-all
