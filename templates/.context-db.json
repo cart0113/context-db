@@ -1,21 +1,4 @@
 {
-  // Sections loaded on session start (load-manual command).
-  // With no flags, these are loaded in the order listed.
-  // With flags, only flagged sections load (in canonical order).
-  //
-  // Available sections (canonical order):
-  //   main-agent/on-demand            — don't browse context-db, wait for /context-db (default)
-  //   main-agent/read-mechanics       — how to navigate context-db via TOC script
-  //   main-agent/prompt               — instructions for prompt command
-  //   main-agent/context-usage        — context-db is a map, not truth
-  //   main-agent/write-mechanics      — how to edit context-db files
-  //   main-agent/write-content-guide  — what belongs in context-db
-  //   main-agent/pre-review           — check plan against standards
-  //   main-agent/review               — review changes against conventions
-  //   main-agent/update-general       — file learnings into context-db
-  //   main-agent/update-commit        — how to write commit messages
-  "load-manual": ["main-agent/on-demand"],
-
   // mode: main-agent | sub-agent | ask
   // model: haiku | sonnet | opus | ask
   "defaults": {

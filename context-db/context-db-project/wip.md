@@ -46,17 +46,14 @@ Remaining:
 - Test pre-review with haiku
 - Delete `old-prompts/` once all commands are verified
 
-## Load-manual sub-agent integration — low priority
+## Startup context delivery — resolved
 
-load-manual currently only loads main-agent templates. No mechanism for a
-startup hook or CLAUDE.md rule to configure load-manual to spawn a sub-agent for
-context delivery. The main use case right now is on-demand mode (agent knows
-context-db exists, user explicitly invokes `/context-db` commands).
-
-If a use case emerges where auto-loaded sessions need sub-agent context
-delivery, load-manual would need to support spawn templates and mode
-configuration. Not needed yet — the user controls things manually via
-`/context-db <sub-command>`.
+Replaced hook-based `load-manual` compositing with 4 static rule files
+(`templates/rules/startup-*.md`). Rules survive compaction, require no config.
+Sub-agent integration is handled by the rules themselves — they tell the agent
+to call `/context-db prompt`, `/context-db pre-review`, etc., and the mode
+config determines whether those run as sub-agents. `load-manual` simplified to
+single-section loader for mid-conversation use.
 
 ## Main-agent skill is working well
 

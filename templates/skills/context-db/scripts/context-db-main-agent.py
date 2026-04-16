@@ -30,18 +30,19 @@ from pathlib import Path
 
 COMMANDS = ["prompt", "pre-review", "review", "update", "maintain"]
 
-# Canonical section order for load-manual. Each entry is (name, description).
-# Output is always emitted in this order regardless of flag order.
-LOAD_MANUAL_SECTIONS = [
-    ("read-mechanics",      "How to navigate context-db via TOC script"),
-    ("prompt",              "Instructions for prompt command"),
-    ("context-usage",       "Context-db is a map, not truth — verify against code"),
-    ("write-mechanics",     "How to edit context-db files"),
-    ("write-content-guide", "What belongs in context-db"),
-    ("pre-review",          "Check plan against standards before implementing"),
-    ("review",              "Review changes against conventions"),
-    ("update-general",      "File learnings into context-db"),
-    ("update-commit",       "How to write commit messages"),
+# Available sections for load-manual. Each entry is (name, description).
+MANUAL_SECTIONS = [
+    ("on-demand",            "Don't browse context-db — wait for /context-db commands"),
+    ("read-mechanics",       "How to navigate context-db via TOC script"),
+    ("prompt",               "Instructions for prompt command"),
+    ("context-usage",        "Context-db is a map, not truth — verify against code"),
+    ("write-mechanics",      "How to edit context-db files"),
+    ("write-content-guide",  "What belongs in context-db"),
+    ("persist-to-context-db","Use context-db, not auto-memory, for project knowledge"),
+    ("pre-review",           "Check plan against standards before implementing"),
+    ("review",               "Review changes against conventions"),
+    ("update-general",       "File learnings into context-db"),
+    ("update-commit",        "How to write commit messages"),
 ]
 
 DEFAULT_CONFIG = {
@@ -49,9 +50,6 @@ DEFAULT_CONFIG = {
         "mode": "sub-agent",
         "model": "haiku",
     },
-    "load-manual": [
-        "main-agent/on-demand",
-    ],
     "prompt": {},
     "pre-review": {},
     "review": {
@@ -89,8 +87,6 @@ def load_config(config_path):
         for cmd in COMMANDS:
             if cmd in user:
                 config[cmd].update(user[cmd])
-        if "load-manual" in user:
-            config["load-manual"] = user["load-manual"]
     return config
 
 
@@ -196,44 +192,12 @@ def print_section(tag, content):
 # Write commands (update, maintain) get write-mechanics + write-content-guide.
 
 
-def cmd_load_manual(args, config):
-    """Concatenate and print instruction templates.
-
-    With no flags: uses the load-manual list from .context-db.json.
-    With flags: prints only the flagged sections, in canonical order.
-    """
+def cmd_load_manual(args):
+    """Load a single instruction template by name."""
     toc = find_toc_script()
     context_db_rel = find_context_db()
-    section_names = [name for name, _ in LOAD_MANUAL_SECTIONS]
-
-    # Any flag given → use only those; otherwise fall back to config
-    flagged = [
-        name for name in section_names
-        if getattr(args, name.replace("-", "_"), False)
-    ]
-    on_demand = getattr(args, "on_demand", False)
-
-    if on_demand and flagged:
-        print("Error: --on-demand cannot be combined with other sections.",
-              file=sys.stderr)
-        sys.exit(1)
-
-    if on_demand:
-        selected = ["on-demand"]
-    elif flagged:
-        selected = flagged
-    else:
-        config_refs = config.get("load-manual", [])
-        selected = [ref.split("/", 1)[-1] for ref in config_refs]
-
-    print("\nThis project uses a `context-db/` knowledge database.\n")
-
-    if not selected:
-        return
-
-    for name in selected:
-        print_template(name, subdir="main-agent", toc=toc,
-                       context_db_rel=context_db_rel)
+    print_template(args.section, subdir="main-agent", toc=toc,
+                   context_db_rel=context_db_rel)
 
 
 def cmd_main_agent(command, prompt, cmd_config, debug=False):
@@ -418,34 +382,20 @@ def main():
     subs = parser.add_subparsers(dest="command")
 
     # load-manual
-    section_order_help = "\n".join(
-        f"  {i+1:>2}. --{name:<22s}{desc}"
-        for i, (name, desc) in enumerate(LOAD_MANUAL_SECTIONS)
+    section_names = [name for name, _ in MANUAL_SECTIONS]
+    section_help = "\n".join(
+        f"  {name:<24s}{desc}"
+        for name, desc in MANUAL_SECTIONS
     )
     lm = subs.add_parser(
         "load-manual",
-        help="Load instruction templates into context",
+        help="Load a single instruction template",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
-            "With no flags, uses the load-manual list from .context-db.json.\n"
-            "With section flags, loads only those sections in this order:\n\n"
-            f"{section_order_help}\n\n"
-            "--on-demand is special: it cannot be combined with other sections.\n"
-            "It tells the agent not to browse context-db on its own."
-        ),
+        epilog=f"available sections:\n\n{section_help}",
     )
-    lm.add_argument("--config", default=".context-db.json")
-    lm.add_argument("--on-demand", action="store_true", default=False,
-                    help="Don't browse context-db — wait for /context-db commands. "
-                         "Cannot be combined with other sections.")
-    for name, desc in LOAD_MANUAL_SECTIONS:
-        lm.add_argument(
-            f"--{name}",
-            dest=name.replace("-", "_"),
-            action="store_true",
-            default=False,
-            help=desc,
-        )
+    lm.add_argument("section", choices=section_names,
+                    metavar="section",
+                    help="Section to load (see list below)")
 
     # prompt
     p = subs.add_parser("prompt", help="Consult knowledge base")
@@ -496,7 +446,7 @@ def main():
     )
 
     if args.command == "load-manual":
-        cmd_load_manual(args, config)
+        cmd_load_manual(args)
     elif args.command == "read-all":
         cmd_read_all(args)
     elif args.command == "maintain":

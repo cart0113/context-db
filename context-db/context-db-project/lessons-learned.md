@@ -1,8 +1,8 @@
 ---
 description:
   Lessons from building context delivery — late-session recall, pre-loading
-  pitfalls, prompt engineering for cheap models, relative paths. Applies to the
-  unified /context-db skill.
+  pitfalls, prompt engineering for cheap models, relative paths, rules vs hooks
+  for startup context. Applies to the unified /context-db skill.
 ---
 
 # Lessons Learned
@@ -70,10 +70,17 @@ IndexError bug where the `# Main Prompt` injection split failed when the role
 template was the first in the composition. Sonnet is the right model for review
 — haiku lacks the reasoning depth to compare code against conventions.
 
-## The rule file is the durable anchor
+## Rules for behavior, config for execution
 
-The session-start hook fires once. SKILL.md loads on demand. The rule file stays
-in context all session — it survives compression. Durable instructions go there.
+Rules (`.claude/rules/`) survive compaction — they're system prompt, re-injected
+every turn. Hook output lives in conversation and gets compacted away. Startup
+instructions belong in rules, not hooks.
+
+The clean separation: rules tell the agent WHAT to do and WHEN (e.g., "before
+coding, run `/context-db pre-review`"). Config (`.context-db.json`) controls HOW
+commands execute — sub-agent vs main-agent, which model. The rule doesn't need
+to know about mode. Four preset rule files cover the spectrum: on-demand,
+reader, contributor, autonomous.
 
 ## Constrain navigation to TOC + Read only
 
