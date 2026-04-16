@@ -3,12 +3,9 @@ repository of conventions, standards, design decisions, and pitfalls.
 
 ## Reading
 
-On your first response to the user, or when the topic shifts significantly, run:
-
-    /context-db prompt "<user's request>"
-
-This searches context-db for standards, conventions, and pitfalls relevant to
-the task. Use what it returns to inform your work.
+For non-coding questions, or to search for additional context mid-session, run
+`/context-db prompt` with a brief summary of the request. For coding tasks, the
+pre-review step below handles context lookup.
 
 Context-db is a starting point — a map, not truth. It documents things you can't
 learn from reading any single file. Use it to orient yourself, then verify
@@ -17,16 +14,17 @@ with the project, trust the project.
 
 ## Pre-Review
 
-Before you start coding, run:
+Before you start editing files, run:
 
     /context-db pre-review
 
 This checks your planned changes against project standards and conventions.
-Follow what it finds.
+Follow what it finds. For trivial changes (typos, one-line fixes), use your
+judgment on whether to skip this step.
 
 ## Review
 
-After you finish coding, run:
+After you've completed all changes for the task, run:
 
     /context-db review
 

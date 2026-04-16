@@ -3,9 +3,8 @@ repository of conventions, standards, design decisions, and pitfalls.
 
 ## Reading
 
-On your first response to the user, or when the topic shifts significantly, run:
-
-    /context-db prompt "<user's request>"
+Before your first response to the user, run `/context-db prompt` with a brief
+summary of their request. When the topic shifts significantly, run it again.
 
 This searches context-db for standards, conventions, and pitfalls relevant to
 the task. Use what it returns to inform your work.
