@@ -37,106 +37,58 @@ cp -r templates/skills/context-db your-project/.claude/skills/context-db
 ```
 
 The same scripts run unchanged from any path. Non-Claude users can put them
-anywhere and reference that path from their rule body. There's nothing
-Claude-specific about the script itself — it's a Python file that reads
-context-db markdown and prints text.
+anywhere and call them directly. There's nothing Claude-specific about the
+script itself — it's a Python file that reads context-db markdown and prints
+text. No configuration file is needed; the commands take no config.
 
-Drop the project-level config:
+## 3. (Optional) Add `ON_PROMPT.md`
 
-```bash
-cp .context-db.json your-project/.context-db.json
-```
-
-Edit per-command mode/model/posture as needed. See
-[Configuring Posture](configuring-posture.md).
-
-## 3. Install `ON_START.md` and `ON_ALL.md` (recommended)
-
-Drop the boilerplate into the project folder and edit:
+A file at `context-db/ON_PROMPT.md` is inlined automatically on every `prompt` —
+the only always-on mechanism, and the one most projects actually use. Add it if
+you have a rule the agent should see every time it consults the knowledge base:
 
 ```bash
-cp templates/context-db-files/ON_START.md \
-   your-project/context-db/<project-name>-project/ON_START.md
-cp templates/context-db-files/ON_ALL.md \
-   your-project/context-db/<project-name>-project/ON_ALL.md
+cp templates/ON_PROMPT.md your-project/context-db/ON_PROMPT.md
 ```
 
-These are the always-loaded content files. Use `ON_START.md` for orientation an
-agent needs once per session. Use `ON_ALL.md` for the handful of rules that must
-be re-pinned in front of every command. See
-[Configuring Posture](configuring-posture.md).
+Then edit it down to your rule. Keep it brief — every line is re-read on every
+`prompt`. Two siblings work identically if you ever need them:
+`context-db/ON_UPDATE.md` (inlined on every `update`) and
+`context-db/ON_MAINTAIN.md` (inlined on every `maintain`) — most projects never
+add them. See [Commands](commands.md#the-onmd-special-files).
 
-## 4. Wire up the rule
+## 4. (Optional) Tell the agent the commands exist
 
-Tell the agent to load context-db on session start. Each agent has its own rule
-mechanism — pick the section that matches yours. The body to install is the same
-in all cases (see [Rules](rules.md)).
-
-### Claude Code
+context-db is opt-in — there is no startup hook. If you want the agent to reach
+for it on its own, paste the shipped boilerplate into your agent's
+standing-instructions file:
 
 ```bash
-cp templates/rules/context-db.md your-project/.claude/rules/context-db.md
+cat templates/AGENTS.md >> your-project/AGENTS.md
 ```
 
-Rules in `.claude/rules/` load on every conversation turn and survive context
-compaction.
+`AGENTS.md` is the cross-agent convention (Codex and many others read it);
+Claude Code reads `CLAUDE.md`, Cursor reads `.cursor/rules/`, and Copilot reads
+`.github/copilot-instructions.md`. Paste the same body into whichever your agent
+uses. It tells the agent to run `prompt` before a task and `update` after.
 
-### Cursor
-
-Newer projects use `.cursor/rules/context-db.md` — same format. Older projects
-use a single `.cursorrules` at the repo root. Either works:
-
-```bash
-cp templates/rules/context-db.md your-project/.cursor/rules/context-db.md
-# or
-cat templates/rules/context-db.md >> your-project/.cursorrules
-```
-
-If the path to the dispatcher script differs in your project, edit the rule body
-to match.
-
-### Codex / generic `AGENTS.md`
-
-The cross-agent convention is a top-level `AGENTS.md`. Append the rule body
-under a `## context-db` heading:
-
-```bash
-{
-  echo
-  echo "## context-db"
-  cat templates/rules/context-db.md
-} >> your-project/AGENTS.md
-```
-
-### GitHub Copilot
-
-`.github/copilot-instructions.md` plays the same role:
-
-```bash
-cat templates/rules/context-db.md >> your-project/.github/copilot-instructions.md
-```
-
-### Anything else
-
-Any agent that reads a project-level instruction file works. The only runtime
-requirement is that the agent can run a Python script and read its output.
+If you skip this step, nothing fires automatically — you invoke the commands by
+hand (or as the `/context-db` skill in Claude Code) when you want them.
 
 ## 5. Verify
 
 ```bash
 python3 .claude/skills/context-db/scripts/context-db-generate-toc.py context-db/
-python3 .claude/skills/context-db/scripts/context-db-main-agent.py load-start-context
+python3 .claude/skills/context-db/scripts/context-db-main-agent.py prompt "test"
 ```
 
-The first prints the TOC. The second prints the on-start payload — the exact
-bytes the agent will see when the rule fires.
+The first prints the TOC. The second prints the exact bytes the agent sees when
+you run `prompt` — read mechanics, context-usage framing, any `ON_PROMPT.md`,
+and your instruction.
 
 ## Next steps
 
-- [Commands](commands.md) — the sub-command catalog.
-- [Rules](rules.md) — how the rule body works and how to customize it.
-- [Configuring Posture](configuring-posture.md) — `.context-db.json`, `on_start`
-  / `on_all` / per-sub-command globs.
+- [Commands](commands.md) — the command catalog.
 - [Cross-Project Sharing](cross-project-sharing.md) — symlink folders from other
   repos.
 - [Reference](../reference/specification.md) — format specification.

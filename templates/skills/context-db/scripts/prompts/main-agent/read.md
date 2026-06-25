@@ -1,4 +1,4 @@
-# Read All
+# Read
 
 Read everything in `{target_path}` exhaustively — every file, every subfolder,
 all the way down.

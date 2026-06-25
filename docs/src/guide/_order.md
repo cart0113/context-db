@@ -1,7 +1,4 @@
 - getting-started
 - commands
-- rules
-- configuring-posture
 - cross-project-sharing
-- sub-agents
 - efficacy

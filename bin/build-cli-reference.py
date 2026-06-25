@@ -38,15 +38,10 @@ OUT_PATH = REPO_ROOT / "docs/src/reference/cli.md"
 # Subcommands surfaced as `/context-db <name>` to users. The instruction
 # template name (under prompts/main-agent/) is paired where one exists.
 SUBCOMMANDS = [
-    ("load-start-context", None),
     ("prompt", "prompt"),
-    ("pre-review", "pre-review"),
-    ("review", "review"),
     ("update", "update-general"),
     ("maintain", "maintain-instructions"),
-    ("load-manual", None),
-    ("read", None),
-    ("read-all", "read-all"),
+    ("read", "read"),
 ]
 
 
@@ -133,9 +128,7 @@ def main():
         For each subcommand, this page shows the literal `--help` output and
         the verbatim instruction text the dispatcher emits to the agent at
         run time. For the higher-level guide, see
-        [Commands](../guide/commands.md). For complete payloads under
-        different `.context-db.json` configs, see
-        [Config Effects](config-effects.md).
+        [Commands](../guide/commands.md).
 
         """
     )

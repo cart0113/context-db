@@ -9,19 +9,18 @@ it from bloating into what it was built to avoid. The four ideas:
 - **Hierarchical Markdown, navigated on demand.** Every file and folder carries
   YAML `description` frontmatter (the same shape as a `SKILL.md`). A small
   Python script renders the table of contents for any folder at call time, so
-  the agent walks a B-tree of descriptions and reads only the leaves it needs.
-  By convention, 5–10 items per folder and ~150 lines per file: context loaded
+  the agent walks a tree of descriptions and reads only the leaves it needs. By
+  convention, 5–10 items per folder and ~150 lines per file: context loaded
   scales with the task, not with the size of the database.
 
 - **Re-injection at decision points, not only at startup.** Standards loaded
   once at session start compact out of the agent's context on long sessions; by
   turn 40 the agent has drifted back to its training defaults.
-  `/context-db prompt` re-fetches just the slice relevant to the next step.
-  `/context-db pre-review` surfaces the standards a planned change has to clear
-  before code is written. `/context-db review` audits the diff against them
-  after the fact. Each is a deliberate moment where the user re-points the agent
-  at the project's conventions, without having to remember which standards apply
-  or where they live.
+  `/context-db prompt` re-fetches just the slice relevant to the next step — a
+  deliberate moment where the user re-points the agent at the project's
+  conventions, without having to remember which standards apply or where they
+  live. `/context-db read` pulls in a whole area when the agent needs full
+  coverage.
 
 - **A bounded write loop.** `/context-db update` files what the agent learned —
   gotchas, decisions, conventions — using the same frontmatter and folder
@@ -34,29 +33,45 @@ it from bloating into what it was built to avoid. The four ideas:
 - **Global and local knowledge in one tree.** Symlink folders from a personal or
   team standards repo and they appear in the TOC alongside project-local content
   — coding standards, writing conventions, library runbooks, written once and
-  used from every project. Per-sub-command `on_<command>` lists let
-  project-specific notes layer on top of those shared, read-only docs without
-  forking them.
+  used from every project.
+
+## The commands
+
+A single Python dispatcher exposes four commands. They take no configuration.
+
+| Command               | What it does                                                 |
+| --------------------- | ------------------------------------------------------------ |
+| `prompt "<task>"`     | Re-inject the slice of context-db relevant to the next step. |
+| `update "<learning>"` | File a learning into context-db (`--push` to commit + push). |
+| `maintain [folder]`   | Multi-phase audit that keeps the database lean.              |
+| `read [folder]`       | Read everything under a folder, exhaustively.                |
+
+```bash
+python3 .claude/skills/context-db/scripts/context-db-main-agent.py prompt "add a refund endpoint"
+```
+
+In Claude Code the dispatcher is packaged as the `/context-db` skill, so the
+same call is just `/context-db prompt "add a refund endpoint"`.
 
 ## Typical folder structure
 
 ```
 your-project/
+├── AGENTS.md                              ← opt-in: tells the agent the commands exist
 ├── .claude/
-│   ├── rules/context-db.md                ← load the skill every conversation
 │   └── skills/
-│       └── context-db/                    ← unified skill: all commands + scripts
+│       └── context-db/                    ← the skill: commands + scripts
 │           ├── SKILL.md
 │           └── scripts/
 │               ├── context-db-generate-toc.py
 │               ├── context-db-main-agent.py
-│               └── context-db-sub-agent.py
-├── .context-db.json                       ← per-command mode/model/posture
+│               └── context-db-resolve-path.py
 └── context-db/
+    ├── ON_PROMPT.md                       ← optional: inlined on every prompt
+    ├── ON_UPDATE.md                       ← optional: inlined on every update
+    ├── ON_MAINTAIN.md                     ← optional: inlined on every maintain
     ├── <project-name>-project/            ← project-specific knowledge
-    │   ├── <project-name>-project.md      ← folder description (frontmatter only)
-    │   ├── ON_START.md                    ← orientation, inlined once per session
-    │   ├── ON_ALL.md                      ← brief rules, inlined every command
+    │   ├── <project-name>-project.md      ← folder descriptor (frontmatter only)
     │   ├── architecture.md                ← document (frontmatter + body)
     │   └── data-model/
     ├── coding-standards/                  ← project-agnostic (often symlinked)
@@ -70,26 +85,20 @@ project-agnostic and often symlinked from a shared standards repo — see
 
 ## Wiring it in
 
-context-db works with any agent that has a project-level standing instruction
-mechanism — Claude Code rules, Cursor rules, `AGENTS.md`, `.cursorrules`,
-`copilot-instructions.md`. The pattern is universal:
+context-db is **opt-in**. There is no startup hook and nothing fires on its own.
+You reach it in one of two ways:
 
-> Tell the agent to run `/context-db load-start-context` at the start of every
-> conversation, and follow what it prints.
+- **Invoke the commands directly** when you want them — by hand, or as the
+  `/context-db` skill in Claude Code.
+- **Teach the agent to reach for them** by pasting the shipped `AGENTS.md`
+  boilerplate (`templates/AGENTS.md`) into your agent's standing-instructions
+  file — `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, or
+  `.github/copilot-instructions.md`. The agent then runs `prompt` before a task
+  and `update` after, on its own.
 
-That single delegation gives the agent the read mechanics, the context-usage
-framing, and every file matched by `on_start` / `on_all` globs in
-`.context-db.json`. The five sub-commands — `prompt`, `pre-review`, `review`,
-`update`, `maintain` — handle context re-injection, plan checks, diff audits,
-filing learnings, and database upkeep respectively.
-
-The exact text each sub-command injects into the agent's context is shown in
-[Config Effects](../reference/config-effects.md), generated from the dispatcher
-itself so it can't drift from what the agent actually receives. For the
-underlying schema, posture toggles, and per-command overrides, see
-[Configuring Posture](../guide/configuring-posture.md) and
-[Commands](../guide/commands.md). For the rule body and per-agent install, see
-[Rules](../guide/rules.md) and [Getting Started](../guide/getting-started.md).
+The three optional `ON_*.md` files at the root of `context-db/` are the only
+always-on mechanism: if present, each is inlined automatically when its matching
+command runs. No configuration file, no globs.
 
 ## Why this design
 
@@ -116,11 +125,9 @@ project — see [Efficacy](../guide/efficacy.md).
 
 ## Where to next
 
-- [Getting Started](../guide/getting-started.md) — install paths for Claude
-  Code, Cursor, Codex/`AGENTS.md`, and Copilot.
-- [Commands](../guide/commands.md) — the sub-command catalog: `prompt`,
-  `pre-review`, `review`, `update`, `maintain`.
-- [Configuring Posture](../guide/configuring-posture.md) — `.context-db.json`,
-  `on_start` / `on_all` / per-sub-command globs.
-- [Reference](../reference/specification.md) — format specification, CLI, and
-  the literal text the dispatcher emits under different configs.
+- [Getting Started](../guide/getting-started.md) — install and opt-in wiring.
+- [Commands](../guide/commands.md) — the command catalog: `prompt`, `update`,
+  `maintain`, `read`.
+- [Cross-Project Sharing](../guide/cross-project-sharing.md) — symlink folders
+  from other repos.
+- [Reference](../reference/specification.md) — format specification and CLI.

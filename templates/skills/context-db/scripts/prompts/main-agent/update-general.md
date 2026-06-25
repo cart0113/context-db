@@ -21,12 +21,12 @@ broader standards shared across projects. Route accordingly, but use judgement.
 Do not persist things derivable from the code — CLI flags, function signatures,
 file layouts. The code is the source of truth for those.
 
-If what you are persisting is critical enough that the next agent must see it
-every session (or on every subcommand), emit a single concise hint line after
-your update — e.g.
-`hint: consider adding <file> to on_start in .context-db.json`. Only suggest
-this when the content is clearly load-bearing; real estate in those files
-(especially on_all) is at a premium.
+If what you are persisting is critical enough that the next agent must see it on
+every `/context-db prompt` — not just when it happens to navigate there — say
+so: it could live in `context-db/ON_PROMPT.md`, the optional file inlined
+automatically on every prompt. Only suggest this when the content is clearly
+load-bearing; that file is re-read on every prompt, so real estate in it is at a
+premium.
 
 If you are unsure or want clarification, ask the user.
 

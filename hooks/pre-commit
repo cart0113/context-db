@@ -7,9 +7,7 @@
 #   2. ruff on staged python files
 #   3. cache-bust docs/index.html if docs changed
 #   4. TOC script tests if the script or tests changed
-#   5. regenerate docs/src/reference/config-effects.md if dispatcher,
-#      prompt templates, the example fixture, or the generator changed
-#   6. regenerate docs/src/reference/cli.md if dispatcher, prompt
+#   5. regenerate docs/src/reference/cli.md if dispatcher, prompt
 #      templates, or the generator changed
 #
 # Install:
@@ -79,22 +77,7 @@ if [ -n "$TOC_FILES" ]; then
     }
 fi
 
-# ── 5. Regenerate config-effects docs page if inputs changed ───────────────
-
-CONFIG_EFFECTS_INPUTS=$(git diff --cached --name-only \
-    | grep -E '^(templates/skills/context-db/scripts/|\.claude/skills/context-db/scripts/|example/acme-payments-repo/|bin/build-config-effects-docs\.py)' \
-    || true)
-
-if [ -n "$CONFIG_EFFECTS_INPUTS" ]; then
-    echo "Regenerating docs/src/reference/config-effects.md..."
-    python3 bin/build-config-effects-docs.py >/dev/null || {
-        echo "config-effects generator failed — fix before committing."
-        exit 1
-    }
-    git add docs/src/reference/config-effects.md
-fi
-
-# ── 6. Regenerate CLI reference if dispatcher or prompt templates changed ──
+# ── 5. Regenerate CLI reference if dispatcher or prompt templates changed ──
 
 CLI_REFERENCE_INPUTS=$(git diff --cached --name-only \
     | grep -E '^(templates/skills/context-db/scripts/|\.claude/skills/context-db/scripts/|bin/build-cli-reference\.py)' \

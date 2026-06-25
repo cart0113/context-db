@@ -11,46 +11,26 @@
 For each subcommand, this page shows the literal `--help` output and
 the verbatim instruction text the dispatcher emits to the agent at
 run time. For the higher-level guide, see
-[Commands](../guide/commands.md). For complete payloads under
-different `.context-db.json` configs, see
-[Config Effects](config-effects.md).
+[Commands](../guide/commands.md).
 
 ## Top-level
 
 ```text
-usage: context-db [-h]
-                  {load-manual,prompt,pre-review,review,update,read-all,read,load-start-context,maintain}
-                  ...
+usage: context-db [-h] {prompt,update,maintain,read,help} ...
 
 Project knowledge base
 
 positional arguments:
-  {load-manual,prompt,pre-review,review,update,read-all,read,load-start-context,maintain}
-    load-manual         Load a single instruction template
-    prompt              Consult knowledge base
-    pre-review          Check plan against standards before implementing
-    review              Review changes against conventions
+  {prompt,update,maintain,read,help}
+    prompt              Consult the knowledge base
     update              File learnings into context-db
-    read-all            Exhaustively read everything under a folder
-    read                Inline full content of files/folders/globs
-    load-start-context  Emit on-start context: on_start + on_all + read
-                        mechanics/usage
     maintain            Audit and maintain context-db
+    read                Read everything under a context-db folder,
+                        exhaustively
+    help                Show this help message
 
 optional arguments:
   -h, --help            show this help message and exit
-```
-
-## `/context-db load-start-context` {#load-start-context}
-
-**CLI**
-
-```text
-usage: context-db load-start-context [-h] [--config CONFIG]
-
-optional arguments:
-  -h, --help       show this help message and exit
-  --config CONFIG
 ```
 
 ## `/context-db prompt` {#prompt}
@@ -58,27 +38,15 @@ optional arguments:
 **CLI**
 
 ```text
-usage: context-db prompt [-h] [--use-git-diff [N]]
-                         [--mode {sub-agent,main-agent,ask}]
-                         [--model {haiku,sonnet,opus,ask}] [--config CONFIG]
-                         [--debug] [--load-start-context]
-                         [instruction]
+usage: context-db prompt [-h] [--use-git-diff [N]] [instruction]
 
 positional arguments:
   instruction
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --use-git-diff [N]    Use git diff to examine context-db changes to focus on
-                        recently updated context. N=commits (default 3,
-                        0=uncommitted only)
-  --mode {sub-agent,main-agent,ask}
-  --model {haiku,sonnet,opus,ask}
-  --config CONFIG
-  --debug
-  --load-start-context  Also inline on_start content before the command output
-                        (use for sub-agents that missed the session-start
-                        load).
+  -h, --help          show this help message and exit
+  --use-git-diff [N]  Surface recently changed context-db files first.
+                      N=commits (default 3, 0=uncommitted only).
 ```
 
 **Canonical instruction text** — what the dispatcher
@@ -99,129 +67,20 @@ context from context-db later, use the read mechanics above directly.
 
 _Source: `templates/skills/context-db/scripts/prompts/main-agent/prompt.md`_
 
-## `/context-db pre-review` {#pre-review}
-
-**CLI**
-
-```text
-usage: context-db pre-review [-h] [--mode {sub-agent,main-agent,ask}]
-                             [--model {haiku,sonnet,opus,ask}]
-                             [--config CONFIG] [--debug]
-                             [--load-start-context]
-                             [instruction]
-
-positional arguments:
-  instruction
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --mode {sub-agent,main-agent,ask}
-  --model {haiku,sonnet,opus,ask}
-  --config CONFIG
-  --debug
-  --load-start-context  Also inline on_start content before the command output
-                        (use for sub-agents that missed the session-start
-                        load).
-```
-
-**Canonical instruction text** — what the dispatcher
-emits to the agent when this subcommand runs:
-
-```markdown
-# Pre Review Instructions
-
-You are about to start coding. Before you do, navigate context-db for standards,
-conventions, and pitfalls that apply to your planned changes.
-
-You already know your plan from the conversation. Look for:
-
-- Coding standards (general and language-specific for what you're writing)
-- Conventions and patterns used in this project
-- Pitfalls, gotchas, things that break in non-obvious ways
-- Files that must change together, ordering dependencies
-- Design decisions that constrain your approach
-
-Follow what you find when making your edits.
-
-Do not run /context-db pre-review again yourself. The user invokes this. If you
-need more context from context-db later, use the read mechanics above directly.
-```
-
-_Source: `templates/skills/context-db/scripts/prompts/main-agent/pre-review.md`_
-
-## `/context-db review` {#review}
-
-**CLI**
-
-```text
-usage: context-db review [-h] [--context-db-only-review]
-                         [--mode {sub-agent,main-agent,ask}]
-                         [--model {haiku,sonnet,opus,ask}] [--config CONFIG]
-                         [--debug] [--load-start-context]
-                         [instruction]
-
-positional arguments:
-  instruction
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --context-db-only-review
-                        Only flag issues backed by context-db conventions
-  --mode {sub-agent,main-agent,ask}
-  --model {haiku,sonnet,opus,ask}
-  --config CONFIG
-  --debug
-  --load-start-context  Also inline on_start content before the command output
-                        (use for sub-agents that missed the session-start
-                        load).
-```
-
-**Canonical instruction text** — what the dispatcher
-emits to the agent when this subcommand runs:
-
-```markdown
-# Review Command Instructions
-
-Review your recent changes against the project's context-db knowledge base.
-
-1. Run git diff to see what changed
-2. Navigate context-db for relevant conventions and standards
-3. Compare your changes against what you find
-4. Fix real issues, use your judgment on edge cases
-
-Do not run /context-db review again yourself. The user will invoke it if needed.
-If you need more context from context-db later, use the read mechanics above
-directly. If you need to write to context-db:
-`/context-db load-manual write-mechanics`
-```
-
-_Source: `templates/skills/context-db/scripts/prompts/main-agent/review.md`_
-
 ## `/context-db update` {#update}
 
 **CLI**
 
 ```text
-usage: context-db update [-h] [--commit] [--push]
-                         [--mode {sub-agent,main-agent,ask}]
-                         [--model {haiku,sonnet,opus,ask}] [--config CONFIG]
-                         [--debug] [--load-start-context]
-                         [instruction]
+usage: context-db update [-h] [--commit] [--push] [instruction]
 
 positional arguments:
   instruction
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --commit              Commit affected files after updating context-db
-  --push                Push after committing (implies --commit)
-  --mode {sub-agent,main-agent,ask}
-  --model {haiku,sonnet,opus,ask}
-  --config CONFIG
-  --debug
-  --load-start-context  Also inline on_start content before the command output
-                        (use for sub-agents that missed the session-start
-                        load).
+  -h, --help   show this help message and exit
+  --commit     Commit affected files after updating context-db
+  --push       Push after committing (implies --commit)
 ```
 
 **Canonical instruction text** — what the dispatcher
@@ -251,12 +110,12 @@ broader standards shared across projects. Route accordingly, but use judgement.
 Do not persist things derivable from the code — CLI flags, function signatures,
 file layouts. The code is the source of truth for those.
 
-If what you are persisting is critical enough that the next agent must see it
-every session (or on every subcommand), emit a single concise hint line after
-your update — e.g.
-`hint: consider adding <file> to on_start in .context-db.json`. Only suggest
-this when the content is clearly load-bearing; real estate in those files
-(especially on_all) is at a premium.
+If what you are persisting is critical enough that the next agent must see it on
+every `/context-db prompt` — not just when it happens to navigate there — say
+so: it could live in `context-db/ON_PROMPT.md`, the optional file inlined
+automatically on every prompt. Only suggest this when the content is clearly
+load-bearing; that file is re-read on every prompt, so real estate in it is at a
+premium.
 
 If you are unsure or want clarification, ask the user.
 
@@ -272,17 +131,13 @@ _Source: `templates/skills/context-db/scripts/prompts/main-agent/update-general.
 **CLI**
 
 ```text
-usage: context-db maintain [-h] [--config CONFIG] [--load-start-context]
-                           [path]
+usage: context-db maintain [-h] [path]
 
 positional arguments:
   path
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --config CONFIG
-  --load-start-context  Also inline on_start content before the command
-                        output.
+  -h, --help  show this help message and exit
 ```
 
 **Canonical instruction text** — what the dispatcher
@@ -354,53 +209,12 @@ Do not run /context-db maintain yourself. The user invokes this.
 
 _Source: `templates/skills/context-db/scripts/prompts/main-agent/maintain-instructions.md`_
 
-## `/context-db load-manual` {#load-manual}
-
-**CLI**
-
-```text
-usage: context-db load-manual [-h] section
-
-positional arguments:
-  section     Section to load (see list below)
-
-optional arguments:
-  -h, --help  show this help message and exit
-
-available sections:
-
-  read-mechanics          How to navigate context-db via TOC script
-  prompt                  Instructions for prompt command
-  context-usage           Context-db is a map, not truth — verify against code
-  write-mechanics         How to edit context-db files
-  write-content-guide     What belongs in context-db
-  persist-to-context-db   Use context-db, not auto-memory, for project knowledge
-  pre-review              Check plan against standards before implementing
-  review                  Review changes against conventions
-  update-general          File learnings into context-db
-  update-commit           How to write commit messages
-```
-
 ## `/context-db read` {#read}
 
 **CLI**
 
 ```text
-usage: context-db read [-h] paths [paths ...]
-
-positional arguments:
-  paths       One or more paths or glob patterns
-
-optional arguments:
-  -h, --help  show this help message and exit
-```
-
-## `/context-db read-all` {#read-all}
-
-**CLI**
-
-```text
-usage: context-db read-all [-h] [folder]
+usage: context-db read [-h] [folder]
 
 positional arguments:
   folder
@@ -413,7 +227,7 @@ optional arguments:
 emits to the agent when this subcommand runs:
 
 ```markdown
-# Read All
+# Read
 
 Read everything in `{target_path}` exhaustively — every file, every subfolder,
 all the way down.
@@ -428,5 +242,5 @@ subfolders. Do not skip anything based on relevance; the goal is complete
 coverage.
 ```
 
-_Source: `templates/skills/context-db/scripts/prompts/main-agent/read-all.md`_
+_Source: `templates/skills/context-db/scripts/prompts/main-agent/read.md`_
 

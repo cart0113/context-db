@@ -70,83 +70,60 @@ status: deprecated
 When `status` is not `stable`, the TOC script appends it to the entry so agents
 see the lifecycle without opening the file.
 
+## The `ON_*.md` special files
+
+Three optional files at the **root** of `context-db/` are inlined automatically
+when their command runs. They are the only always-on mechanism — there is no
+configuration file and no glob list.
+
+| File                        | Inlined on                   |
+| --------------------------- | ---------------------------- |
+| `context-db/ON_PROMPT.md`   | every `/context-db prompt`   |
+| `context-db/ON_UPDATE.md`   | every `/context-db update`   |
+| `context-db/ON_MAINTAIN.md` | every `/context-db maintain` |
+
+Rules:
+
+- Presence is the only switch. If the file exists, it is used; if not, nothing
+  happens.
+- The body is inlined raw — frontmatter stripped, no preamble, no path
+  attribution, no headings added. Whatever the file contains is what the agent
+  sees. The author owns the framing.
+- Give each file YAML `description` frontmatter so it appears in the TOC when
+  the script runs on the `context-db/` root. The frontmatter is stripped on
+  inline, so it costs nothing at run time.
+- The content is placed right before the user's instruction (for `prompt` and
+  `update`) or at the end of the output (for `maintain`). Recency matters: it is
+  the freshest thing in the agent's context when it acts.
+
+In practice `ON_PROMPT.md` is the only one most projects use; `ON_UPDATE.md` and
+`ON_MAINTAIN.md` exist for the rare case. A worked example to copy lives at
+`templates/ON_PROMPT.md`.
+
 ## Directory layout
 
 ```
 your-project/
+├── AGENTS.md                              ← opt-in standing instructions
 ├── .claude/
-│   ├── rules/context-db.md                ← standing rule loaded every session
-│   └── skills/context-db/                 ← unified skill: dispatcher + scripts
+│   └── skills/context-db/                 ← the skill: dispatcher + scripts
 │       ├── SKILL.md
 │       └── scripts/
 │           ├── context-db-generate-toc.py
 │           ├── context-db-main-agent.py
-│           ├── context-db-resolve-path.py
-│           └── context-db-sub-agent.py
-├── .context-db.json                       ← per-command mode/model/posture
+│           └── context-db-resolve-path.py
 └── context-db/
+    ├── ON_PROMPT.md                       ← optional, inlined on every prompt
+    ├── ON_UPDATE.md                       ← optional, inlined on every update
+    ├── ON_MAINTAIN.md                     ← optional, inlined on every maintain
     ├── <project-name>-project/            ← knowledge specific to this repo
     │   ├── <project-name>-project.md      ← folder descriptor
-    │   ├── ON_START.md                    ← inlined once per session
-    │   ├── ON_ALL.md                      ← inlined every command
     │   ├── architecture.md                ← context document
     │   └── data-model/
     │       ├── data-model.md
     │       └── entities.md
     └── coding-standards/                  ← project-agnostic, often symlinked
 ```
-
-## `.context-db.json` schema
-
-JSONC (JSON with `// line comments` and trailing commas). All keys optional.
-
-```jsonc
-{
-  // Fallback for any per-command key not set below.
-  "defaults": {
-    "mode": "main-agent", // main-agent | sub-agent
-  },
-
-  // Glob patterns relative to context-db/.
-  "on_start": ["*-project/ON_START.md"],
-  "on_all": ["*-project/ON_ALL.md"],
-
-  // Per-sub-command always-on lists. Optional; default to [].
-  "on_prompt": [],
-  "on_pre_review": [],
-  "on_review": [],
-  "on_update": [],
-  "on_maintain": [],
-}
-```
-
-The dispatcher carries sensible model defaults internally (`haiku` for read
-commands, `sonnet` for `review` and `update`); set `model` only to override.
-
-### Per-command keys
-
-| Key     | Type | Default      | Effect                                                                               |
-| ------- | ---- | ------------ | ------------------------------------------------------------------------------------ |
-| `mode`  | enum | `main-agent` | `main-agent` runs in the active conversation. `sub-agent` spawns a separate process. |
-| `model` | enum | `haiku`      | Model used for sub-agent dispatch and recommended for main-agent execution.          |
-
-`update` and `maintain` are pinned to `main-agent` regardless of `mode` because
-they edit the working tree.
-
-### Always-loaded content
-
-| Key             | Type           | Effect                                                                             |
-| --------------- | -------------- | ---------------------------------------------------------------------------------- |
-| `on_start`      | array of globs | Files inlined raw at the top of `load-start-context` (once per session).           |
-| `on_all`        | array of globs | Files inlined raw at the end of every sub-command, right before user instructions. |
-| `on_prompt`     | array of globs | Files inlined right after `on_all` when `/context-db prompt` runs. Default `[]`.   |
-| `on_pre_review` | array of globs | Same, scoped to `/context-db pre-review`. Default `[]`.                            |
-| `on_review`     | array of globs | Same, scoped to `/context-db review`. Default `[]`.                                |
-| `on_update`     | array of globs | Same, scoped to `/context-db update`. Default `[]`.                                |
-| `on_maintain`   | array of globs | Same, scoped to `/context-db maintain`. Default `[]`.                              |
-
-Globs are relative to `context-db/`. Folders expand recursively. Frontmatter is
-stripped from inlined content; body is emitted as-is.
 
 ## Symlinks
 
@@ -220,20 +197,16 @@ python3 .claude/skills/context-db/scripts/context-db-generate-toc.py context-db/
 
 ### `context-db-main-agent.py`
 
-The sub-command dispatcher. See [Commands](../guide/commands.md) for the
-sub-command catalog.
+The command dispatcher. See [Commands](../guide/commands.md) for the catalog and
+[CLI reference](cli.md) for the literal `--help` and instruction text.
 
 ```bash
 python3 .claude/skills/context-db/scripts/context-db-main-agent.py <command> [args]
 ```
 
-Each sub-command takes one positional `instruction` argument where one applies.
-Multi-word instructions must be quoted as a single shell argument.
-
-### `context-db-sub-agent.py`
-
-Internal — invoked by the dispatcher when a sub-command's `mode` is `sub-agent`.
-Not run directly. See [Sub-Agents](../guide/sub-agents.md).
+Commands: `prompt`, `update`, `maintain`, `read`, `help`. Where a command takes
+an instruction it is one positional argument — multi-word instructions must be
+quoted as a single shell argument.
 
 ### `context-db-resolve-path.py`
 
@@ -262,7 +235,8 @@ bin/build_site.sh --template file.html <source_dir> <output_dir>
 
 ## pre-commit hook
 
-Runs formatters (prettier, ruff) on staged files:
+Runs formatters (prettier, ruff) on staged files and regenerates the CLI
+reference when the dispatcher or prompt templates change:
 
 ```bash
 cp hooks/pre-commit .git/hooks/pre-commit

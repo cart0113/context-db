@@ -26,10 +26,8 @@ fast-api-test/
 build/
 context-db/general-standards
 context-db/general-coding-standards
-.context-db.json
 
-# Example fixture — must be checked in for the dynamic config-effects docs
-# generator and so users can clone a runnable reference layout.
+# Example fixture — must be checked in so users can clone a runnable reference
+# layout (and so the CLI-reference generator has a tree to run against).
 !example/**/.claude
 !example/**/.claude/**
-!example/**/.context-db.json
