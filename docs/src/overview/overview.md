@@ -90,11 +90,14 @@ You reach it in one of two ways:
 
 - **Invoke the commands directly** when you want them — by hand, or as the
   `/context-db` skill in Claude Code.
-- **Teach the agent to reach for them** by pasting the shipped `AGENTS.md`
-  boilerplate (`templates/AGENTS.md`) into your agent's standing-instructions
-  file — `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, or
-  `.github/copilot-instructions.md`. The agent then runs `prompt` before a task
-  and `update` after, on its own.
+- **Make the agent aware of it** by pasting the shipped `AGENTS.md` boilerplate
+  (`templates/AGENTS.md`) into your agent's standing-instructions file —
+  `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, or
+  `.github/copilot-instructions.md`. The boilerplate tells the agent the
+  knowledge base exists and — deliberately — that it must **not** read
+  `context-db/` on its own; it engages only when you invoke a `/context-db`
+  command. This keeps the database from leaking into context as background
+  reading, which is exactly the failure mode context-db is built to avoid.
 
 The three optional `ON_*.md` files at the root of `context-db/` are the only
 always-on mechanism: if present, each is inlined automatically when its matching

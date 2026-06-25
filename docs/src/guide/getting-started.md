@@ -57,10 +57,10 @@ Then edit it down to your rule. Keep it brief — every line is re-read on every
 `context-db/ON_MAINTAIN.md` (inlined on every `maintain`) — most projects never
 add them. See [Commands](commands.md#the-onmd-special-files).
 
-## 4. (Optional) Tell the agent the commands exist
+## 4. (Optional) Make the agent aware of it
 
-context-db is opt-in — there is no startup hook. If you want the agent to reach
-for it on its own, paste the shipped boilerplate into your agent's
+context-db is opt-in — there is no startup hook. To make the agent aware the
+knowledge base exists, paste the shipped boilerplate into your agent's
 standing-instructions file:
 
 ```bash
@@ -70,10 +70,13 @@ cat templates/AGENTS.md >> your-project/AGENTS.md
 `AGENTS.md` is the cross-agent convention (Codex and many others read it);
 Claude Code reads `CLAUDE.md`, Cursor reads `.cursor/rules/`, and Copilot reads
 `.github/copilot-instructions.md`. Paste the same body into whichever your agent
-uses. It tells the agent to run `prompt` before a task and `update` after.
+uses. It tells the agent the database exists and — deliberately — that it must
+**not** read `context-db/` on its own; the agent engages only when you invoke a
+`/context-db` command.
 
-If you skip this step, nothing fires automatically — you invoke the commands by
-hand (or as the `/context-db` skill in Claude Code) when you want them.
+If you skip this step, nothing fires automatically either way — you invoke the
+commands by hand (or as the `/context-db` skill in Claude Code) when you want
+them.
 
 ## 5. Verify
 
