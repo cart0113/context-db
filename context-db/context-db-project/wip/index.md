@@ -1,3 +1,3 @@
 # Files
 
-* [v0.1 cutover](v0.1-cutover.md) - What is left of the v0.1 cutover now that the rewrite is built, published, and the default branch — migrating the work projects and the shared standards repository, a missing LICENSE file, and the questions real use should answer. [draft]
+* [v0.1 cutover](v0.1-cutover.md) - Finishing the v0.1 cutover — the rewrite has landed on v0.1, so what is left is migrating the real work projects and the shared standards repository, a missing LICENSE file, and four questions that real use should answer. [draft]

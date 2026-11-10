@@ -2,9 +2,9 @@
 type: Gotcha
 description:
   Prompt-writing lessons from building context delivery — late-session recall,
-  why not to pre-load, rules last and instruction last, positive framing first,
-  cwd-relative paths, and retiring specialized primitives. Read before editing
-  anything under skill/context-db/prompts/.
+  why not to pre-load, rules last and instruction last, testing a prompt on a
+  fresh agent, single-quoting instructions, defining every term, cwd-relative
+  paths. Read before editing anything under skill/context-db/prompts/.
 ---
 
 # Lessons Learned
@@ -31,6 +31,25 @@ even on `update --commit`. The script adds no wording of its own to ON content.
 It adds a `# Project Rules` heading only when the file does not start with a
 heading, because a test agent read unheaded rules as part of the section above
 them.
+
+## Test a prompt change on an agent that has never seen it
+
+Tests and a careful read did not find the problems that three fresh agents found
+in their first run. Each got a throwaway project, the one slash command a user
+would type, and the rule "read SKILL.md and do what it says", plus a request to
+report every place it had to guess, with the wording quoted. That surfaced a
+shell-quoting bug, a hole in the YAML check, three undefined words, and a
+migration that passed every check while still stating old facts.
+
+Do this again after changing any file in `skill/context-db/prompts/`, `SKILL.md`,
+or the migration guide. Tell the agent what a sensible user would answer, so
+that it does not stop at every question, and do not tell it what you expect to
+see.
+
+One trap when testing by hand: within a session the harness shows the copy of
+`SKILL.md` it loaded first. After editing that file, a second `/context-db` call
+in the same session still shows the old text. The script and the prompt files
+are read fresh every time.
 
 ## Tell the agent to single-quote the instruction
 
