@@ -10,10 +10,9 @@ description:
 # Migrating a project from v0.0 to v0.1
 
 Follow these steps in the project being migrated. `<cdb-repo>` is a checkout of
-this repository on the `v0.1` branch. Do the work on a new branch of the
-project and commit at the end.
-
-Ask the user before deleting anything that is not plainly obsolete.
+this repository on the `v0.1` branch; the old system is on its `v0.0` branch. Do
+the work on a new branch of the project and commit at the end. Ask the user
+before deleting anything that is not plainly obsolete.
 
 ## What changed
 
@@ -55,9 +54,7 @@ cp -r <cdb-repo>/skill/context-db .claude/skills/context-db
 ```
 
 For an agent that does not use `.claude/skills/`, put the folder wherever that
-agent's skills live. The script finds its prompts relative to itself.
-
-Note which commit you installed, for the commit message at the end:
+agent's skills live. Note which commit you installed, for the commit message:
 
 ```bash
 git -C <cdb-repo> rev-parse --short HEAD
@@ -78,13 +75,8 @@ It adds a guessed `type` to every note, maps retired statuses to `draft`, turns
 backticked paths that name another note into links, and moves the ON files and
 `wip.md`. Running it twice is safe.
 
-It prints four lists. Keep the output; later steps work through it.
-
-- **Changed**: nothing to do.
-- **Types guessed**: reviewed in step 5.
-- **Needs a decision**: one line per thing the script could not settle. Steps 4
-  and 5 say what to do with each kind.
-- **Mentions of v0.0 machinery**: handled in step 4.
+It prints four lists. Keep the output; steps 4 and 5 work through "Types
+guessed", "Needs a decision", and "Mentions of v0.0 machinery".
 
 Notes that git ignores are private to this user. The script updates them like
 any other note, and the index leaves them out.
@@ -173,9 +165,8 @@ python3 <cdb-repo>/skill/context-db/context-db.py index context-db/<folder>
 ```
 
 Naming the folder means that repository needs no config of its own. Work through
-steps 4 and 5 there, then commit there. Until that is done the folder still
-works here: `prompt` tells the agent to list the folder instead of reading an
-index.
+steps 4 and 5 there, then commit there. Until then the folder still works here:
+`prompt` tells the agent to list it instead of reading an index.
 
 ## 7. Standing instructions, docs, and hooks
 
@@ -206,5 +197,3 @@ of the second, check that:
 
 Then commit, naming the context-db commit from step 1 in the message. Do not
 run `/context-db wip` or `/context-db update` yourself; tell the user they can.
-
-The v0.0 system remains on the `v0.0` branch of this repository.
