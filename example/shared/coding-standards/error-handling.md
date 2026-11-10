@@ -1,6 +1,8 @@
 ---
 type: Convention
-description: Error handling patterns and exception conventions
+description:
+  Error handling — handle errors where they can be addressed, never swallow an
+  exception, prefer typed errors to string messages
 ---
 
 # Error Handling

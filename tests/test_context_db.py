@@ -21,6 +21,7 @@ MIGRATE = (
     REPO / "context-db" / "context-db-project" / "context-db-migrate-from-v0.0" / "migrate-v0.0.py"
 )
 
+sys.dont_write_bytecode = True  # keep __pycache__ out of the skill folder people copy
 spec = importlib.util.spec_from_file_location("context_db", SCRIPT)
 context_db = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(context_db)
@@ -121,6 +122,60 @@ def test_nested_keys_do_not_become_top_level():
     )
     assert "by" not in meta
     assert meta["description"] == "d"
+
+
+YAML_CASES = [
+    "description: plain value",
+    'description: "double quoted: with a colon"',
+    "description: 'single quoted # not a comment'",
+    "description:\n  folded onto\n  two lines",
+    "description: >-\n  block: with a colon # and a hash",
+    "description: |\n  literal: block",
+    "description: has: a colon inside",
+    "description: ends with a colon:",
+    "description:\n  a line that ends with a colon:\n  and goes on",
+    "description: has a # comment",
+    "description: `backtick` start",
+    'description: "unclosed quote',
+    "description: 'it's wrong'",
+    "description: 'it''s right'",
+    "description: [bracket] start",
+    "description: *star start",
+    "description: - dash start",
+    "description: -dash without a space is fine",
+    "description: http://example.com/x is fine",
+    "description: 10:30 is fine",
+    'description: say "hi" in the middle',
+    'description: "say \\"hi\\" escaped"',
+    'description: "bad "inner" quotes"',
+    "description: %percent start",
+    "description: @at start",
+    "description: {brace} start",
+    "description: question? mark is fine",
+    "description: ? question start",
+    "description: a,b, c commas are fine",
+    "description: 'padded'  ",
+    "description:\n\tTab indented",
+    "description: Refunds over $10,000 — approval & sign-off (finance)",
+]
+
+
+@pytest.mark.parametrize("case", YAML_CASES)
+def test_the_yaml_check_agrees_with_a_real_yaml_parser(case):
+    """A value passes the check exactly when PyYAML reads the same string we do."""
+    yaml = pytest.importorskip("yaml")
+    content = f"---\ntype: X\n{case}\n---\n"
+    header = content.split("\n---", 1)[0][4:]
+    meta, _ = context_db.parse_frontmatter(content)
+    try:
+        loaded = yaml.safe_load(header)
+        expected = loaded["description"]
+        real_yaml_agrees = isinstance(expected, str) and (
+            " ".join(expected.split()) == " ".join(meta["description"].split())
+        )
+    except (yaml.YAMLError, KeyError, TypeError):
+        real_yaml_agrees = False
+    assert (not context_db.yaml_problems(content)) == real_yaml_agrees, case
 
 
 def test_byte_order_mark_and_bad_bytes_do_not_break_reading(project):
@@ -282,6 +337,8 @@ def test_index_on_a_subfolder_indexes_the_whole_bundle(project):
         ("x.md", "---\ndescription: d\n---\n", "no `type`"),
         ("x.md", "---\ntype: X\n---\n", "no `description`"),
         ("x.md", doc(extra="status: experiment\n"), "status `experiment`"),
+        ("x.md", doc(description="Compliance rule: refunds"), "`description` is not valid YAML"),
+        ("x.md", doc(description="`index.md` rules"), "it starts with ```"),
         ("x.md", doc(body="See [gone](./gone.md).\n"), "broken link `./gone.md`"),
         ("x.md", doc(body="See [root](/x.md).\n"), "starts with /"),
         ("sub/x.md", doc(), "no folder descriptor"),
@@ -411,7 +468,13 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
     assert "wip/refund-endpoint.md` — Adding POST /refunds" in out
     assert "[branch: feature/refunds]" in out
     assert "context-db-on-markdown" not in out.split("# Folders")[1]
-    marks = ("# Folders", "# Work In Progress", "PCI-scoped", "# User Instruction")
+    marks = (
+        "# Work In Progress",
+        "# Folders",
+        "# Project Rules",
+        "PCI-scoped",
+        "# User Instruction",
+    )
     order = [out.index(mark) for mark in marks]
     assert order == sorted(order)
     assert out.rstrip().endswith("add a refund endpoint")
@@ -468,6 +531,33 @@ def test_on_file_is_inlined_without_comments_or_frontmatter(project):
     assert "hidden" not in out and "ignored" not in out
 
 
+def test_on_rules_keep_a_heading_the_author_wrote(project):
+    on_file = project / "context-db" / "context-db-on-markdown" / "ON_PROMPT.md"
+    write(on_file, "<!-- note -->\nBe careful.\n")
+    assert "# Project Rules\n\nBe careful." in run(project, "prompt", "x").stdout
+    write(on_file, "# House Rules\n\nBe careful.\n")
+    out = run(project, "prompt", "x").stdout
+    assert "# House Rules\n\nBe careful." in out and "# Project Rules" not in out
+    write(on_file, "<!-- only a comment -->\n")
+    assert "# Project Rules" not in run(project, "prompt", "x").stdout
+
+
+def test_an_instruction_can_come_from_standard_input(project):
+    tricky = "Don't retry refunds over $10,000; they aren't \"idempotent\" & `fail`"
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "update", "-", "--push"],
+        check=False,
+        cwd=str(project),
+        input=tricky + "\n",
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.rstrip().endswith("# User Instruction\n\n" + tricky)
+    assert "Then push the current branch" in result.stdout
+
+
 def test_printed_commands_use_the_local_interpreter_override(project):
     assert run(project, "init", "--local", "python=/opt/py/bin/python3").returncode == 0
     assert "/opt/py/bin/python3 " in run(project, "update").stdout
@@ -492,6 +582,7 @@ def test_wip_shows_git_state_and_every_wip_file(project):
     out = run(project, "wip", "plan the x work").stdout
     assert "- Current branch: `feature/x`" in out
     assert "- Main branch: `main`" in out
+    assert "Work has landed when it is merged into `main`" in out
     assert "add src" in out
     assert "src.py" in out
     assert "x-plan.md" in out.split("git status --short")[1]
@@ -524,6 +615,26 @@ def test_wip_outside_git(project):
 
 
 # ── configure and init ───────────────────────────────────────────────────────
+
+
+def test_configure_says_when_the_main_branch_is_a_guess(tmp_path):
+    out = run(tmp_path, "configure").stdout
+    assert "Suggested main branch: `main` (a guess: nothing could be detected)" in out
+    git(tmp_path, "init", "-q", "-b", "trunk")
+    write(tmp_path / "a.txt", "x\n")
+    git(tmp_path, "add", "-A")
+    git(tmp_path, "commit", "-q", "-m", "base")
+    out = run(tmp_path, "configure").stdout
+    assert "Suggested main branch: `trunk` (a guess: the branch checked out now" in out
+    git(tmp_path, "update-ref", "refs/remotes/origin/develop", "HEAD")
+    git(tmp_path, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/develop")
+    out = run(tmp_path, "configure").stdout
+    assert "Suggested main branch: `develop` (origin's default branch)" in out
+
+
+def test_an_empty_folder_gets_an_index_that_says_so(project):
+    wip_index = project / "context-db" / "demo-project" / "wip" / "index.md"
+    assert wip_index.read_text() == "<!-- Nothing is in this folder yet. -->\n"
 
 
 def test_configure_reports_state_and_v0_leftovers(tmp_path):
@@ -646,11 +757,9 @@ def test_index_files_follow_the_okf_shape():
         body = path.read_text(encoding="utf-8")
         if body.startswith("---"):
             body = body.split("---", 2)[2]
+        allowed = ("# Subfolders", "# Files", "<!-- Nothing is in this folder yet. -->")
         for line in body.splitlines():
-            assert not line or line in ("# Subfolders", "# Files") or entry.match(line), (
-                path,
-                line,
-            )
+            assert not line or line in allowed or entry.match(line), (path, line)
 
 
 # ── Migration from v0.0 ──────────────────────────────────────────────────────

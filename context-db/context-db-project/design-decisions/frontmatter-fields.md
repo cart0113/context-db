@@ -15,6 +15,23 @@ description:
 | `status`      | Optional: `draft`, `stable` (the default), `deprecated`.        |
 | `branch`      | Optional, on `wip/` files only.                                 |
 
+## The type vocabulary
+
+`Decision`, `Convention`, `Rule`, `Architecture`, `Gotcha`, `Reference`,
+`Research`, `Plan`, `Folder`. Suggested, never enforced. `Rule` was added after
+a test agent had no label for a compliance requirement and hesitated between
+`Convention` and `Gotcha`: a rule is imposed on the project, a convention is
+chosen by it.
+
+## Frontmatter must survive a real YAML parser
+
+The script's own parser is forgiving, but OKF conformance means a strict parser
+must accept the file. A plain description containing `: ` or ` #`, or starting
+with a backtick or a quote, is the usual way an agent breaks that.
+`yaml_problems()` flags those cases without a YAML dependency, and a test checks
+its verdicts against PyYAML on a list of tricky values. Add a case there when a
+new failure turns up.
+
 ## The principle
 
 A key earns its place only if it (1) cannot be derived from the filesystem or

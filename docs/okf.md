@@ -93,7 +93,7 @@ These are the parts of the specification that context-db uses:
 | --- | --- | --- |
 | Bundles | 3 | Each top-level folder in `context-db/` is a bundle: the project folder, and every background folder. |
 | Concepts | 4 | Every Markdown file in those folders is a concept. |
-| `type` | 4.1 | Required, as in OKF. context-db suggests eight values and accepts any. |
+| `type` | 4.1 | Required, as in OKF. context-db suggests nine values and accepts any. |
 | `description` | 4.1 | OKF recommends it. context-db requires it, because it is what the agent reads to decide whether to open a file. |
 | `status` | 5.4 | Used as defined: `draft`, `stable`, or `deprecated`. |
 | Links | 6.1 | Ordinary Markdown links, always in the relative form. |
@@ -101,8 +101,8 @@ These are the parts of the specification that context-db uses:
 | `okf_version` | 12 | Written at the top of each bundle's root `index.md`. |
 | Conformance | 11 | `index --check` tests the three rules above, and a few stricter ones. |
 
-The suggested values for `type` are `Folder`, `Decision`, `Convention`,
-`Architecture`, `Gotcha`, `Reference`, `Research`, and `Plan`. OKF keeps no
+The suggested values for `type` are `Decision`, `Convention`, `Rule`,
+`Architecture`, `Gotcha`, `Reference`, `Research`, `Plan`, and `Folder`. OKF keeps no
 registry of types, so these are context-db's own choice.
 
 ## The parts context-db leaves out
@@ -166,7 +166,9 @@ Settings and rules kept outside the bundles
 
 Stricter checks
 : Besides the three OKF rules, `index --check` fails on a missing description,
-  a broken link, a folder with no descriptor, or a symlink inside a bundle.
+  a broken link, a folder with no descriptor, or a symlink inside a bundle. It
+  also catches the common ways a description stops being valid YAML, such as a
+  colon followed by a space.
 
 ## Where context-db departs from the LLM wiki
 

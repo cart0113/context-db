@@ -1,6 +1,7 @@
 ---
 type: Convention
-description: Variable, function, and file naming rules
+description:
+  Naming rules for functions, classes, constants, and files
 ---
 
 # Naming Conventions

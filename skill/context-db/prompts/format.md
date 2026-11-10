@@ -9,9 +9,12 @@ Every `.md` file in the knowledge base starts with YAML frontmatter:
       follows from it
     ---
 
-- `type` is required. One short label for the kind of knowledge: `Folder`,
-  `Decision`, `Convention`, `Architecture`, `Gotcha`, `Reference`, `Research`,
-  or `Plan`. Pick the closest; coin a new one only when none fits.
+- `type` is required. It says what kind of knowledge the file holds, and the
+  Open Knowledge Format requires it. Use one of `Decision`, `Convention`,
+  `Rule`, `Architecture`, `Gotcha`, `Reference`, `Research`, `Plan`, or
+  `Folder`. A `Rule` is a requirement imposed on the project, such as a business
+  or compliance rule; a `Convention` is how the team chooses to do things. Coin
+  a new type only when none fits.
 - `description` is required. It is the only thing an agent sees before deciding
   whether to open the file, so be specific: "scheduler execution flow, budget
   enforcement hook", not "Architecture overview". Include alternative terms when
@@ -19,6 +22,11 @@ Every `.md` file in the knowledge base starts with YAML frontmatter:
 - `status` is optional: `draft` or `deprecated`. Omit it when the content is
   stable.
 - Add no other keys, except `branch` on files in `wip/`.
+
+The frontmatter must be valid YAML. In a description, do not write a colon
+followed by a space, or a space followed by `#`, and do not start it with a
+quote, a backtick, or a bracket. If you need any of those, wrap the whole
+description in double quotes.
 
 **Folders.** Every folder has a descriptor named after it,
 `<folder>/<folder>.md`, with `type: Folder` and a description of what the folder

@@ -21,8 +21,8 @@ your project's rules.
 
 What the agent does:
 
-1. Reads the list of knowledge folders and the list of plans in `wip/`.
-2. Opens the `index.md` of each folder that looks relevant.
+1. Reads the plans in `wip/` that bear on the task.
+2. Opens the `index.md` of each knowledge folder that looks relevant.
 3. Opens only the files whose descriptions match the task.
 4. Gets on with the task, and checks what it read against the code.
 
@@ -33,7 +33,7 @@ code and to tell you.
 :color: secondary
 
 Words in braces are filled in when the command runs. After this text the agent
-sees the folder list, the plans in `wip/`, your `ON_PROMPT.md`, and your
+sees the plans in `wip/`, the folder list, your `ON_PROMPT.md` rules, and your
 instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/prompt.md
@@ -100,8 +100,9 @@ What the agent does:
 1. Reads every plan in `wip/`.
 2. Looks at git: the current branch, uncommitted changes, and what has been
    committed since the main branch.
-3. Deletes the plans for work that has landed. Anything worth keeping for the
-   long term is moved into the main knowledge base first.
+3. Deletes the plans for work that has landed, meaning merged into the main
+   branch. Anything worth keeping for the long term is moved into the main
+   knowledge base first.
 4. Writes or updates the plan for what you are doing now.
 
 `prompt` lists the plans in `wip/` every time it runs, so each new session
@@ -162,7 +163,9 @@ card data" is one. Put rules like that in the files in
 | `ON_WIP.md` | `wip` |
 | `ON_CONFIGURE.md` | `configure` |
 
-The text is placed immediately before your instruction, which always comes last.
+The text is placed immediately before your instruction, which always comes
+last. It appears under the heading `Project Rules`, unless your file starts with
+a heading of its own.
 
 Keep these files short, because every line is read on every run. Text inside
 HTML comments is left out, so you can keep notes to yourself in them. An empty

@@ -1,6 +1,7 @@
 ---
 type: Convention
-description: Branch naming and merge strategy
+description:
+  Branch naming, keeping main deployable, and squash merging
 ---
 
 # Branching Strategy

@@ -4,5 +4,6 @@ Everything in this file outside HTML comments is inlined on every
 -->
 
 This is a payments service and it is PCI-scoped. Before touching anything that
-handles card data, storage, or logging, check the project bundle for the
-handling rules. Do not infer them from the code alone.
+handles card data, storage, or logging, read
+`context-db/acme-payments-project/pci-handling.md`. Do not infer the rules from
+the code alone.

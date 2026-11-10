@@ -105,7 +105,7 @@ context-db/
 ├── acme-payments-project/       the project folder: your project's knowledge
 │   ├── index.md                 generated list of everything in this folder
 │   ├── architecture.md
-│   ├── api-reference.md
+│   ├── pci-handling.md
 │   ├── data-model/
 │   └── wip/                     plans for the work in progress
 └── coding-standards/            a background folder shared with other projects
@@ -135,13 +135,14 @@ Every refund request carries an idempotency key. See
 ```markdown
 # Subfolders
 
-* [data-model](data-model/index.md) - Database schema, entities, and relationships
+* [data-model](data-model/index.md) - Database schema — the payment, refund, and merchant entities
 * [wip](wip/index.md) - Plans for what is being built right now
 
 # Files
 
-* [API Reference](api-reference.md) - REST API endpoints, authentication, and error codes
-* [Architecture](architecture.md) - System components, data flow, and service boundaries
+* [API Reference](api-reference.md) - The REST API — authentication and the payments and refunds endpoints
+* [Architecture](architecture.md) - The three services, what each one owns, and how they talk
+* [PCI handling](pci-handling.md) - What may never be stored or logged, and what needs a security review
 ```
 :::
 ::::

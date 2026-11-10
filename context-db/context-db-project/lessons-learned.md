@@ -27,8 +27,24 @@ routing. The script prints where to start; the agent navigates.
 Recency wins. Rules at the top of a composed prompt get diluted by everything
 after them. `ON_*.md` content is emitted at the end of each command's output,
 immediately before the user instruction, which is always the final section,
-even on `update --commit`. The script adds no framing around ON content; its
-author owns the wording.
+even on `update --commit`. The script adds no wording of its own to ON content.
+It adds a `# Project Rules` heading only when the file does not start with a
+heading, because a test agent read unheaded rules as part of the section above
+them.
+
+## Tell the agent to single-quote the instruction
+
+`SKILL.md` once showed the instruction in double quotes. The shell then expands
+`$` and backticks: "Refunds over $10,000" reached the script as "Refunds over
+0,000", with no error. Single quotes, or `-` with the text on standard input,
+pass it through untouched.
+
+## Define every word a step depends on
+
+Fresh agents stalled on three undefined words: "landed" in `wip` (merged, or
+only committed?), "descriptor" in `configure`, and "settle with the user" (wait,
+or proceed?). Each now has a definition or an explicit rule in the prompt. When
+adding a step, ask what a reader with no context would have to guess.
 
 ## Lead with what to do, then the constraints
 

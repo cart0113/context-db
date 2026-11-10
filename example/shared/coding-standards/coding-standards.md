@@ -1,5 +1,5 @@
 ---
 type: Folder
 description:
-  Shared coding standards — naming, error handling, and testing conventions
+  Shared coding standards — naming rules and error handling
 ---

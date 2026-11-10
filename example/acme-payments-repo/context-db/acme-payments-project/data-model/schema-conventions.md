@@ -1,6 +1,8 @@
 ---
 type: Convention
-description: Naming conventions, indexing strategy, and migration rules
+description:
+  Table conventions — snake_case names, UUID primary keys, UTC timestamps, soft
+  deletes, and which columns get indexes
 ---
 
 # Schema Conventions

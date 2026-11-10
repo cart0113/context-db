@@ -1,6 +1,8 @@
 ---
 type: Reference
-description: REST API endpoints, authentication, and error codes
+description:
+  The REST API — bearer-token authentication and the payments and refunds
+  endpoints
 ---
 
 # API Reference

@@ -67,7 +67,7 @@ The block between the `---` lines is the frontmatter.
 
 | Key | Required | Meaning |
 | --- | --- | --- |
-| `type` | yes | The kind of knowledge. Use `Decision`, `Convention`, `Architecture`, `Gotcha`, `Reference`, `Research`, `Plan`, or `Folder`. Make up another only when none of these fits. |
+| `type` | yes | The kind of knowledge. Use `Decision`, `Convention`, `Rule`, `Architecture`, `Gotcha`, `Reference`, `Research`, `Plan`, or `Folder`. Make up another only when none of these fits. |
 | `description` | yes | One or two lines. This is all the agent sees before it decides whether to open the file, so be specific. |
 | `status` | no | `draft` or `deprecated`. Leave it out when the content is current. |
 | `branch` | no | The git branch a plan belongs to. Used only in `wip/`. |
@@ -75,6 +75,11 @@ The block between the `---` lines is the frontmatter.
 A good description names what is in the file. "Scheduler execution flow and the
 budget enforcement hook" works. "Architecture overview" does not. If a topic
 goes by several names, put them all in.
+
+The frontmatter is YAML, and YAML is fussy about a few characters. In a
+description, avoid a colon followed by a space, and a space followed by `#`. If
+you need them, put the whole description in double quotes. The checker tells you
+when a description breaks these rules.
 
 Keep a file to about 150 lines, and 200 at most. When a file outgrows that,
 turn it into a folder.
@@ -88,7 +93,7 @@ the index one level up. The file needs nothing but frontmatter:
 ```markdown
 ---
 type: Folder
-description: Database schema, entities, and relationships
+description: Database schema — the payment, refund, and merchant entities
 ---
 ```
 
@@ -102,13 +107,14 @@ Every folder has an `index.md` that lists what is in it:
 ```markdown
 # Subfolders
 
-* [data-model](data-model/index.md) - Database schema, entities, and relationships
+* [data-model](data-model/index.md) - Database schema — the payment, refund, and merchant entities
 * [wip](wip/index.md) - Plans for what is being built right now
 
 # Files
 
-* [API Reference](api-reference.md) - REST API endpoints, authentication, and error codes
-* [Architecture](architecture.md) - System components, data flow, and service boundaries
+* [API Reference](api-reference.md) - The REST API — authentication and the payments and refunds endpoints
+* [Architecture](architecture.md) - The three services, what each one owns, and how they talk
+* [PCI handling](pci-handling.md) - What may never be stored or logged, and what needs a security review
 ```
 
 You never write these. `update` and `wip` regenerate them from the frontmatter.
@@ -148,6 +154,7 @@ The [`wip` command](commands.md) keeps this folder up to date.
 `index --check` reports these as errors:
 
 - a file with no frontmatter, no `type`, or no `description`
+- a `type` or `description` that is not valid YAML as written
 - a `status` other than `draft`, `stable`, or `deprecated`
 - a link to a file that does not exist, or a link that starts with `/`
 - a folder with no file named after it

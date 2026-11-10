@@ -1,6 +1,8 @@
 ---
 type: Architecture
-description: System components, data flow, and service boundaries
+description:
+  The three services (API gateway, payment engine, ledger), what each one owns,
+  and the rule that services talk only through the message queue
 ---
 
 # Architecture

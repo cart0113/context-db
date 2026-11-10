@@ -1,5 +1,5 @@
 ---
 type: Folder
 description:
-  Git workflow — branching strategy, commit messages, and PR conventions
+  Git workflow — branch naming, squash merges, and the commit message format
 ---

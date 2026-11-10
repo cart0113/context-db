@@ -6,7 +6,7 @@ description:
 allowed-tools: Bash,Read,Write,Edit,Glob,Grep
 ---
 
-Run the script with the user's arguments:
+Run the script from the repository root with the user's arguments:
 
     <python> .claude/skills/context-db/context-db.py <args>
 
@@ -14,10 +14,20 @@ Run the script with the user's arguments:
 file exists and sets one, otherwise the `python` value in
 `context-db/context-db.json`, otherwise `python3`.
 
-Sub-commands: `prompt`, `update`, `wip`, `configure`, `help`. Quote a multi-word
-instruction as one shell argument, so that punctuation in it cannot be read as
-shell syntax:
+Sub-commands: `prompt`, `update`, `wip`, `configure`, `help`. Flags such as
+`--commit` and `--push` go outside the quotes.
 
-    <python> .claude/skills/context-db/context-db.py update "Notes go in the wiki, not the README"
+Pass the user's instruction exactly as they typed it, as one single-quoted
+argument. Single quotes stop the shell from changing `$`, backticks, and `!`:
 
-The script prints instructions for you. Follow them.
+    <python> .claude/skills/context-db/context-db.py update 'Refunds over $10,000 need approval' --push
+
+If the instruction itself contains a single quote, pass `-` in its place and
+feed the text on standard input:
+
+    <python> .claude/skills/context-db/context-db.py update - --push <<'EOF_INSTRUCTION'
+    Don't retry refunds; they aren't idempotent
+    EOF_INSTRUCTION
+
+The script prints instructions for you. Follow them. They may tell you to run
+two helper sub-commands, `init` and `index`, in the same way.

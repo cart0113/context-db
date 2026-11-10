@@ -94,7 +94,8 @@ instruction{on_branch} before anything else.
 """
 
 WIP_FOR_WIP = """
-Read every one of these files now.
+Read every one of these files now, unless you have already read it in this session
+and it has not changed since.
 """
 
 WIP_EMPTY = """
@@ -131,6 +132,10 @@ nothing to compare against. Tell the user to fix `main_branch` with
 V0_LAYOUT_FOUND = """
 This repository still has the v0.0 layout ({leftovers}). Follow the migration
 guide before step 2: {guide}
+"""
+
+EMPTY_INDEX = """
+<!-- Nothing is in this folder yet. -->
 """
 
 PROJECT_DESCRIPTOR = """
@@ -301,13 +306,77 @@ def parse_frontmatter(content):
         elif key and line[:1] in (" ", "\t") and line.strip():
             meta[key] = (meta[key] + " " + line.strip()).strip()
     for key, value in meta.items():
-        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
-            meta[key] = value[1:-1]
+        if len(value) >= 2 and value[0] == value[-1] == '"':
+            meta[key] = value[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+        elif len(value) >= 2 and value[0] == value[-1] == "'":
+            meta[key] = value[1:-1].replace("''", "'")
     return meta, "\n".join(lines[end + 1 :])
 
 
 def read_doc(path):
     return parse_frontmatter(read_text(path))
+
+
+# The parser above is forgiving, but OKF asks for frontmatter that a real YAML
+# parser accepts. These checks catch what writers actually get wrong in the
+# keys context-db reads, without needing a YAML library.
+
+SCALAR_KEYS = ("type", "description", "status", "branch", "title")
+PLAIN_START_RE = re.compile(r"^([\[\]{}#&*!|>%@`,]|[-?:](\s|$))")
+
+
+def scalar_problem(lines):
+    """Why a value would fail or change in a strict YAML parser, or None.
+
+    `lines` is the value as written: the rest of the key's line, then each
+    indented continuation line, all stripped.
+    """
+    if not lines or BLOCK_SCALAR_RE.match(lines[0]):
+        return None  # empty, or a block scalar whose content YAML takes verbatim
+    joined = " ".join(lines)
+    quote = joined[0] if joined[0] in "\"'" else ""
+    if quote == '"':
+        closed = len(re.findall(r'(?<!\\)"', joined)) == 2 and joined.endswith('"')
+        return None if closed else "its double quotes do not pair up"
+    if quote == "'":
+        closed = joined.endswith("'") and "'" not in joined[1:-1].replace("''", "")
+        return None if closed and len(joined) > 1 else "its single quotes do not pair up"
+    if PLAIN_START_RE.match(joined):
+        return f"it starts with `{joined[0]}`"
+    for line in lines:
+        if ": " in line or line.endswith(":"):
+            return "it contains a colon followed by a space or a line end"
+        if " #" in line or line.startswith("#"):
+            return "it contains ` #`, which starts a YAML comment"
+    return None
+
+
+def yaml_problems(content):
+    """Problems a strict YAML parser would have with the keys context-db reads."""
+    lines = content.split("\n")
+    end = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), len(lines))
+    values = {}
+    key = None
+    problems = []
+    for line in lines[1:end]:
+        match = KEY_RE.match(line)
+        if match:
+            key = match.group(1)
+            first = (match.group(2) or "").strip()
+            values[key] = [first] if first else []
+        elif key and line[:1] in (" ", "\t") and line.strip():
+            indent = line[: len(line) - len(line.lstrip())]
+            if "\t" in indent and key in SCALAR_KEYS:
+                problems.append(f"`{key}` is indented with a tab")
+            values[key].append(line.strip())
+    for key in SCALAR_KEYS:
+        problem = scalar_problem(values.get(key, []))  # any of these keys may be absent
+        if problem:
+            problems.append(
+                f"`{key}` is not valid YAML as written ({problem}) — "
+                "reword it, or wrap the whole value in double quotes"
+            )
+    return problems
 
 
 def strip_code(content):
@@ -477,6 +546,8 @@ def build_index(folder, is_root):
         parts.append("# Subfolders\n\n" + "\n".join(sub_lines))
     if file_lines:
         parts.append("# Files\n\n" + "\n".join(file_lines))
+    if not sub_lines and not file_lines:
+        parts.append(EMPTY_INDEX.strip())
     return "\n\n".join(parts) + "\n"
 
 
@@ -523,6 +594,7 @@ def lint_file(path, in_wip):
     for key in ("type", "description"):
         if not meta.get(key):
             errors.append(f"{path}: frontmatter has no `{key}`")
+    errors.extend(f"{path}: {problem}" for problem in yaml_problems(content))
     status = meta.get("status", "")
     if status and status not in STATUSES:
         errors.append(f"{path}: status `{status}` is not one of {', '.join(STATUSES)}")
@@ -588,7 +660,10 @@ def on_file_text(cdb, command):
     if not os.path.isfile(path):
         return ""
     _, body = read_doc(path)
-    return re.sub(r"(?s)<!--.*?-->", "", body).strip()
+    rules = re.sub(r"(?s)<!--.*?-->", "", body).strip()
+    if rules and not rules.startswith("#"):
+        rules = f"# Project Rules\n\n{rules}"
+    return rules
 
 
 def emit(sections):
@@ -596,6 +671,9 @@ def emit(sections):
 
 
 def instruction_of(args):
+    """The user's instruction. A lone `-` means: read it from standard input."""
+    if args.instruction == ["-"]:
+        return sys.stdin.read().strip()
     return " ".join(args.instruction).strip()
 
 
@@ -728,8 +806,8 @@ def cmd_prompt(args):
     emit(
         [
             load_prompt("prompt", cdb=cdb, project_dir=project_dir(cdb, config)),
-            folders_section(cdb, config),
             wip_section(cdb, config, text(WIP_FOR_PROMPT, on_branch=on_branch)),
+            folders_section(cdb, config),
             on_file_text(cdb, "prompt"),
             instruction_section(instruction),
         ]
@@ -771,6 +849,7 @@ def cmd_wip(args):
                 project_dir=project,
                 wip_dir=os.path.join(project, "wip"),
                 branch=current_branch() or "<branch>",
+                main=config["main_branch"],
                 index_cmd=f"{script_command(config['python'])} index",
             ),
             git_state_section(config),
@@ -786,10 +865,14 @@ def cmd_wip(args):
 
 
 def detect_main_branch():
+    """Return (branch, how it was found). Only origin's default branch is certain."""
     head = git("symbolic-ref", "--short", "refs/remotes/origin/HEAD").strip()
     if head.startswith("origin/"):
-        return head[len("origin/") :]
-    return current_branch() or "main"
+        return head[len("origin/") :], "origin's default branch"
+    branch = current_branch()
+    if branch and branch != "HEAD":
+        return branch, "a guess: the branch checked out now, because no remote names a default"
+    return "main", "a guess: nothing could be detected"
 
 
 def project_folders(cdb):
@@ -867,6 +950,7 @@ def cmd_configure(args):
     python3, python3_usable = describe_python3()
     suggested_python = "python3" if python3_usable else sys.executable
     name, name_source = suggest_project_name(root, cdb)
+    main_branch, main_branch_source = detect_main_branch()
 
     lines = ["# Detected State", ""]
     lines.append(f"- Interpreter running this script: `{sys.executable}` (Python {version})")
@@ -874,7 +958,7 @@ def cmd_configure(args):
     lines.append(f"- Suggested `python` value: `{suggested_python}`")
     lines.append(f"- Repository root: `{rel(root)}/`")
     lines.append(f"- Suggested project name: `{name}` (from {name_source})")
-    lines.append(f"- Detected main branch: `{detect_main_branch()}`")
+    lines.append(f"- Suggested main branch: `{main_branch}` ({main_branch_source})")
 
     configured_python = None
     for label, filename in (("Shared config", CONFIG_NAME), ("User overrides", LOCAL_CONFIG_NAME)):
@@ -906,6 +990,7 @@ def cmd_configure(args):
                 config_name=CONFIG_NAME,
                 local_config_name=LOCAL_CONFIG_NAME,
                 init_cmd=f"{script_command(configured_python or suggested_python)} init",
+                index_cmd=f"{script_command(configured_python or suggested_python)} index",
                 agents_snippet=rel(os.path.join(SKILL_DIR, "starters", "AGENTS.md")),
             ),
             "\n".join(lines),
@@ -972,7 +1057,7 @@ def cmd_init(args):
     if "python" not in config:
         config["python"] = "python3"
     if "main_branch" not in config:
-        config["main_branch"] = detect_main_branch()
+        config["main_branch"] = detect_main_branch()[0]
 
     local = None
     if args.local:
@@ -1106,7 +1191,11 @@ def build_parser():
     subs = parser.add_subparsers(dest="command", metavar="<command>")
 
     def instruction(sub):
-        sub.add_argument("instruction", nargs="*", help="Free text; quote it as one argument")
+        sub.add_argument(
+            "instruction",
+            nargs="*",
+            help="Free text, as one single-quoted argument; or `-` to read it from stdin",
+        )
 
     p = subs.add_parser("prompt", help="Look up what the knowledge base says about a task")
     instruction(p)

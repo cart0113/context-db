@@ -1,6 +1,8 @@
 ---
 type: Architecture
-description: Core entities — payments, refunds, and merchants
+description:
+  Fields of the payment, refund, and merchant entities, including amounts in
+  minor units and the payment status values
 ---
 
 # Entities
