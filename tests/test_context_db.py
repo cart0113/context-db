@@ -298,6 +298,7 @@ def test_index_is_idempotent_and_check_detects_drift(project):
     result = run(project, "index", "--check")
     assert result.returncode == 1
     assert "out of date" in result.stdout
+    assert "Fix them, then run:  python3 " in result.stdout and " index" in result.stdout
     assert "new.md" not in (project / "context-db" / "demo-project" / "index.md").read_text()
 
 
@@ -782,6 +783,10 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
     )
     write(bundle / "standards.md", "---\ndescription: Coding standards\n---\n\n# Standards\n")
     write(bundle / "api" / "api-instructions.md", "---\ndescription: API notes\n---\n")
+    write(
+        bundle / "api" / "errors.md",
+        "---\ndescription: Error codes\n---\n\nFollows `standards.md`. Run the TOC script.\n",
+    )
 
     dry = run(tmp_path, "context-db", "--dry-run", script=MIGRATE)
     assert dry.returncode == 0 and (cdb / "ON_PROMPT.md").exists()
@@ -790,9 +795,14 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
     result = run(tmp_path, "context-db", script=MIGRATE)
     assert result.returncode == 0, result.stdout
     assert (cdb / "context-db-on-markdown" / "ON_PROMPT.md").exists()
-    assert (bundle / "wip" / "current-work.md").exists()
-    assert "[standards.md](../standards.md)" in (bundle / "wip" / "current-work.md").read_text()
-    decide = result.stdout.split("Needs a decision")[1]
+    plan = (bundle / "wip" / "current-work.md").read_text()
+    assert plan.startswith("---\ntype: Plan\n")
+    assert "[standards.md](../standards.md)" in plan
+    assert (bundle / "wip" / "wip.md").read_text().startswith("---\ntype: Folder\n")
+    assert "Follows [standards.md](../standards.md)." in (bundle / "api" / "errors.md").read_text()
+    mentions = result.stdout.split("Mentions of v0.0 machinery")[1]
+    assert "api/errors.md:6: `TOC script`" in mentions
+    decide = result.stdout.split("Needs a decision")[1].split("## Mentions")[0]
     assert "ON_MAINTAIN.md" in decide
     assert "`./missing.md` does not resolve" in decide
     assert "rename api-instructions.md to api.md" in decide
@@ -809,6 +819,7 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
 
     again = run(tmp_path, "context-db", script=MIGRATE)
     assert again.stdout.split("## Types guessed")[0].strip().endswith("(nothing)")
+    assert "wip" not in again.stdout.split("Needs a decision")[1].split("## Mentions")[0]
 
     (bundle / "api" / "api-instructions.md").rename(bundle / "api" / "api.md")
     init = run(tmp_path, "init", "--project", "acme")

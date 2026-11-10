@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # Subfolders
 
-* [context-db-migrate-from-v0.0](context-db-migrate-from-v0.0/index.md) - Step-by-step guide for an agent migrating a project's context-db from v0.0 to v0.1 (Open Knowledge Format) — install the new skill, run the migration script, configure, fix what the checker reports, and handle shared folders, ON files, and wip. Includes the full list of what changed.
+* [context-db-migrate-from-v0.0](context-db-migrate-from-v0.0/index.md) - Step-by-step guide for an agent migrating a project's context-db from v0.0 to v0.1 (Open Knowledge Format) — install the new skill, run the migration script, configure, clear out what is obsolete, fix what the checker reports, and handle shared folders. Includes the full list of what changed.
 * [context-db-theory](context-db-theory/index.md) - Information retrieval theory behind context-db — why hierarchy works, cross-references, what we rejected, and the fundamental context delivery problem (attention dilution, obedience poisoning, memory corruption)
 * [design-decisions](design-decisions/index.md) - Design decisions and their reasons — OKF adoption and its sources, static index files, link form and symlink rules, which frontmatter keys exist, folder descriptor naming, config layering, gate-before-action prompt ordering, Python and argparse.
 * [wip](wip/index.md) - Current work in progress — plans for what is being built right now. Read first when picking up work; files here are deleted once the work lands.

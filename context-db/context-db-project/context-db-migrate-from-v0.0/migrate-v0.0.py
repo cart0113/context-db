@@ -8,15 +8,16 @@ What it changes, in every real (non-symlinked) top-level folder:
 
   - adds a guessed `type:` to frontmatter that has none
   - maps the retired statuses (experiment, work-in-progress, refactor) to draft
-  - turns backticked relative paths that resolve to a file into Markdown links
+  - turns backticked paths that name another note into Markdown links
 
 And at the top level of context-db/:
 
   - moves ON_PROMPT.md and ON_UPDATE.md into context-db-on-markdown/
   - moves <name>-project/wip.md to <name>-project/wip/current-work.md
 
-Everything it cannot decide is printed under "Needs a decision". The guessed
-types are a starting point; the guide next to this script covers the rest.
+It then prints three lists: what it changed, the types it guessed, and what it
+could not decide, including every mention of v0.0 machinery it found. The guide
+next to this script says what to do with each.
 
 Running it twice is safe: the second run changes nothing.
 
@@ -32,17 +33,28 @@ ON_DIR = "context-db-on-markdown"
 RETIRED_STATUSES = ("experiment", "work-in-progress", "refactor")
 OLD_DESCRIPTOR_NAMES = ("SKILL.md", "CONTEXT.md", "AGENT.md", "AGENTS.md")
 TYPE_GUESSES = (
+    (r"research|landscape|theory|evidence", "Research"),
     (r"decision|rationale|why ", "Decision"),
     (r"standard|convention|style|naming|voice", "Convention"),
     (r"architecture|data.model|schema|design of", "Architecture"),
     (r"gotcha|pitfall|lesson|edge case", "Gotcha"),
-    (r"research|landscape|theory|evidence", "Research"),
     (r"plan|roadmap|work in progress|todo", "Plan"),
+)
+V0_MACHINERY_RE = re.compile(
+    r"TOC script|context-db-generate-toc|context-db-resolve-path|context-db-main-agent"
+    r"|/context-db (?:maintain|read)\b|ON_MAINTAIN|_drafts/|-instructions\.md|templates/skills"
 )
 PATH_SPAN_RE = re.compile(r"`((?:\.\.?/)?[\w./-]+\.md)`")
 LINK_RE = re.compile(r"(\[[^\]]*\])\(([^)\s]+)\)")
 NOT_RELATIVE_RE = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*:|#|/)")
 FENCE_RE = re.compile(r"^[ \t]*(```|~~~)")
+WIP_DESCRIPTOR = """---
+type: Folder
+description:
+  Current work in progress — plans for what is being built right now. Files
+  here are deleted once the work lands.
+---
+"""
 
 
 def read(path):
@@ -69,6 +81,8 @@ def guess_type(path, folder_name, header):
     stem = os.path.splitext(os.path.basename(path))[0]
     if stem == folder_name:
         return "Folder"
+    if stem == "wip" and folder_name.endswith("-project"):
+        return "Plan"  # the old single wip file, about to move into wip/
     haystack = (path + " " + header).lower()
     for pattern, type_name in TYPE_GUESSES:
         if re.search(pattern, haystack):
@@ -76,24 +90,36 @@ def guess_type(path, folder_name, header):
     return "Reference"
 
 
-def linkify(path, lines, start):
-    """Replace `./x.md` and `x.md` code spans with links when the target exists.
+def linkify(path, lines, start, names):
+    """Replace code spans that name another note with links to it.
 
-    A span that starts with ./ or ../ but points nowhere is reported. A bare
-    name that points nowhere is left alone: it is usually just a filename.
+    `./x.md` and `x.md` become links when the file is there. A bare name that is
+    not beside this file is looked up in the whole folder tree and linked when
+    exactly one note has that name. Anything else is left alone; a path that
+    starts with ./ or ../ and leads nowhere is reported.
     """
     count = 0
-    unresolved = []
+    undecided = []
     in_fence = False
+    here = os.path.dirname(path)
 
     def replace(match):
         nonlocal count
         target = match.group(1)
-        if os.path.isfile(os.path.join(os.path.dirname(path), target)):
+        if os.path.isfile(os.path.join(here, target)):
             count += 1
             return f"[{os.path.basename(target)}]({target})"
-        if target.startswith("."):
-            unresolved.append(target)
+        if "/" not in target:
+            found = names.get(target, [])
+            if len(found) == 1:
+                count += 1
+                return f"[{target}]({os.path.relpath(found[0], here)})"
+            if len(found) > 1:
+                undecided.append(
+                    f"`{target}` could be any of {', '.join(found)} — link the right one"
+                )
+        elif target.startswith("."):
+            undecided.append(f"`{target}` does not resolve — fix it, unless it is only an example")
         return match.group(0)
 
     for i in range(start, len(lines)):
@@ -101,10 +127,16 @@ def linkify(path, lines, start):
             in_fence = not in_fence
         elif not in_fence:
             lines[i] = PATH_SPAN_RE.sub(replace, lines[i])
-    return count, unresolved
+    return count, undecided
 
 
-def migrate_file(path, folder_name, dry_run, report):
+def report_machinery(path, lines, report):
+    for number, line in enumerate(lines, start=1):
+        for mention in sorted(set(V0_MACHINERY_RE.findall(line))):
+            report["mentions"].append(f"{path}:{number}: `{mention}`")
+
+
+def migrate_file(path, folder_name, names, dry_run, report):
     lines = read(path).split("\n")
     end = frontmatter_end(lines)
     if end is None:
@@ -126,13 +158,11 @@ def migrate_file(path, folder_name, dry_run, report):
             lines[i] = "status: draft"
             report["changed"].append(f"{path}: status {match.group(1)} -> draft")
 
-    count, unresolved = linkify(path, lines, end + 1)
+    count, undecided = linkify(path, lines, end + 1, names)
     if count:
         report["changed"].append(f"{path}: {count} backticked path(s) -> links")
-    for target in unresolved:
-        report["decide"].append(
-            f"{path}: `{target}` does not resolve — fix it, unless it is only an example"
-        )
+    report["decide"].extend(f"{path}: {item}" for item in undecided)
+    report_machinery(path, lines, report)
 
     if lines != original and not dry_run:
         write(path, "\n".join(lines))
@@ -147,8 +177,29 @@ def missing_descriptor(folder, names):
     return f"{folder}/: no folder descriptor {name}.md"
 
 
-def migrate_bundle(bundle, dry_run, report):
+def walk(bundle):
+    """Yield (folder, note filenames) for every real folder in a bundle."""
     for dirpath, dirnames, filenames in os.walk(bundle):
+        dirnames[:] = sorted(
+            name
+            for name in dirnames
+            if not name.startswith(".") and not os.path.islink(os.path.join(dirpath, name))
+        )
+        notes = sorted(
+            name
+            for name in filenames
+            if name.endswith(".md") and name not in ("index.md", "log.md")
+        )
+        yield dirpath, notes
+
+
+def migrate_bundle(bundle, dry_run, report):
+    names = {}
+    for folder, notes in walk(bundle):
+        for name in notes:
+            names.setdefault(name, []).append(os.path.join(folder, name))
+
+    for dirpath, dirnames, _ in os.walk(bundle):
         for name in sorted(dirnames):
             full = os.path.join(dirpath, name)
             if name.startswith("_"):
@@ -157,23 +208,15 @@ def migrate_bundle(bundle, dry_run, report):
                 )
             if os.path.islink(full):
                 report["decide"].append(
-                    f"{full}: symlink inside a bundle — mount it at the top level instead"
+                    f"{full}: symlink inside a folder — mount it at the top level instead"
                 )
-        dirnames[:] = sorted(
-            name
-            for name in dirnames
-            if not name.startswith(".") and not os.path.islink(os.path.join(dirpath, name))
-        )
-        folder_name = os.path.basename(dirpath)
-        names = sorted(
-            name
-            for name in filenames
-            if name.endswith(".md") and name not in ("index.md", "log.md")
-        )
-        if names and f"{folder_name}.md" not in names:
-            report["decide"].append(missing_descriptor(dirpath, names))
-        for name in names:
-            migrate_file(os.path.join(dirpath, name), folder_name, dry_run, report)
+
+    for folder, notes in walk(bundle):
+        folder_name = os.path.basename(folder)
+        if notes and f"{folder_name}.md" not in notes:
+            report["decide"].append(missing_descriptor(folder, notes))
+        for name in notes:
+            migrate_file(os.path.join(folder, name), folder_name, names, dry_run, report)
 
 
 def rebase_links(path, old_dir):
@@ -197,6 +240,22 @@ def move(src, dst, dry_run, report):
     os.rename(src, dst)
 
 
+def move_wip(folder, dry_run, report):
+    """Turn <name>-project/wip.md into <name>-project/wip/current-work.md."""
+    old_wip = os.path.join(folder, "wip.md")
+    if not os.path.isfile(old_wip):
+        return
+    new_wip = os.path.join(folder, "wip", "current-work.md")
+    descriptor = os.path.join(folder, "wip", "wip.md")
+    move(old_wip, new_wip, dry_run, report)
+    if dry_run:
+        return
+    rebase_links(new_wip, folder)
+    if not os.path.exists(descriptor):
+        write(descriptor, WIP_DESCRIPTOR)
+        report["changed"].append(f"{descriptor}: created")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("context_db", help="Path to the context-db/ folder")
@@ -206,7 +265,7 @@ def main():
     if not os.path.isdir(cdb):
         sys.exit(f"Error: {cdb} is not a folder.")
 
-    report = {"changed": [], "types": [], "decide": []}
+    report = {"changed": [], "types": [], "decide": [], "mentions": []}
 
     for name in ("ON_PROMPT.md", "ON_UPDATE.md"):
         src = os.path.join(cdb, name)
@@ -217,6 +276,12 @@ def main():
             f"{os.path.join(cdb, 'ON_MAINTAIN.md')}: maintain is gone — fold what still matters "
             f"into {ON_DIR}/ON_UPDATE.md, then delete it"
         )
+    on_dir = os.path.join(cdb, ON_DIR)
+    if os.path.isdir(on_dir):
+        for name in sorted(os.listdir(on_dir)):
+            if name.endswith(".md"):
+                path = os.path.join(on_dir, name)
+                report_machinery(path, read(path).split("\n"), report)
 
     for name in sorted(os.listdir(cdb)):
         folder = os.path.join(cdb, name)
@@ -228,17 +293,14 @@ def main():
             )
             continue
         migrate_bundle(folder, args.dry_run, report)
-        old_wip = os.path.join(folder, "wip.md")
-        if name.endswith("-project") and os.path.isfile(old_wip):
-            new_wip = os.path.join(folder, "wip", "current-work.md")
-            move(old_wip, new_wip, args.dry_run, report)
-            if not args.dry_run:
-                rebase_links(new_wip, folder)
+        if name.endswith("-project"):
+            move_wip(folder, args.dry_run, report)
 
     for title, key in (
         ("Changed", "changed"),
         ("Types guessed (review these)", "types"),
         ("Needs a decision", "decide"),
+        ("Mentions of v0.0 machinery (rewrite or delete each)", "mentions"),
     ):
         print(f"## {title}\n")
         print("\n".join(f"- {line}" for line in report[key]) or "(nothing)")

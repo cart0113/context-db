@@ -1101,19 +1101,23 @@ def cmd_init(args):
     for path in created:
         print(f"Created {path}")
     print()
-    sys.exit(run_index(project, check=False))
+    rerun = f"{script_command(config['python'])} index"
+    sys.exit(run_index(project, check=False, rerun=rerun))
 
 
 # ── index ────────────────────────────────────────────────────────────────────
 
 
-def run_index(bundle, check):
-    """Sync the indexes, print the lint report, and return the exit code."""
+def run_index(bundle, check, rerun):
+    """Sync the indexes, print the lint report, and return the exit code.
+
+    `rerun` is the command to print for running the index again.
+    """
     load_git_ignored(bundle)
     stale = sync_indexes(bundle, check)
     errors, warnings = lint_bundle(bundle)
     if check:
-        errors = [f"{path}: out of date — run the index command" for path in stale] + errors
+        errors = [f"{path}: out of date" for path in stale] + errors
     elif stale:
         print(f"Regenerated {len(stale)} index file(s):")
         for path in stale:
@@ -1124,7 +1128,7 @@ def run_index(bundle, check):
         for problem in problems:
             print(f"{label}: {problem}")
     if errors:
-        print(f"\n{len(errors)} error(s). Fix them and run this command again.")
+        print(f"\n{len(errors)} error(s). Fix them, then run:  {rerun}")
         return 1
     print(f"{bundle}/ is a conformant OKF v{OKF_VERSION} bundle.")
     return 0
@@ -1155,7 +1159,20 @@ def bundle_root(folder):
         folder = rel(parent)
 
 
+def configured_python(cdb):
+    """The `python` setting if it can be read, else python3. Never fails."""
+    python = "python3"
+    for filename in (CONFIG_NAME, LOCAL_CONFIG_NAME):
+        path = os.path.join(cdb, filename)
+        data = load_json(path)[0] if os.path.isfile(path) else None
+        if data:
+            python = data.get("python", python)  # either file may leave it out
+    return python
+
+
 def cmd_index(args):
+    cdb = context_db_dir()
+    rerun = f"{script_command(configured_python(cdb))} index"
     if args.folder:
         folder = os.path.normpath(args.folder)
         if not os.path.isdir(folder):
@@ -1169,12 +1186,12 @@ def cmd_index(args):
         bundle = bundle_root(folder)
         if bundle != folder:
             print(f"{folder}/ is inside {bundle}/; indexing all of {bundle}/.")
+        rerun = f"{rerun} {shlex.quote(bundle)}"
     else:
-        cdb = context_db_dir()
         bundle = project_dir(cdb, require_config(cdb))
         if not os.path.isdir(bundle):
             sys.exit(f"Error: {bundle}/ does not exist. Run /context-db configure.")
-    sys.exit(run_index(bundle, args.check))
+    sys.exit(run_index(bundle, args.check, rerun))
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
