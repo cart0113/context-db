@@ -1,4 +1,5 @@
 ---
+type: Convention
 description: Error handling patterns and exception conventions
 ---
 

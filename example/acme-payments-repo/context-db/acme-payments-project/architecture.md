@@ -1,4 +1,5 @@
 ---
+type: Architecture
 description: System components, data flow, and service boundaries
 ---
 

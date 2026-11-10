@@ -1,5 +1,6 @@
 ---
+type: Folder
 description:
-  Notes on writing and maintaining documentation for context-db — docs site,
-  README, context-db knowledge base
+  Conventions for writing this project's documentation — the Sphinx docs site,
+  the README, and which pages include agent-facing text verbatim.
 ---

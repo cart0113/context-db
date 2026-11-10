@@ -1,4 +1,5 @@
 ---
+type: Convention
 description: Naming conventions, indexing strategy, and migration rules
 ---
 

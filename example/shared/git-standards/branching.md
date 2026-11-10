@@ -1,4 +1,5 @@
 ---
+type: Convention
 description: Branch naming and merge strategy
 ---
 

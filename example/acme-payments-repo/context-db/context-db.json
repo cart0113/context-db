@@ -1,0 +1,5 @@
+{
+  "project": "acme-payments",
+  "main_branch": "main",
+  "python": "python3"
+}

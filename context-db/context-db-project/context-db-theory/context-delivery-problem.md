@@ -1,4 +1,5 @@
 ---
+type: Research
 description:
   Why providing context to agents often hurts performance — three distinct
   failure modes (attention dilution, obedience poisoning, memory corruption) and
@@ -63,9 +64,7 @@ considers, and sometimes the right answer is outside that narrowed space.
 
 **This is a prompting/framing problem.** The fix isn't less context, it's
 context delivered differently — as reference material rather than instructions.
-But current models don't distinguish between the two. See:
-[subagent-context-delivery.md](other/subagent-context-delivery.md) for one
-potential architectural fix.
+But current models don't distinguish between the two.
 
 ## Failure mode 3: Memory corruption and self-reinforcement
 
@@ -93,7 +92,7 @@ separating project knowledge (survives across sessions) from working memory
 
 context-db's design already addresses several of these:
 
-- **On-demand loading via TOC** mitigates attention dilution — the agent reads
+- **On-demand loading via `index.md`** mitigates attention dilution — the agent reads
   10 descriptions and skips 9 folders instead of ingesting everything
 - **"Only include what the agent can't infer"** is the right principle for
   obedience poisoning, though enforcement is hard
@@ -152,7 +151,5 @@ until models can distinguish "things I should know" from "things I should do."
 
 - [context-engineering-research.md](../context-engineering-research.md) — full
   research landscape with sources and citations
-- [subagent-context-delivery.md](other/subagent-context-delivery.md) — subagent
-  architecture as a potential delivery mechanism
 - [why-hierarchy-works.md](why-hierarchy-works.md) — how hierarchy reduces token
   load via progressive disclosure

@@ -1,1 +1,0 @@
-../../../../../../templates/skills/context-db/scripts/context-db-main-agent.py

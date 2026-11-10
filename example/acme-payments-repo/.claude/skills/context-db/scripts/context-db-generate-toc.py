@@ -1,1 +1,0 @@
-../../../../../../templates/skills/context-db/scripts/context-db-generate-toc.py

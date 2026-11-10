@@ -1,4 +1,5 @@
 ---
+type: Research
 description:
   Cross-references — lateral links across the hierarchy, and what we rejected
   from knowledge graph research
@@ -15,13 +16,13 @@ starting point.
 
 "See also" links at the bottom of document bodies. These can point to anything
 in the project — other context-db documents, source code, docs pages, config
-files. Not in frontmatter (bloats the TOC), not in a separate graph file (second
-source of truth). Just markdown in the body — zero TOC tokens, only read when
-the file is already open.
+files. Not in frontmatter (bloats the index), not in a separate graph file (second
+source of truth). Just Markdown links in the body — zero index tokens, only read
+when the file is already open.
 
 ## What we rejected and why
 
-- **Tags.** Vocabulary maintenance cost exceeds retrieval benefit (Forte). The
+- **Tags.** OKF allows a `tags` key; context-db does not write it. Vocabulary maintenance cost exceeds retrieval benefit (Forte). The
   description field already functions as a free-text tag.
 - **Typed relationships** ("depends-on", "extends"). Maintenance scales
   quadratically. Not worth it at <100 documents.

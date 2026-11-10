@@ -1,12 +1,14 @@
 ---
+type: Decision
 description:
   Why files are named after their parent folder rather than using fixed names
 ---
 
 # Naming Convention
 
-Each folder's description file is named `<folder>.md` (or
-`<folder>-instructions.md`) rather than a fixed name like `CONTEXT.md`.
+Each folder's descriptor is named `<folder>.md` rather than a fixed name like
+`CONTEXT.md`. OKF has no rule for this (its issue #10 proposes the same idea),
+so the descriptor is an ordinary concept with `type: Folder`.
 
 ## Rationale
 
@@ -17,5 +19,5 @@ Each folder's description file is named `<folder>.md` (or
   easy to search for.
 - **Generalizes beyond context-db/.** The convention works for any directory. A
   `docs/api/` directory uses `api.md`.
-- **Script simplicity.** The TOC script computes the folder basename and knows
+- **Script simplicity.** The index generator computes the folder basename and knows
   exactly which description file to look for. No special-casing.

@@ -1,6 +1,8 @@
 ---
+type: Folder
 description:
-  Main project folder for this repo. context-db project knowledge — TOC script,
-  cross-project sharing, context engineering research, design decisions, context
-  delivery lessons, documentation maintenance, and refactors.
+  Main project folder for this repo — knowledge for agents changing context-db
+  itself. Design decisions (OKF adoption, static index, links), the theory and
+  research behind them, prompt-writing lessons, docs conventions, and the guide
+  for migrating a project from v0.0.
 ---

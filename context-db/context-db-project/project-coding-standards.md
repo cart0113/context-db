@@ -1,4 +1,5 @@
 ---
+type: Convention
 description:
   context-db-specific coding standards — overrides and additions to
   general-coding-standards. No shims, no defensive .get(), triple-quote editable

@@ -1,93 +1,42 @@
 #!/usr/bin/env bash
 #
-# pre-commit — Format staged files and run TOC script tests.
+# pre-commit — keep the index, the code, and the tests honest.
 #
-# Runs:
-#   1. prettier on staged md/js/ts/json/css/yaml files
-#   2. ruff on staged python files
-#   3. cache-bust docs/index.html if docs changed
-#   4. TOC script tests if the script or tests changed
-#   5. regenerate docs/src/reference/cli.md if dispatcher, prompt
-#      templates, or the generator changed
+#   1. ruff format + fix on staged Python files (if ruff is installed)
+#   2. context-db index --check on this repo's own bundle
+#   3. pytest when the skill, the migration script, the example, or tests change
 #
 # Install:
 #   cp hooks/pre-commit .git/hooks/pre-commit
-#   chmod +x .git/hooks/pre-commit
 
 set -eo pipefail
+cd "$(git rev-parse --show-toplevel)"
 
-REPO_ROOT="$(git rev-parse --show-toplevel)"
-cd "$REPO_ROOT"
+PYTHON=python3
+[ -x .venv/bin/python ] && PYTHON=.venv/bin/python
+RUFF="$(command -v ruff || true)"
+[ -x .venv/bin/ruff ] && RUFF=.venv/bin/ruff
 
-# ── 1. Prettier on staged web/markdown files ────────────────────────────────
+STAGED="$(git diff --cached --name-only --diff-filter=ACM)"
 
-PRETTIER="./node_modules/.bin/prettier"
-if [ -x "$PRETTIER" ]; then
-    PRETTIER_FILES=$(git diff --cached --name-only --diff-filter=ACM \
-        | grep -E '\.(md|js|ts|jsx|tsx|json|css|html|yaml|yml)$' \
-        || true)
-
-    if [ -n "$PRETTIER_FILES" ]; then
-        echo "$PRETTIER_FILES" | while IFS= read -r file; do
-            [ -f "$file" ] || continue
-            "$PRETTIER" --write "$file" 2>/dev/null || true
-            git add "$file" 2>/dev/null || true
-        done
-    fi
-fi
-
-# ── 2. Ruff on staged Python files ──────────────────────────────────────────
-
-RUFF="$(command -v ruff-main 2>/dev/null || true)"
 if [ -n "$RUFF" ]; then
-    PY_FILES=$(git diff --cached --name-only --diff-filter=ACM \
-        | grep -E '\.py$' \
-        || true)
+    echo "$STAGED" | grep -E '\.py$' | while IFS= read -r file; do
+        [ -f "$file" ] || continue
+        "$RUFF" format -q "$file"
+        "$RUFF" check -q --fix "$file"
+        git add "$file"
+    done
+fi
 
-    if [ -n "$PY_FILES" ]; then
-        echo "$PY_FILES" | while IFS= read -r file; do
-            [ -f "$file" ] || continue
-            "$RUFF" format "$file" 2>/dev/null || true
-            "$RUFF" check --fix "$file" 2>/dev/null || true
-            git add "$file" 2>/dev/null || true
-        done
+"$PYTHON" skill/context-db/context-db.py index --check || {
+    echo "Run: python3 skill/context-db/context-db.py index"
+    exit 1
+}
+
+if echo "$STAGED" | grep -qE '^(skill/|tests/|example/|context-db/context-db-project/context-db-migrate-from-v0.0/)'; then
+    if "$PYTHON" -c "import pytest" 2>/dev/null; then
+        "$PYTHON" -m pytest tests -q
+    else
+        echo "pytest is not installed; skipping tests."
     fi
-fi
-
-# ── 3. Cache-bust docs/index.html ──────────────────────────────────────────
-
-DOCS_DIR="${REPO_ROOT}/docs"
-if [ -f "${DOCS_DIR}/index.html" ] && git diff --cached --name-only | grep -qE '^docs/'; then
-    STAMP=$(date +%Y%m%d%H%M%S)
-    sed -i '' "s/?v=[0-9a-zA-Z]*/?v=${STAMP}/g" "${DOCS_DIR}/index.html"
-    git add "${DOCS_DIR}/index.html"
-fi
-
-# ── 4. TOC script tests (if script or tests changed) ───────────────────────
-
-TOC_FILES=$(git diff --cached --name-only \
-    | grep -E '(context-db-generate-toc\.sh|tests/test_toc_script\.py)' \
-    || true)
-
-if [ -n "$TOC_FILES" ]; then
-    echo "Running TOC script tests..."
-    python3 -m unittest tests.test_toc_script 2>&1 || {
-        echo "TOC script tests failed — fix before committing."
-        exit 1
-    }
-fi
-
-# ── 5. Regenerate CLI reference if dispatcher or prompt templates changed ──
-
-CLI_REFERENCE_INPUTS=$(git diff --cached --name-only \
-    | grep -E '^(templates/skills/context-db/scripts/|\.claude/skills/context-db/scripts/|bin/build-cli-reference\.py)' \
-    || true)
-
-if [ -n "$CLI_REFERENCE_INPUTS" ]; then
-    echo "Regenerating docs/src/reference/cli.md..."
-    python3 bin/build-cli-reference.py >/dev/null || {
-        echo "cli-reference generator failed — fix before committing."
-        exit 1
-    }
-    git add docs/src/reference/cli.md
 fi

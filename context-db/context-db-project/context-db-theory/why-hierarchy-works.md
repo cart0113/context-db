@@ -1,4 +1,5 @@
 ---
+type: Research
 description:
   Why hierarchical folders give O(log n) lookup — Hick's Law, progressive
   disclosure, information foraging, and description quality
@@ -20,7 +21,7 @@ replicated findings in cognitive science — applies to LLM attention the same
 way.
 
 **Progressive disclosure** (Rosenfeld & Morville, _Information Architecture_):
-Show only what's needed at each level. The TOC script surfaces descriptions
+Show only what's needed at each level. Each `index.md` surfaces descriptions
 first; the agent never loads content it didn't ask for.
 
 **Information foraging theory** (Pirolli & Card, PARC): Agents follow
@@ -34,5 +35,5 @@ entry — the agent skips a relevant document or opens an irrelevant one.
 
 Include alternative terms when a topic has multiple names. A description like
 "How to handle rate limiting (throttling, backpressure, retry logic)" lets the
-agent match on any of those terms when scanning the TOC. This is what library
+agent match on any of those terms when scanning an index. This is what library
 science calls a "synonym ring" — zero cost, better recall.

@@ -5,7 +5,10 @@ __pycache__/
 .env
 *.tmp
 
-.claude
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/context-db
 .cursor
 .playwright-mcp/
 
@@ -14,7 +17,6 @@ node_modules/
 context-db/writing-standards
 context-db/using-bruha
 context-db/using-context-db
-context-db/context-db-project/overview.md
 context-db/local-repos-to-update/
 bin/sync-to-repos.sh
 
@@ -28,6 +30,12 @@ context-db/general-standards
 context-db/general-coding-standards
 
 # Example fixture — must be checked in so users can clone a runnable reference
-# layout (and so the CLI-reference generator has a tree to run against).
+# layout.
 !example/**/.claude
 !example/**/.claude/**
+
+docs/_build/
+.venv/
+.pytest_cache/
+.ruff_cache/
+context-db/context-db.local.json

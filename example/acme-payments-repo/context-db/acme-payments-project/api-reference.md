@@ -1,4 +1,5 @@
 ---
+type: Reference
 description: REST API endpoints, authentication, and error codes
 ---
 

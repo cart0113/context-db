@@ -1,4 +1,0 @@
-- getting-started
-- commands
-- cross-project-sharing
-- efficacy

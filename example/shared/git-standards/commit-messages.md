@@ -1,4 +1,5 @@
 ---
+type: Convention
 description: Commit message format and conventions
 ---
 

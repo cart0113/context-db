@@ -1,0 +1,3 @@
+sphinx>=8.2,<10
+pydata-sphinx-theme>=0.24
+myst-parser>=5

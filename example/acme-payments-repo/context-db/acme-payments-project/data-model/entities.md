@@ -1,4 +1,5 @@
 ---
+type: Architecture
 description: Core entities — payments, refunds, and merchants
 ---
 

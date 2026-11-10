@@ -1,4 +1,5 @@
 ---
+type: Decision
 description:
   Why all scripts are Python 3 with argparse — minimal dependency choice, why
   not bash, why not click
@@ -6,8 +7,8 @@ description:
 
 # Python and Argparse
 
-All context-db scripts (TOC generation, main-agent dispatcher, sub-agent
-spawner) are Python 3 with argparse for CLI parsing.
+The skill is one Python 3 script, stdlib only, with argparse for CLI parsing. It
+targets Python 3.8 so it runs on old system interpreters.
 
 ## Why Python 3
 
@@ -18,7 +19,9 @@ spawner) are Python 3 with argparse for CLI parsing.
   do this (and the original TOC script did), but the Python versions are more
   readable, testable, and maintainable. The bash version required careful
   avoidance of bash 4+ features for macOS 3.2 compatibility.
-- **Testable.** The Python TOC script has 72 tests. The bash version had none.
+- **Testable.** The script is covered by `tests/`. The bash version had none.
+- **No PyYAML.** Frontmatter is read by a small hand-rolled parser that handles
+  only top-level scalar keys. Do not replace it with a YAML dependency.
 
 ## Why argparse over click
 

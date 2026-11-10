@@ -1,4 +1,5 @@
 ---
+type: Convention
 description:
   Documentation voice — no first person ("I", "we"), use neutral or direct
   address
@@ -6,4 +7,4 @@ description:
 
 Docs use neutral voice. No "we" or "I" — write in direct address or passive
 where needed. "Copy the skill into your project" not "We recommend copying the
-skill." "The hook fires on startup" not "I configured the hook to fire."
+skill." "The command prints instructions" not "I made the command print instructions."

@@ -1,4 +1,5 @@
 ---
+type: Convention
 description: Variable, function, and file naming rules
 ---
 
