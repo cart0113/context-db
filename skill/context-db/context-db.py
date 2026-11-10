@@ -345,12 +345,46 @@ def is_real_dir(path):
     return os.path.isdir(path) and not os.path.islink(path)
 
 
+# Paths that git ignores, filled in by load_git_ignored() before a bundle is
+# indexed. A committed index must list only what every clone has, so private,
+# gitignored notes inside a bundle are left out of it.
+GIT_IGNORED = set()
+
+
+def load_git_ignored(bundle):
+    GIT_IGNORED.clear()
+    candidates = [bundle]
+    for dirpath, dirnames, filenames in os.walk(bundle):
+        dirnames[:] = [d for d in dirnames if visible(d)]
+        candidates.extend(os.path.join(dirpath, name) for name in dirnames)
+        candidates.extend(os.path.join(dirpath, name) for name in filenames if name.endswith(".md"))
+    try:
+        result = subprocess.run(
+            ["git", "check-ignore", "--stdin"],
+            check=False,
+            input="\n".join(candidates) + "\n",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=15,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return
+    ignored = set(result.stdout.splitlines())
+    if bundle not in ignored:  # a wholly private folder is indexed as it stands
+        GIT_IGNORED.update(ignored)
+
+
+def in_tree(folder, name):
+    return visible(name) and os.path.join(folder, name) not in GIT_IGNORED
+
+
 def folder_files(folder):
     """The folder's own documents: every visible .md except index.md and log.md."""
     return sorted(
         name
         for name in os.listdir(folder)
-        if visible(name)
+        if in_tree(folder, name)
         and name.endswith(".md")
         and name not in RESERVED_FILES
         and os.path.isfile(os.path.join(folder, name))
@@ -364,7 +398,7 @@ def has_knowledge(folder):
     return any(
         has_knowledge(os.path.join(folder, name))
         for name in os.listdir(folder)
-        if visible(name) and is_real_dir(os.path.join(folder, name))
+        if in_tree(folder, name) and is_real_dir(os.path.join(folder, name))
     )
 
 
@@ -372,7 +406,7 @@ def folder_subfolders(folder):
     return sorted(
         name
         for name in os.listdir(folder)
-        if visible(name)
+        if in_tree(folder, name)
         and is_real_dir(os.path.join(folder, name))
         and has_knowledge(os.path.join(folder, name))
     )
@@ -505,12 +539,12 @@ def lint_bundle(bundle):
     for dirpath, dirnames, filenames in os.walk(bundle):
         for name in sorted(dirnames):
             path = os.path.join(dirpath, name)
-            if os.path.islink(path):
+            if os.path.islink(path) and in_tree(dirpath, name):
                 errors.append(
                     f"{path}: symlink inside a bundle — "
                     f"mount shared folders at the top level of {CONTEXT_DB}/ instead"
                 )
-        dirnames[:] = [d for d in dirnames if visible(d)]
+        dirnames[:] = [d for d in dirnames if in_tree(dirpath, d)]
         if dirpath != bundle and "index.md" in filenames and not has_knowledge(dirpath):
             warnings.append(f"{dirpath}/: holds only an index.md — delete it")
 
@@ -990,6 +1024,7 @@ def cmd_init(args):
 
 def run_index(bundle, check):
     """Sync the indexes, print the lint report, and return the exit code."""
+    load_git_ignored(bundle)
     stale = sync_indexes(bundle, check)
     errors, warnings = lint_bundle(bundle)
     if check:

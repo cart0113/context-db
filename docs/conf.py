@@ -35,6 +35,7 @@ html_baseurl = SITE
 html_logo = "_static/context-db-icon.svg"
 html_favicon = "_static/favicon.svg"
 html_static_path = ["_static"]
+templates_path = ["_templates"]
 html_css_files = ["custom.css"]
 html_show_sourcelink = False
 

@@ -208,6 +208,34 @@ def test_a_folder_left_with_only_its_index_is_reported(project):
     assert "gone" not in (bundle / "index.md").read_text()
 
 
+def test_what_git_ignores_stays_out_of_the_index_and_the_checks(project, tmp_path):
+    git(project, "init", "-q", "-b", "main")
+    bundle = project / "context-db" / "demo-project"
+    write(
+        project / ".gitignore",
+        "context-db/demo-project/private/\ncontext-db/demo-project/secret.md\n"
+        "context-db/demo-project/mine\ncontext-db/notes\n",
+    )
+    write(bundle / "private" / "scratch.md", "no frontmatter at all\n")
+    write(bundle / "secret.md", "no frontmatter either\n")
+    (tmp_path / "elsewhere").mkdir(exist_ok=True)
+    (bundle / "mine").symlink_to(tmp_path / "elsewhere")
+    result = run(project, "index")
+    assert result.returncode == 0, result.stdout
+    index = (bundle / "index.md").read_text()
+    assert "private" not in index and "secret" not in index
+    assert not (bundle / "private" / "index.md").exists()
+    assert run(project, "index", "--check").returncode == 0
+
+    # A folder that is ignored as a whole is private, and is indexed as it stands.
+    notes = project / "context-db" / "notes"
+    write(notes / "notes.md", "---\ntype: Folder\ndescription: My notes\n---\n")
+    write(notes / "idea.md", doc(description="An idea"))
+    result = run(project, "index", "context-db/notes")
+    assert result.returncode == 0, result.stdout
+    assert "An idea" in (notes / "index.md").read_text()
+
+
 def test_index_is_idempotent_and_check_detects_drift(project):
     assert "up to date" in run(project, "index").stdout
     assert run(project, "index", "--check").returncode == 0

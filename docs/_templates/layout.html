@@ -1,0 +1,9 @@
+{#- The home page gets a full title; every other page keeps "Page — context-db". -#}
+{% extends "!layout.html" %}
+{% block htmltitle %}
+{%- if pagename == root_doc %}
+<title>context-db: skills for coding agents, built on the Open Knowledge Format</title>
+{%- else %}
+<title>{{ title|striptags|e }}{{ titlesuffix }}</title>
+{%- endif %}
+{% endblock %}

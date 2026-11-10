@@ -60,3 +60,13 @@ still works: `prompt` tells the agent to list the folder and read frontmatter.
 
 Folders that hold no Markdown (images, scripts) are skipped entirely: no index,
 no descriptor required.
+
+## Gitignored content is left out
+
+A committed index must list only what every clone has. This repository keeps
+private notes in a gitignored folder inside the project folder
+(`context-db-theory/other/`), which would otherwise appear in the owner's
+regenerated index and fail `--check` for everyone else. So `load_git_ignored()`
+asks `git check-ignore` before indexing, and ignored files and folders are
+dropped from the index and from lint. A folder that is ignored as a whole is
+treated as private and indexed as it stands.

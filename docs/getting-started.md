@@ -3,7 +3,7 @@
 You need Python 3.8 or newer, and a coding agent that can run shell commands.
 These steps use Claude Code.
 
-## 1. Copy the skill into your project
+## 1. Copy the skills into your project
 
 ```bash
 git clone -b v0.1 https://github.com/cart0113/context-db /tmp/context-db
@@ -11,9 +11,9 @@ mkdir -p .claude/skills
 cp -r /tmp/context-db/skill/context-db .claude/skills/
 ```
 
-The skill is one folder: a Python script, a few instruction files, and some
-starter templates. Commit it with your project so that everyone on the team has
-the same version.
+The skills come as one folder: a Python script, a few instruction files, and
+some starter templates. Commit it with your project so that everyone on the team
+has the same version.
 
 If you use a different agent, put the folder wherever that agent keeps its
 skills. You can also run any command yourself from a terminal:

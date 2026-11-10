@@ -21,24 +21,30 @@ agent's head after someone renames the file.
 
 ## What context-db does about it
 
-**It keeps notes out of the way until they are needed.** Nothing is loaded when
-a session starts. The agent reads the knowledge base only when you run a
+### It keeps notes out of the way until they are needed
+
+Nothing is loaded when a session starts. The agent reads the knowledge base only when you run a
 command, and then it reads an index and opens only the files that match the
 task.
 
-**It loads notes at the moment of work.** Rules that are loaded at the start of
-a session fade. On a long session they are compacted away, and by turn forty the
+### It loads notes at the moment of work
+
+Rules that are loaded at the start of a session fade. On a long session they are compacted away, and by turn forty the
 agent is back on its defaults. `prompt` fetches the relevant rules again,
 immediately before the work they apply to.
 
-**It tells the agent that the code wins.** Every `prompt` includes this:
+### It tells the agent that the code wins
+
+Every `prompt` includes this:
 
 > Context-db is a map, not the territory. Use it to orient, then verify against
 > the project's assets (code, configs, docs). Where they conflict, trust the
 > project's assets, especially code, and tell the user what is out of date.
 
-**It asks whether to write before it says how.** `update` opens with a question:
-would the next agent get something wrong without this? Then it says:
+### It asks whether to write before it says how
+
+`update` opens with a question: would the next agent get something wrong
+without this? Then it says:
 
 > Most sessions produce nothing worth storing. That is the normal outcome, not a
 > failure. Every addition dilutes what is already there.

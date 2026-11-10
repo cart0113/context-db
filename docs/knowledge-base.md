@@ -156,4 +156,7 @@ The [`wip` command](commands.md) keeps this folder up to date.
 It reports these as warnings: a file over 200 lines outside `wip/`, and a
 folder with more than 12 items.
 
-Folders that contain no Markdown, such as a folder of images, are ignored.
+Two things are skipped. Folders that contain no Markdown, such as a folder of
+images, are not part of the knowledge base. Anything that git ignores is left
+out of the index and the checks, so you can keep private notes beside the
+shared ones.
