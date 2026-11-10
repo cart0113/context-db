@@ -18,7 +18,9 @@ And at the top level of context-db/:
 Everything it cannot decide is printed under "Needs a decision". The guessed
 types are a starting point; the guide next to this script covers the rest.
 
-Dependencies: python 3.8+, stdlib only.
+Running it twice is safe: the second run changes nothing.
+
+Requires Python 3.8+ and nothing outside the standard library.
 """
 
 import argparse
@@ -28,6 +30,7 @@ import sys
 
 ON_DIR = "context-db-on-markdown"
 RETIRED_STATUSES = ("experiment", "work-in-progress", "refactor")
+OLD_DESCRIPTOR_NAMES = ("SKILL.md", "CONTEXT.md", "AGENT.md", "AGENTS.md")
 TYPE_GUESSES = (
     (r"decision|rationale|why ", "Decision"),
     (r"standard|convention|style|naming|voice", "Convention"),
@@ -36,11 +39,23 @@ TYPE_GUESSES = (
     (r"research|landscape|theory|evidence", "Research"),
     (r"plan|roadmap|work in progress|todo", "Plan"),
 )
-PATH_SPAN_RE = re.compile(r"`((?:\.\.?/)[\w./-]+\.md)`")
+PATH_SPAN_RE = re.compile(r"`((?:\.\.?/)?[\w./-]+\.md)`")
+LINK_RE = re.compile(r"(\[[^\]]*\])\(([^)\s]+)\)")
+NOT_RELATIVE_RE = re.compile(r"^([A-Za-z][A-Za-z0-9+.-]*:|#|/)")
 FENCE_RE = re.compile(r"^[ \t]*(```|~~~)")
 
 
-def frontmatter_bounds(lines):
+def read(path):
+    with open(path, "r", encoding="utf-8-sig", errors="replace") as f:
+        return f.read()
+
+
+def write(path, content):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+
+def frontmatter_end(lines):
     """Index of the closing --- line, or None when there is no frontmatter."""
     if not lines or lines[0].strip() != "---":
         return None
@@ -62,34 +77,36 @@ def guess_type(path, folder_name, header):
 
 
 def linkify(path, lines, start):
-    """Replace `./x.md` code spans with links when the target exists."""
+    """Replace `./x.md` and `x.md` code spans with links when the target exists.
+
+    A span that starts with ./ or ../ but points nowhere is reported. A bare
+    name that points nowhere is left alone: it is usually just a filename.
+    """
     count = 0
     unresolved = []
     in_fence = False
+
+    def replace(match):
+        nonlocal count
+        target = match.group(1)
+        if os.path.isfile(os.path.join(os.path.dirname(path), target)):
+            count += 1
+            return f"[{os.path.basename(target)}]({target})"
+        if target.startswith("."):
+            unresolved.append(target)
+        return match.group(0)
+
     for i in range(start, len(lines)):
         if FENCE_RE.match(lines[i]):
             in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-
-        def replace(match):
-            nonlocal count
-            target = match.group(1)
-            if os.path.exists(os.path.join(os.path.dirname(path), target)):
-                count += 1
-                return f"[{os.path.basename(target)}]({target})"
-            unresolved.append(target)
-            return match.group(0)
-
-        lines[i] = PATH_SPAN_RE.sub(replace, lines[i])
+        elif not in_fence:
+            lines[i] = PATH_SPAN_RE.sub(replace, lines[i])
     return count, unresolved
 
 
 def migrate_file(path, folder_name, dry_run, report):
-    with open(path, "r", encoding="utf-8") as f:
-        lines = f.read().split("\n")
-    end = frontmatter_bounds(lines)
+    lines = read(path).split("\n")
+    end = frontmatter_end(lines)
     if end is None:
         report["decide"].append(f"{path}: no YAML frontmatter — add type and description by hand")
         return
@@ -118,13 +135,21 @@ def migrate_file(path, folder_name, dry_run, report):
         )
 
     if lines != original and not dry_run:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write("\n".join(lines))
+        write(path, "\n".join(lines))
+
+
+def missing_descriptor(folder, names):
+    """What to say about a folder that has no <folder>.md descriptor."""
+    name = os.path.basename(folder)
+    for old in [f"{name}-instructions.md", *OLD_DESCRIPTOR_NAMES]:
+        if old in names:
+            return f"{folder}/: rename {old} to {name}.md — it is the folder descriptor"
+    return f"{folder}/: no folder descriptor {name}.md"
 
 
 def migrate_bundle(bundle, dry_run, report):
     for dirpath, dirnames, filenames in os.walk(bundle):
-        for name in list(dirnames):
+        for name in sorted(dirnames):
             full = os.path.join(dirpath, name)
             if name.startswith("_"):
                 report["decide"].append(
@@ -135,32 +160,33 @@ def migrate_bundle(bundle, dry_run, report):
                     f"{full}: symlink inside a bundle — mount it at the top level instead"
                 )
         dirnames[:] = sorted(
-            d
-            for d in dirnames
-            if not d.startswith(".") and not os.path.islink(os.path.join(dirpath, d))
+            name
+            for name in dirnames
+            if not name.startswith(".") and not os.path.islink(os.path.join(dirpath, name))
         )
         folder_name = os.path.basename(dirpath)
-        mds = sorted(n for n in filenames if n.endswith(".md") and n not in ("index.md", "log.md"))
-        if f"{folder_name}.md" not in mds:
-            report["decide"].append(f"{dirpath}/: no folder descriptor {folder_name}.md")
-        for name in mds:
+        names = sorted(
+            name
+            for name in filenames
+            if name.endswith(".md") and name not in ("index.md", "log.md")
+        )
+        if names and f"{folder_name}.md" not in names:
+            report["decide"].append(missing_descriptor(dirpath, names))
+        for name in names:
             migrate_file(os.path.join(dirpath, name), folder_name, dry_run, report)
 
 
 def rebase_links(path, old_dir):
-    """Rewrite relative links in a file that moved out of old_dir."""
-    with open(path, "r", encoding="utf-8") as f:
-        text = f.read()
+    """Rewrite relative links in a file that has moved out of old_dir."""
 
     def replace(match):
         target = match.group(2)
-        if re.match(r"^([A-Za-z][A-Za-z0-9+.-]*:|#|/)", target):
+        if NOT_RELATIVE_RE.match(target):
             return match.group(0)
         rebased = os.path.relpath(os.path.join(old_dir, target), os.path.dirname(path))
         return f"{match.group(1)}({rebased})"
 
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(re.sub(r"(\[[^\]]*\])\(([^)\s]+)\)", replace, text))
+    write(path, LINK_RE.sub(replace, read(path)))
 
 
 def move(src, dst, dry_run, report):
@@ -198,7 +224,7 @@ def main():
             continue
         if os.path.islink(folder):
             report["decide"].append(
-                f"{folder}: symlinked bundle — run this script in the repo that owns it"
+                f"{folder}: symlinked folder — run this script in the repository that owns it"
             )
             continue
         migrate_bundle(folder, args.dry_run, report)
@@ -222,4 +248,6 @@ def main():
 
 
 if __name__ == "__main__":
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8", errors="replace")
     main()

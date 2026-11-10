@@ -19,13 +19,13 @@ restatements of code. Link to code and docs; never restate them.
 
 ## Where it goes
 
-Write only inside `{project_dir}/`. Every other folder under `{cdb}/` is a
-background bundle owned elsewhere: never edit one.
+Write only inside the project folder, `{project_dir}/`. Every other folder
+under `{cdb}/` is a background folder owned elsewhere: never edit one.
 
 Read `{project_dir}/index.md` and navigate to see what is already documented.
 Update an existing file when it covers the topic. Create a file only for a
 genuinely new topic. Delete content that has become false or has drifted into a
-summary of the code. A smaller, accurate bundle beats a larger one.
+summary of the code. A smaller, accurate knowledge base beats a larger one.
 
 Plans and the status of ongoing work do not go in the main tree. They live in
 `{project_dir}/wip/`, which `/context-db wip` manages.

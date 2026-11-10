@@ -23,8 +23,8 @@ the user instruction at the end of this output.
        {index_cmd}
 
    and fix anything it reports.
-5. Tell the user in a few lines what you deleted, what you promoted, and what
-   the plan now says.
+5. Tell the user in a few lines what you deleted, what you moved into the main
+   tree, and what the plan now says.
 
 With no user instruction, do steps 1 and 2 and summarize what is in progress.
 

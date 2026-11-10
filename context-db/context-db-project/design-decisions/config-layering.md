@@ -11,7 +11,7 @@ description:
 v0.0 had no config. v0.1 has three keys, because each answers a question the
 script cannot reliably answer itself:
 
-- `project` names the project bundle, so nothing has to glob for `*-project/`.
+- `project` names the project folder, so nothing has to glob for `*-project/`.
 - `python` is the interpreter. On some machines `python3` is too old or absent.
 - `main_branch` is the diff base for `/context-db wip`.
 
@@ -28,6 +28,11 @@ The script cannot choose the interpreter that runs it. So `SKILL.md` tells the
 agent where to find the value: local file, then shared file, then `python3`.
 The script then prints follow-up commands with the configured interpreter
 already filled in.
+
+`configure` runs before any config exists, so it reports what it can see: the
+interpreter running it, and whether `python3` on PATH is the same one or new
+enough. It must keep working when the config is missing, partial, or not valid
+JSON, because it is the repair tool; the other commands stop with an error.
 
 ## The key set is closed
 

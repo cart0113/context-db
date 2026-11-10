@@ -16,7 +16,7 @@ jobs:
         python: ["3.8", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - run: pip install pytest
+      - run: pip install pytest pyyaml
       - run: python skill/context-db/context-db.py index --check
       - run: python -m pytest tests -q
 

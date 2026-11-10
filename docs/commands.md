@@ -1,11 +1,14 @@
 # Commands
 
-Every command prints instructions that the calling agent follows. The sections
-below show the instruction text itself, included verbatim from the skill, so
-this page cannot drift from what the agent reads.
+There are four commands. Each one prints a set of instructions, and the agent
+follows them. Nothing is hidden: the exact text is under each command below.
 
-Each command also inlines its `ON_*.md` file, if it has content, immediately
-before the user's instruction. The instruction is always last.
+In Claude Code you type a command as `/context-db <command>`. Anywhere else, run
+the script:
+
+```bash
+python3 .claude/skills/context-db/context-db.py <command>
+```
 
 ## prompt
 
@@ -13,19 +16,30 @@ before the user's instruction. The instruction is always last.
 /context-db prompt "add a refund endpoint"
 ```
 
-Use it at the start of a piece of work, and again whenever a long session has
-drifted from the project's conventions. The output is, in order:
+Use it before a task. Use it again whenever a long session has drifted away from
+your project's rules.
 
-1. The navigation rules below.
-2. **Bundles**: the project bundle and every background bundle, each with its
-   description and where to start reading.
-3. **Work In Progress**: every file in `wip/` with its description and branch.
-4. The contents of `ON_PROMPT.md`.
-5. The user's instruction.
+What the agent does:
+
+1. Reads the list of knowledge folders and the list of plans in `wip/`.
+2. Opens the `index.md` of each folder that looks relevant.
+3. Opens only the files whose descriptions match the task.
+4. Gets on with the task, and checks what it read against the code.
+
+When the knowledge base and the code disagree, the agent is told to trust the
+code and to tell you.
+
+:::{dropdown} The text the agent receives
+:color: secondary
+
+Words in braces are filled in when the command runs. After this text the agent
+sees the folder list, the plans in `wip/`, your `ON_PROMPT.md`, and your
+instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/prompt.md
 :language: markdown
 ```
+:::
 
 ## update
 
@@ -36,19 +50,40 @@ drifted from the project's conventions. The output is, in order:
 /context-db update --push
 ```
 
-Use it at the end of a session. With no instruction the agent reviews the
-session itself. `--commit` then commits every file touched in the session;
-`--push` commits and pushes.
+Use it at the end of a session.
+
+What the agent does:
+
+1. Decides whether anything is worth writing down. Most of the time nothing is,
+   and it stops there.
+2. If there is something, finds the right file in the project folder, or
+   creates one.
+3. Regenerates the `index.md` files and fixes any format problems.
+4. With `--commit`, commits everything that changed in the session. With
+   `--push`, pushes as well.
+
+Give it an instruction to say what should be recorded. Without one, the agent
+looks back over the session and decides for itself.
+
+:::{dropdown} The text the agent receives
+:color: secondary
 
 ```{literalinclude} ../skill/context-db/prompts/update.md
 :language: markdown
 ```
 
-With `--commit` or `--push` this follows:
+The agent also receives the format rules:
+
+```{literalinclude} ../skill/context-db/prompts/format.md
+:language: markdown
+```
+
+With `--commit` or `--push` it receives this as well:
 
 ```{literalinclude} ../skill/context-db/prompts/commit.md
 :language: markdown
 ```
+:::
 
 ## wip
 
@@ -57,14 +92,35 @@ With `--commit` or `--push` this follows:
 /context-db wip
 ```
 
-`<name>-project/wip/` holds the plans for work in progress. `wip` is a form of
-`prompt` aimed at that folder. Besides the instructions it prints the current
-branch, uncommitted changes, the commits and changed files since the main
-branch, and every wip file, so the agent can tell what has landed.
+Use it for work that takes more than one session. Plans live in the `wip/`
+folder inside the project folder.
+
+What the agent does:
+
+1. Reads every plan in `wip/`.
+2. Looks at git: the current branch, uncommitted changes, and what has been
+   committed since the main branch.
+3. Deletes the plans for work that has landed. Anything worth keeping for the
+   long term is moved into the main knowledge base first.
+4. Writes or updates the plan for what you are doing now.
+
+`prompt` lists the plans in `wip/` every time it runs, so each new session
+starts by knowing what is in progress.
+
+A plan can name the branch it belongs to. The agent asks you before it touches a
+plan for a different branch. Without an instruction, `wip` only cleans up and
+tells you what is in progress.
+
+:::{dropdown} The text the agent receives
+:color: secondary
+
+After this text the agent sees the git state, every plan in `wip/`, the format
+rules, your `ON_WIP.md`, and your instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/wip.md
 :language: markdown
 ```
+:::
 
 ## configure
 
@@ -72,31 +128,60 @@ branch, and every wip file, so the agent can tell what has landed.
 /context-db configure
 ```
 
-Run it once per repository, and again whenever something is missing. It prints
-what it detected: the interpreter, the repository name, the main branch, both
-config files, existing project bundles, and any leftovers from v0.0.
+Run it once per repository. Run it again if a file goes missing or you want to
+change a setting.
+
+What the agent does:
+
+1. Looks at what is already there: the Python on your machine, the repository
+   name, the main branch, and any existing settings.
+2. Agrees the project name, the Python command, and the main branch with you.
+3. Writes the settings and creates whatever is missing. It never overwrites
+   anything.
+4. Offers to add a note about context-db to your `AGENTS.md` or `CLAUDE.md`, and
+   asks whether you want to mount any shared folders.
+
+:::{dropdown} The text the agent receives
+:color: secondary
 
 ```{literalinclude} ../skill/context-db/prompts/configure.md
 :language: markdown
 ```
+:::
 
-## The ON files
+## Rules the agent sees every time
 
-`context-db/context-db-on-markdown/` holds one optional file per command:
-`ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, `ON_CONFIGURE.md`. Whatever a file
-contains, outside HTML comments, is inlined every time its command runs. Keep
-them to the few rules the agent must see every single time; each line is paid
-for on every run.
+Some rules have to be in front of the agent on every run. "This service handles
+card data" is one. Put rules like that in the files in
+`context-db/context-db-on-markdown/`:
 
-## Helpers
+| File | Added to every |
+| --- | --- |
+| `ON_PROMPT.md` | `prompt` |
+| `ON_UPDATE.md` | `update` |
+| `ON_WIP.md` | `wip` |
+| `ON_CONFIGURE.md` | `configure` |
 
-Two more sub-commands do deterministic file work. Agents run them when the
-instructions say to; they are also useful by hand and in CI.
+The text is placed immediately before your instruction, which always comes last.
 
-`init [--project NAME] [--python CMD] [--main-branch BRANCH] [--local KEY=VALUE]`
-: Writes the config and creates whatever is missing without overwriting.
+Keep these files short, because every line is read on every run. Text inside
+HTML comments is left out, so you can keep notes to yourself in them. An empty
+file adds nothing.
 
-`index [bundle] [--check]`
-: Regenerates every `index.md` in a bundle and lints it. With no argument it
-  works on the project bundle. `--check` changes nothing and exits 1 if anything
-  is out of date or invalid.
+## Two helper commands
+
+The agent runs these when the instructions tell it to. You can run them too.
+
+```bash
+python3 .claude/skills/context-db/context-db.py init --project acme-payments
+python3 .claude/skills/context-db/context-db.py index
+python3 .claude/skills/context-db/context-db.py index --check
+```
+
+`init` writes the settings and creates whatever is missing. Its options are
+`--project`, `--python`, `--main-branch`, and `--local KEY=VALUE` for a setting
+that applies only to you.
+
+`index` regenerates every `index.md` in the project folder and checks the
+format. Give it a folder to work on a different one. With `--check` it changes
+nothing and exits with an error if anything is wrong.

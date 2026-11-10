@@ -1,10 +1,10 @@
 # Example: acme-payments-repo
 
-A runnable reference layout.
+A small project that uses context-db, ready to run.
 
 ```
 example/
-├── shared/                             standards owned by "another repo"
+├── shared/                             standards that "another repository" owns
 │   ├── coding-standards/
 │   └── git-standards/
 └── acme-payments-repo/                 the example project
@@ -13,7 +13,7 @@ example/
     └── context-db/
         ├── context-db.json
         ├── context-db-on-markdown/     ON_PROMPT.md carries a PCI reminder
-        ├── acme-payments-project/      the project bundle
+        ├── acme-payments-project/      the project folder
         │   ├── architecture.md
         │   ├── api-reference.md
         │   ├── data-model/
@@ -31,7 +31,7 @@ python3 .claude/skills/context-db/context-db.py wip
 python3 .claude/skills/context-db/context-db.py index --check
 ```
 
-The two symlinked bundles are indexed from the folder that owns them:
+The two symlinked folders are indexed from the folder that owns them:
 
 ```bash
 cd example/shared

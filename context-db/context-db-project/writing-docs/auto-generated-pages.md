@@ -10,9 +10,13 @@ description:
 
 When a docs page would restate what the agent reads, include the source file.
 [docs/commands.md](../../../docs/commands.md) pulls each file from
-`skill/context-db/prompts/` with a MyST `literalinclude` directive. Editing a
-prompt changes the docs on the next build; there is no generator script and
-nothing to regenerate.
+`skill/context-db/prompts/` with a MyST `literalinclude` directive, inside a
+dropdown so that the page stays short. Editing a prompt changes the docs on the
+next build; there is no generator script and nothing to regenerate.
+
+The plain-language summary above each dropdown ("What the agent does") is
+hand-written. When a prompt changes what the agent does, update that summary
+too.
 
 Pages about user intent (worked examples, when to use which command, setup)
 stay hand-written.

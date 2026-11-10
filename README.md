@@ -1,144 +1,136 @@
 # context-db
 
-**An [Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format)
-bundle that lives in your repo, plus four commands that tell a coding agent when
-to read it and when to write it.**
+A set of skills for coding agents. They keep a knowledge base for your project
+as Markdown files in your repo, and tell the agent when to read it and when to
+add to it.
 
-The knowledge base is a hierarchical Markdown wiki. Every folder has a generated
-`index.md` with one described line per child, so an agent reads a short list,
-follows the one link it needs, and never loads the rest. No sub-agents, no
-hooks, no dependencies: one Python script and a few prompt files.
+**Built on the [Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format)
+(OKF)**, an open standard for knowledge that agents can read. OKF grew out of
+Andrej Karpathy's
+[LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
+idea.
+[What OKF is, where it came from, and how context-db uses it](https://cart0113.github.io/context-db/okf.html).
+
+Documentation: <https://cart0113.github.io/context-db/>
+
+## What it is
+
+context-db is a set of skills that you install in a coding agent such as Claude
+Code. They come as one folder and show up as four commands under `/context-db`.
+
+The commands work on a folder in your repository called `context-db/`. That
+folder is the knowledge base. It holds what an agent cannot work out by reading
+your code: your conventions, the decisions you made and why, the mistakes to
+avoid, and the plan for the work in progress.
+
+Everything in it is a Markdown file with a short description at the top. Every
+folder has an `index.md` that lists what is inside, one line each. The agent
+reads the index, opens the one or two files it needs, and leaves the rest alone.
+
+There is no database and no server, in spite of the name. It is a folder of text
+files and one Python script.
 
 ```
 your-project/
-├── AGENTS.md                         opt-in: tells the agent the commands exist
-├── .claude/skills/context-db/        the skill: SKILL.md, context-db.py, prompts/
+├── .claude/skills/context-db/      the skills: SKILL.md, context-db.py, prompts/
 └── context-db/
-    ├── context-db.json               config written by `configure`
-    ├── context-db-on-markdown/       ON_PROMPT.md, ON_UPDATE.md, ON_WIP.md, ON_CONFIGURE.md
-    ├── <name>-project/               the project bundle — the only place commands write
-    │   ├── index.md                  generated
-    │   ├── <name>-project.md         folder descriptor
+    ├── context-db.json             settings
+    ├── context-db-on-markdown/     rules the agent sees on every command
+    ├── acme-payments-project/      the project folder: your project's knowledge
+    │   ├── index.md                generated list of everything in this folder
     │   ├── architecture.md
     │   ├── data-model/
-    │   └── wip/                      what is being built right now
-    └── coding-standards -> ...       a background bundle — read-only
+    │   └── wip/                    plans for the work in progress
+    └── coding-standards/           a background folder shared with other projects
 ```
 
-## The commands
+## The four commands
 
-| Command                 | What it does                                                 |
-| ----------------------- | ------------------------------------------------------------ |
-| `prompt "<task>"`       | Re-centers the agent on the knowledge relevant to a task.    |
-| `update ["<learning>"]` | Files a learning. `--commit` or `--push` commits the session. |
-| `wip ["<instruction>"]` | Refreshes the plan for current work and deletes what landed. |
-| `configure`             | Creates or repairs the config and scaffolding.               |
+| Command | When to run it | What the agent does |
+| --- | --- | --- |
+| `/context-db prompt "<task>"` | Before a task | Looks up what the knowledge base says about the task. |
+| `/context-db update` | After a task | Writes down anything the next agent would need. `--push` also commits and pushes. |
+| `/context-db wip "<what you are doing>"` | During long work | Keeps a short plan of the work in progress, and deletes plans for work that has landed. |
+| `/context-db configure` | Once per repository | Sets everything up. |
 
-In Claude Code these are `/context-db prompt "add a refund endpoint"` and so on.
-Anywhere else, run the script:
+Nothing runs by itself. The agent reads or writes the knowledge base only when
+you run one of these commands.
+
+Outside Claude Code, run the same commands from a terminal:
 
 ```bash
 python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
 ```
 
-Each command prints instructions and the agent follows them. Nothing runs on its
-own.
+## A typical session
 
-The everyday loop is two commands: `prompt` before a piece of work, and
-`update --push` after it.
+1. You type `/context-db prompt "add a refund endpoint"`.
+2. The agent reads the index, opens the notes on the payments API and the plan
+   for refunds, and skips everything else.
+3. It writes the code.
+4. You type `/context-db update --push`. The agent asks itself whether it
+   learned anything that the next agent would get wrong without being told.
+   Usually the answer is no, and it says so. If there is something, it writes a
+   short note in the right place. Then it commits and pushes.
 
-## The ideas
+## Install
 
-- **OKF for the format, context-db for the operations.** Every file has YAML
-  frontmatter with a `type` and a `description`. Every bundle is a conformant
-  OKF v0.2 bundle that Obsidian, GitHub, and OKF tools can read. What OKF does
-  not define is when an agent should read or write, and that is what the
-  commands add.
-
-- **Re-inject at the moment of work.** Standards loaded at session start are
-  compacted away on a long session. `prompt` fetches the relevant slice
-  immediately before the work it applies to.
-
-- **Most sessions store nothing.** `update` opens by asking whether the next
-  agent would get something wrong without this knowledge. Usually the answer is
-  no, and the agent says so and stops.
-
-- **Work in progress has its own place.** `<name>-project/wip/` holds the plans
-  for what is being built right now. `prompt` lists them every time. `wip`
-  compares them against git and deletes what has landed.
-
-- **One project bundle, any number of background bundles.** Project-specific
-  knowledge lives in `<name>-project/`. Shared standards and reference material
-  are mounted beside it, usually as symlinks to another repo, and are never
-  edited from here.
-
-## Getting started
+You need Python 3.8 or newer.
 
 ```bash
 git clone -b v0.1 https://github.com/cart0113/context-db /tmp/context-db
 mkdir -p .claude/skills
-cp -r /tmp/context-db/skill/context-db .claude/skills/context-db
+cp -r /tmp/context-db/skill/context-db .claude/skills/
+```
+
+Then type `/context-db configure` in Claude Code, or run:
+
+```bash
 python3 .claude/skills/context-db/context-db.py init --project <name>
 ```
 
-Or, in Claude Code, run `/context-db configure` after copying the skill and let
-the agent do the rest. Then paste `.claude/skills/context-db/starters/AGENTS.md`
-into your `AGENTS.md` or `CLAUDE.md`.
-
-Requires Python 3.8 or newer. Coming from v0.0? See
+[Get started](https://cart0113.github.io/context-db/getting-started.html) has
+the full steps. If you are on v0.0, see
 [Migrating](https://cart0113.github.io/context-db/migrating.html).
 
-## Config
+## Why use it
 
-`context-db/context-db.json` is committed and shared:
+Agents lose track of a project's rules partway through a long session, and they
+never knew the reasons behind your code in the first place. One large
+instructions file does not fix this.
+[Research from ETH Zurich](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
+found that context files often make agents perform worse: the agent follows the
+file and reads less of the code.
 
-```json
-{
-  "project": "acme-payments",
-  "python": "python3",
-  "main_branch": "main"
-}
-```
-
-`context-db/context-db.local.json` is gitignored, and any key in it overrides
-the shared value for one user. Use it for an interpreter path that exists only
-on one machine.
-
-## Why this design
-
-[ETH Zurich research](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
-found LLM-generated context files reduced task success by about 3% and increased
-cost by more than 20%.
-[Chroma's context-rot study](https://www.trychroma.com/research/context-rot)
-showed every frontier model performing worse as input grows. Agents trust a
-context file, read less of the actual code, and amplify any drift between the
-two.
-
-So the index keeps the loaded slice small, `prompt` keeps it fresh, and `update`
-is biased toward writing nothing. The test for every entry: if it were removed,
-would the agent make a mistake it would not otherwise make?
+A small knowledge base that the agent reads a little at a time, and only when
+asked, does better.
+[Why it works this way](https://cart0113.github.io/context-db/why.html) has the
+details.
 
 ## Documentation
 
-<https://cart0113.github.io/context-db/>
-
-- [Getting started](https://cart0113.github.io/context-db/getting-started.html)
-- [Commands](https://cart0113.github.io/context-db/commands.html) — including
-  the exact instruction text each one prints
-- [Format](https://cart0113.github.io/context-db/format.html) — the OKF profile
-- [Background bundles](https://cart0113.github.io/context-db/background-bundles.html)
+- [Get started](https://cart0113.github.io/context-db/getting-started.html)
+- [Commands](https://cart0113.github.io/context-db/commands.html), with the
+  exact text each one gives the agent
+- [The knowledge base](https://cart0113.github.io/context-db/knowledge-base.html):
+  what goes where, and what a file looks like
+- [The Open Knowledge Format](https://cart0113.github.io/context-db/okf.html):
+  what it is and which parts context-db uses
+- [Sharing knowledge between projects](https://cart0113.github.io/context-db/background-folders.html)
 - [Why it works this way](https://cart0113.github.io/context-db/why.html)
 
-## Developing
+## Working on context-db itself
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install pytest ruff -r docs/requirements.txt
+python3 -m venv .venv
+.venv/bin/pip install pytest pyyaml ruff -r docs/requirements.txt
 .venv/bin/python -m pytest tests
 .venv/bin/sphinx-build -W docs docs/_build/html
 cp hooks/pre-commit .git/hooks/pre-commit
 ```
 
-The repo uses its own skill on its own `context-db/`.
+The docs are Markdown files in `docs/`, built with Sphinx and the PyData theme.
+This repository uses its own skills on its own `context-db/` folder.
 
 ## License
 

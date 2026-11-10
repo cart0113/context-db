@@ -2,8 +2,8 @@
 type: Convention
 description:
   context-db-specific coding standards — overrides and additions to
-  general-coding-standards. No shims, no defensive .get(), triple-quote editable
-  text blocks, "project assets" framing.
+  general-coding-standards. No shims, no defensive .get(), agent-facing text in
+  prompts/ or triple-quoted constants, "project assets" framing.
 ---
 
 # context-db Project Coding Standards
@@ -27,12 +27,22 @@ If a key is required, access it directly — let the KeyError surface. If a key 
 genuinely optional, document why in a comment. Defensive `.get()` hides bugs and
 makes required fields appear optional.
 
+The one standing exception is frontmatter. Every frontmatter key is optional to
+the parser, and lint decides which are required, so code that reads parsed
+frontmatter uses `.get()`.
+
 ## "Project assets" framing — never just "code"
 
 When templates or prompts tell the agent to verify context-db findings, say
 "project assets (code, configs, docs, etc.)" — not just "code." When expressing
 trust priority, say "trust the project's assets, especially project code." Code
 is still primary, but the framing should acknowledge the full project.
+
+## Agent-facing text never lives inside a function
+
+Long instructions are the files in `skill/context-db/prompts/`. Short pieces are
+the triple-quoted constants under "Agent-facing text" at the top of the script.
+A function may format one of them; it may not contain wording of its own.
 
 ## Triple-quote all editable text blocks
 

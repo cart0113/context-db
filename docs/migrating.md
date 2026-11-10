@@ -1,32 +1,41 @@
 # Migrating from v0.0
 
-v0.1 is a rewrite with the same idea and a different shape.
+Version 0.1 is a rewrite. The idea is the same and the layout is different.
 
-| v0.0                                            | v0.1                                                 |
-| ----------------------------------------------- | ---------------------------------------------------- |
-| Frontmatter: `description`                      | Frontmatter: `type` and `description` (OKF)          |
-| TOC printed by a script                         | Generated `index.md` files, read directly            |
-| `prompt`, `update`, `maintain`, `read`          | `prompt`, `update`, `wip`, `configure`               |
-| No config                                       | `context-db.json` plus optional `context-db.local.json` |
-| `context-db/ON_PROMPT.md`                       | `context-db/context-db-on-markdown/ON_PROMPT.md`     |
-| `<name>-project/wip.md`                         | `<name>-project/wip/`                                |
-| Backticked paths and a resolver script          | Markdown links                                       |
-| Three scripts                                   | One script                                           |
+## What changed
 
-A migration script does the mechanical part: it adds a guessed `type` to every
-file, converts backticked paths to links, and moves the ON files and `wip.md`.
+| v0.0 | v0.1 |
+| --- | --- |
+| Frontmatter has `description` | Frontmatter has `type` and `description`, as OKF requires |
+| A script prints the table of contents | Every folder has a generated `index.md` that the agent reads |
+| Commands: `prompt`, `update`, `maintain`, `read` | Commands: `prompt`, `update`, `wip`, `configure` |
+| No settings | `context-db.json`, with optional `context-db.local.json` |
+| `context-db/ON_PROMPT.md` | `context-db/context-db-on-markdown/ON_PROMPT.md` |
+| `<name>-project/wip.md` | `<name>-project/wip/` folder |
+| Paths in backticks, and a script to resolve them | Markdown links |
+| Three scripts | One script |
+
+## How to migrate
+
+A script does the mechanical part. It adds a guessed `type` to every file, turns
+backticked paths into links, and moves the `ON_*.md` files and `wip.md`. See
+what it would do first:
 
 ```bash
-python3 <context-db-checkout>/context-db/context-db-project/context-db-migrate-from-v0.0/migrate-v0.0.py context-db --dry-run
+python3 <checkout>/context-db/context-db-project/context-db-migrate-from-v0.0/migrate-v0.0.py context-db --dry-run
 ```
 
-The full procedure is written for an agent to follow. Point the agent at it:
+`<checkout>` is a clone of the context-db repository.
 
-> Read
-> `<context-db-checkout>/context-db/context-db-project/context-db-migrate-from-v0.0/context-db-migrate-from-v0.0.md`
-> and migrate this project.
+The rest needs judgment, so there is a guide written for an agent to follow.
+Give your agent this instruction:
 
-It is also
-[on GitHub](https://github.com/cart0113/context-db/blob/v0.1/context-db/context-db-project/context-db-migrate-from-v0.0/context-db-migrate-from-v0.0.md).
+```text
+Read <checkout>/context-db/context-db-project/context-db-migrate-from-v0.0/context-db-migrate-from-v0.0.md
+and migrate this project.
+```
 
-The v0.0 system remains on the `v0.0` branch.
+You can also
+[read the guide on GitHub](https://github.com/cart0113/context-db/blob/v0.1/context-db/context-db-project/context-db-migrate-from-v0.0/context-db-migrate-from-v0.0.md).
+
+The old version is still there, on the `v0.0` branch.

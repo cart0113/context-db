@@ -32,11 +32,11 @@ git, (2) changes what an agent does, and (3) costs almost nothing to maintain.
 ## Keys OKF offers that are deliberately not written
 
 - **`generated`, `verified`, `stale_after`, `sources`.** Git blame and git log
-  already record who changed what and when for an in-repo bundle. A trust field
+  already record who changed what and when for files that live in a repository. A trust field
   nobody maintains creates false confidence, which is worse than no field.
 - **`tags`.** Needs a controlled vocabulary. The description and the folder
   hierarchy already do discovery.
 - **`title`.** Redundant with the H1. The index takes its link text from
   `title` if present, else the first H1, else the filename.
 
-Lint ignores unknown keys, so a bundle that carries them still passes.
+Lint ignores unknown keys, so a file that carries them still passes.

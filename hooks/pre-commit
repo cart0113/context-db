@@ -3,40 +3,46 @@
 # pre-commit — keep the index, the code, and the tests honest.
 #
 #   1. ruff format + fix on staged Python files (if ruff is installed)
-#   2. context-db index --check on this repo's own bundle
+#   2. context-db index --check on this repo's own knowledge base
 #   3. pytest when the skill, the migration script, the example, or tests change
 #
 # Install:
 #   cp hooks/pre-commit .git/hooks/pre-commit
 
-set -eo pipefail
+set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
 PYTHON=python3
-[ -x .venv/bin/python ] && PYTHON=.venv/bin/python
+if [ -x .venv/bin/python ]; then PYTHON=.venv/bin/python; fi
 RUFF="$(command -v ruff || true)"
-[ -x .venv/bin/ruff ] && RUFF=.venv/bin/ruff
+if [ -x .venv/bin/ruff ]; then RUFF=.venv/bin/ruff; fi
 
 STAGED="$(git diff --cached --name-only --diff-filter=ACM)"
 
 if [ -n "$RUFF" ]; then
-    echo "$STAGED" | grep -E '\.py$' | while IFS= read -r file; do
-        [ -f "$file" ] || continue
-        "$RUFF" format -q "$file"
-        "$RUFF" check -q --fix "$file"
-        git add "$file"
-    done
+    while IFS= read -r file; do
+        case "$file" in
+            *.py)
+                [ -f "$file" ] || continue
+                "$RUFF" format -q "$file"
+                "$RUFF" check -q --fix "$file"
+                git add "$file"
+                ;;
+        esac
+    done <<< "$STAGED"
 fi
 
-"$PYTHON" skill/context-db/context-db.py index --check || {
-    echo "Run: python3 skill/context-db/context-db.py index"
+if ! "$PYTHON" skill/context-db/context-db.py index --check; then
+    echo "pre-commit: run  python3 skill/context-db/context-db.py index  and stage the result."
     exit 1
-}
-
-if echo "$STAGED" | grep -qE '^(skill/|tests/|example/|context-db/context-db-project/context-db-migrate-from-v0.0/)'; then
-    if "$PYTHON" -c "import pytest" 2>/dev/null; then
-        "$PYTHON" -m pytest tests -q
-    else
-        echo "pytest is not installed; skipping tests."
-    fi
 fi
+
+case "$STAGED" in
+    *skill/* | *tests/* | *example/* | *context-db-migrate-from-v0.0/*)
+        if "$PYTHON" -c "import pytest" 2>/dev/null; then
+            "$PYTHON" -m pytest tests -q
+        else
+            echo "pre-commit: pytest is not installed; skipping tests."
+        fi
+        ;;
+esac

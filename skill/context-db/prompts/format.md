@@ -1,6 +1,6 @@
 # File Format
 
-Every `.md` file in a bundle starts with YAML frontmatter:
+Every `.md` file in the knowledge base starts with YAML frontmatter:
 
     ---
     type: Decision

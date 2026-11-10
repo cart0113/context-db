@@ -26,8 +26,9 @@ routing. The script prints where to start; the agent navigates.
 
 Recency wins. Rules at the top of a composed prompt get diluted by everything
 after them. `ON_*.md` content is emitted at the end of each command's output,
-immediately before the user instruction, which is always the final section. The
-script adds no framing around ON content; its author owns the wording.
+immediately before the user instruction, which is always the final section,
+even on `update --commit`. The script adds no framing around ON content; its
+author owns the wording.
 
 ## Lead with what to do, then the constraints
 
@@ -44,13 +45,13 @@ self-correction. Every path the script prints goes through `rel()`.
 No measurable difference between custom bracket tags and Markdown H1 headers for
 separating sections of a composed prompt, and headers need no closing tag. Each
 prompt file opens with one H1; the script adds H1 sections for dynamic content
-(`# Bundles`, `# Work In Progress`, `# Git State`, `# User Instruction`).
+(`# Folders`, `# Work In Progress`, `# Git State`, `# User Instruction`).
 
-## Name the project bundle on writes, not on reads
+## Name the project folder on writes, not on reads
 
 Write commands say exactly where to write, because writes need direction. The
-`prompt` output lists every bundle with equal standing apart from the label,
-because reads need recall: narrowing attention to the project bundle biases the
+`prompt` output lists every folder with equal standing apart from the label,
+because reads need recall: narrowing attention to the project folder biases the
 agent away from standards that apply.
 
 ## Retire a specialized primitive once a flexible one subsumes it
