@@ -370,7 +370,8 @@ USER_COMMANDS = ("prompt", "update", "wip", "configure", "maintain")
 def help_commands(out):
     """The command names --help lists, in order."""
     section = out.split("  <command>\n", 1)[1].split("\noptions:")[0]
-    return tuple(re.findall(r"(?m)^    (\w+) ", section))
+    # A long name puts its help on the next line on older Pythons (3.8).
+    return tuple(re.findall(r"(?m)^    (\w+)(?: |$)", section))
 
 
 def test_version_and_help():

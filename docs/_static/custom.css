@@ -18,6 +18,9 @@
     color-mix(in srgb, var(--cdb-blue) 50%, transparent) 68%,
     color-mix(in srgb, var(--cdb-indigo) 50%, transparent)
   );
+  /* The theme's default type reads large; the whole site is set 10% smaller.
+     Everything the theme sizes in rem scales with it. */
+  --pst-font-size-base: 0.9rem;
   --pst-font-family-heading: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
