@@ -718,6 +718,18 @@ def test_configure_asks_its_questions_as_a_menu(tmp_path):
     assert "--update-mode <mode>" in out
 
 
+def test_configure_shows_the_current_rules_so_they_can_be_changed(project):
+    on = project / "context-db" / "context-db-on-markdown"
+    write(on / "ON_UPDATE.md", "<!-- note -->\nCommit messages follow Conventional Commits.\n")
+    out = run(project, "configure").stdout
+    rules = out.split("# Current Rules")[1]
+    assert "ON_UPDATE.md`, added to every `/context-db update`" in rules
+    assert "Commit messages follow Conventional Commits." in rules
+    assert "only when the user runs `/context-db update`" in rules
+    assert "ON_WIP.md`, added to every `/context-db wip`\n\n(empty: it adds nothing)" in rules
+    assert "begin by asking what the user wants to do" in out
+
+
 def test_init_rejects_bad_input_without_writing_anything(tmp_path):
     for args in (
         (),

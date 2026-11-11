@@ -62,7 +62,20 @@ context-db/
 
 Running it again is safe. It never overwrites a file that already exists.
 
-## 3. Tell the agent to leave it alone
+## 3. Make it behave the way you want
+
+Four files in `context-db/context-db-on-markdown/` control how the agent
+behaves: `ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, and `ON_CONFIGURE.md`.
+Whatever a file says is added to the agent's instructions every time that
+command runs.
+
+You do not need to edit them by hand. Run `/context-db configure` again at any
+time. It reads the files, tells you what they make the agent do today, and asks
+what you want changed. Then it edits them for you.
+
+[Commands](commands.md) has examples of rules.
+
+## 4. Tell the agent to leave it alone
 
 Add the text in `.claude/skills/context-db/starters/AGENTS.md` to your
 `AGENTS.md` or `CLAUDE.md`.
@@ -72,7 +85,7 @@ it unless you run a command. This matters. An agent that loads the whole
 knowledge base at the start of every session has less attention left for your
 task. [Why it works this way](why.md) covers the research.
 
-## 4. Use it
+## 5. Use it
 
 Before a task:
 

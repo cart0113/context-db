@@ -56,6 +56,11 @@ your-project/
 Nothing runs by itself. The agent reads or writes the knowledge base only when
 you run one of these commands.
 
+Each command gives the agent a set of instructions, so that you do not have to
+type them every time. You control those instructions with a few rule files in
+`context-db/context-db-on-markdown/`, and `/context-db configure` edits them for
+you: it asks what you want and writes it down.
+
 Outside Claude Code, run the same commands from a terminal:
 
 ```bash

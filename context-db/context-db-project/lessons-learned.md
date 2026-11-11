@@ -72,6 +72,11 @@ question at a time, as a menu with a recommended option, using the agent's
 question tool where it has one. Add a new setting as a question in
 `configure.md` and a flag on `init`, never as something to edit by hand.
 
+The owner's model of the product, stated on 2026-11-11: context-db supplies the
+instructions that keep an agent grounded, the `ON_*.md` files are how a user
+controls that behavior, and `configure` is the helper that reads those files,
+asks what the user wants changed, and edits them. Docs must say this plainly.
+
 ## Lead with what to do, then the constraints
 
 A prompt that opens with a list of prohibitions makes weaker models conclude

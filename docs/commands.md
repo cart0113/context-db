@@ -129,8 +129,8 @@ rules, your `ON_WIP.md`, and your instruction.
 /context-db configure
 ```
 
-Run it once per repository. Run it again if a file goes missing or you want to
-change a setting.
+Run it once per repository to set things up. Run it again whenever you want the
+agent to behave differently.
 
 What the agent does:
 
@@ -139,7 +139,10 @@ What the agent does:
 2. Asks you a few questions, one at a time, as a menu: the project name, who
    updates the knowledge base, whether to add a note for the agent to
    `AGENTS.md` or `CLAUDE.md`, and whether to mount shared folders.
-3. Writes the settings and creates whatever is missing. It never overwrites
+3. Reads the rule files, tells you what they make the agent do today, and asks
+   whether you want to change anything. You say what you want in your own
+   words, and the agent edits the files and shows you the result.
+4. Writes the settings and creates whatever is missing. It never overwrites
    anything.
 
 The question about updates has two answers. With `on-command`, the agent writes
@@ -156,11 +159,26 @@ into `ON_PROMPT.md`, where you can reword it.
 ```
 :::
 
-## Rules the agent sees every time
+## The rule files control how the agent behaves
 
-Some rules have to be in front of the agent on every run. "This service handles
-card data" is one. Put rules like that in the files in
-`context-db/context-db-on-markdown/`:
+The commands come with built-in instructions, shown in the dropdowns above. You
+do not edit those. To change what the agent does, you add your own rules to four
+files in `context-db/context-db-on-markdown/`. Whatever a file says is added to
+the agent's instructions every time that command runs.
+
+The easy way to change them is `/context-db configure`. It reads the files,
+tells you what they say now, and asks what you want changed. You can also edit
+them by hand; they are plain Markdown.
+
+Some examples of what goes in them:
+
+- In `ON_PROMPT.md`: "This service handles card data. Read the PCI rules before
+  touching storage or logging." Or: "Never explain code unless asked."
+- In `ON_UPDATE.md`: "Commit messages follow Conventional Commits." Or: "Never
+  record anything about customer names."
+- In `ON_WIP.md`: "Every plan lists the ticket number."
+
+The files:
 
 | File | Added to every |
 | --- | --- |

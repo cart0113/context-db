@@ -969,6 +969,21 @@ def v0_leftovers(root, cdb):
     return found
 
 
+def current_rules_section(cdb):
+    """What each ON file tells the agent today, for configure to show the user."""
+    lines = ["# Current Rules", ""]
+    for command in ON_COMMANDS:
+        path = os.path.join(on_dir(cdb), f"ON_{command.upper()}.md")
+        if not os.path.isfile(path):
+            lines.append(f"## `{path}` (does not exist yet; `init` creates it)")
+            continue
+        _, body = read_doc(path)
+        rules = re.sub(r"(?s)<!--.*?-->", "", body).strip()
+        lines.extend([f"## `{path}`, added to every `/context-db {command}`", ""])
+        lines.extend([rules or "(empty: it adds nothing)", ""])
+    return "\n".join(lines).rstrip()
+
+
 def cmd_configure(args):
     root = find_repo_root()
     cdb = context_db_dir()
@@ -1018,8 +1033,10 @@ def cmd_configure(args):
                 init_cmd=f"{script_command(configured_python or suggested_python)} init",
                 index_cmd=f"{script_command(configured_python or suggested_python)} index",
                 agents_snippet=rel(os.path.join(SKILL_DIR, "starters", "AGENTS.md")),
+                on_dir=on_dir(cdb),
             ),
             "\n".join(lines),
+            current_rules_section(cdb),
             on_file_text(cdb, "configure"),
             instruction_section(instruction_of(args)),
         ]
