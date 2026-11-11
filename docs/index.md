@@ -230,5 +230,4 @@ Setup <setup>
 Commands <commands>
 Layout <layout>
 OKF <okf>
-Sharing <background-folders>
 ```

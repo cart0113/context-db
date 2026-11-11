@@ -158,7 +158,7 @@ A `wip/` folder
 
 One project folder, any number of background folders
 : The commands write to the project folder only. Other bundles are mounted
-  beside it and are read-only. See [](background-folders.md).
+  beside it and are read-only. See [Sharing](layout.md#sharing).
 
 Settings and rules kept outside the bundles
 : The settings file and the `ON_*.md` files sit next to the bundles, not inside

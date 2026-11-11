@@ -46,7 +46,7 @@ date, and the agent trusts them over the code.
 Every other folder in `context-db/` is a background folder. It holds knowledge
 that is not about this project in particular, such as coding standards, and it
 usually lives in another repository. The commands read background folders and
-never change them. See [](background-folders.md).
+never change them. [Sharing](#sharing) covers how to mount one.
 
 ## A file
 
@@ -148,6 +148,77 @@ branch: feature/refunds
 ```
 
 The [`wip` command](commands.md) keeps this folder up to date.
+
+## Sharing
+
+Some knowledge is not about one project. Coding standards, how your team uses
+git, and notes on a library are examples. Keep knowledge like that in one place
+and mount it into each project that needs it.
+
+You mount it as a [background folder](#background-folders). `prompt` lists
+background folders next to the project folder.
+
+```text
+context-db/
+├── acme-payments-project/       this project's knowledge
+├── coding-standards -> ...      shared, mounted with a symlink
+└── git-standards -> ...         shared, mounted with a symlink
+```
+
+### Three rules
+
+1. Mount a background folder at the top level of `context-db/`, and nowhere
+   deeper.
+2. Links inside a shared folder must stay inside it. A link that leaves the
+   folder points at something that may not exist in the next project.
+3. The `index.md` files of a shared folder are made in the repository that owns
+   it.
+
+### Ways to mount a folder
+
+| Method | Who sees it | In git | How it updates |
+| --- | --- | --- | --- |
+| A copy | Everyone | Yes | You copy it again |
+| A symlink that is gitignored | Only you | No | It follows the other repository |
+| A git submodule and a symlink | Everyone | Yes, pinned | `git submodule update` |
+
+### Mounting a folder only for you
+
+```bash
+cd context-db
+ln -s ~/work/standards/context-db/coding-standards coding-standards
+echo "context-db/coding-standards" >> ../.gitignore
+```
+
+Your agent sees the folder. Your teammates' agents do not, and nothing in git
+changes. This works because the list of folders is built fresh every time
+`prompt` runs.
+
+The symlink can have a different name from the folder it points at.
+
+### Mounting a folder for the whole team
+
+```bash
+git submodule add https://github.com/your-org/standards.git external/standards
+cd context-db
+ln -s ../external/standards/context-db/coding-standards coding-standards
+```
+
+Commit the submodule and the symlink.
+
+### Making the index for a shared folder
+
+Go to the repository that owns the folder and run:
+
+```bash
+python3 <path-to>/context-db.py index context-db/coding-standards
+```
+
+Naming the folder means that repository needs no settings file of its own.
+Commit the `index.md` files it writes.
+
+A shared folder with no `index.md` still works. `prompt` tells the agent to list
+the folder and read the descriptions at the top of each file.
 
 ## What the checker looks for
 

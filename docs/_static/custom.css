@@ -197,17 +197,12 @@ section#context-db > h1 {
 
 /* One color per command. */
 .command-card {
-  border: 1px solid var(--pst-color-border);
-  border-top: 5px solid var(--command-color);
   border-radius: 0.75rem;
-  transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+  transition: transform 0.15s ease;
 }
 
 .command-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 0.6rem 1.4rem -0.6rem var(--command-color);
 }
 
 .command-card .sd-card-title {
@@ -289,9 +284,16 @@ section#context-db > h1 {
   color: var(--pst-color-secondary);
 }
 
-/* The page outline on the right. */
+/* The page outline on the right. On a wide screen it sits beside the page,
+   and the theme's white background would cut a box out of the backdrop. */
 .bd-sidebar-secondary .nav-link.active {
   border-left-color: var(--cdb-blue);
+}
+
+@media (min-width: 1200px) {
+  .bd-sidebar-secondary {
+    background: transparent;
+  }
 }
 
 /* Definition lists: the term stands out, the explanation sits under it. */

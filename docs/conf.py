@@ -40,7 +40,10 @@ templates_path = ["_templates"]
 html_css_files = [
     "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap",
     "custom.css",
+    "looks.css",
 ]
+# The look picker, for trying out style ideas. Delete with looks.css once they are chosen.
+html_js_files = ["looks.js"]
 # Pages open in light mode. The switch in the header still offers dark.
 html_context = {"default_mode": "light"}
 html_show_sourcelink = False
@@ -48,7 +51,7 @@ html_show_sourcelink = False
 html_theme_options = {
     "logo": {"text": "context-db"},
     "github_url": "https://github.com/cart0113/context-db",
-    "header_links_before_dropdown": 5,
+    "header_links_before_dropdown": 4,
     "navbar_align": "left",
     "show_toc_level": 2,
     "navigation_with_keys": False,

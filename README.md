@@ -13,6 +13,35 @@ idea.
 
 Documentation: <https://cart0113.github.io/context-db/>
 
+## Example
+
+Before a task, type the command, then the task on a new line. It needs no
+quotes:
+
+```text
+/context-db prompt
+
+Users report a bug here:
+
+https://issues.example.com/PAY-482
+
+It looks like it is in the new receipts database code.
+Can you investigate and propose a fix?
+```
+
+The agent reads the index, opens the notes on the database schema and the plan
+for the receipts work, and skips everything else. Then it finds the cause and
+proposes a fix.
+
+When the work is done:
+
+```text
+/context-db update --push
+```
+
+The agent writes down anything the next agent would need, then commits and
+pushes. Most of the time there is nothing to write down, and it says so.
+
 ## Install
 
 Paste this into your coding agent, in the project where you want it:
@@ -103,29 +132,6 @@ Outside Claude Code, run the same commands from a terminal:
 python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
 ```
 
-## A typical session
-
-1. You type the command, then the task on a new line. It needs no quotes:
-
-   ```text
-   /context-db prompt
-
-   Users report a bug here:
-
-   https://issues.example.com/PAY-482
-
-   It looks like it is in the new receipts database code.
-   Can you investigate and propose a fix?
-   ```
-
-2. The agent reads the index, opens the notes on the database schema and the
-   plan for the receipts work, and skips everything else.
-3. It finds the cause and proposes a fix.
-4. You type `/context-db update --push`. The agent asks itself whether it
-   learned anything that the next agent would get wrong without being told.
-   Usually the answer is no, and it says so. If there is something, it writes a
-   short note in the right place. Then it commits and pushes.
-
 ## Why it works this way
 
 Notes about a project can make an agent worse.
@@ -162,10 +168,10 @@ mistake that it does not make now? If the answer is no, delete it.
 - [Commands](https://cart0113.github.io/context-db/commands.html), with the
   exact text each one gives the agent
 - [Layout](https://cart0113.github.io/context-db/layout.html): what goes where
-  in the knowledge base, and what a file looks like
+  in the knowledge base, what a file looks like, and how to share knowledge
+  between projects
 - [The Open Knowledge Format](https://cart0113.github.io/context-db/okf.html):
   what it is and which parts context-db uses
-- [Sharing knowledge between projects](https://cart0113.github.io/context-db/background-folders.html)
 
 ## Working on context-db itself
 
