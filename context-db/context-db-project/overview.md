@@ -31,3 +31,7 @@ and uses it on its own `context-db/`.
   against a copy of it, so keep it lint-clean.
 - CI tests on Python 3.8 and 3.13 in the official Docker images, because hosted
   runners no longer provide 3.8. Do not use syntax newer than 3.8 in the script.
+- The owner sometimes runs a second agent in this same working tree. Stage your
+  own files by name, never everything, and check a shared file's diff in the
+  same command that stages it. On 2026-11-11 a commit made moments after a clean
+  check still carried the other agent's edit to `docs/index.md`.
