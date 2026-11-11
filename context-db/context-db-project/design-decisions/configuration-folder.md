@@ -36,6 +36,11 @@ that is only words for the agent belongs in an ON file, not in settings.
 The other recommended defaults: the agent reads `context-db/` only when a
 `/context-db` command runs (the AGENTS.md/CLAUDE.md note says so).
 
+The owner wants that note as short as possible: one sentence, since the
+command output carries everything else. `configure` only asks which file the
+agent reads and adds the note there. How the two files relate (a symlink, both,
+one) is the user's personal choice; configure does not offer layouts for it.
+
 ## configure is a helper
 
 The owner does not want a settings subsystem: configure is "a conversation

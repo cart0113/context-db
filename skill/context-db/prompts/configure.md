@@ -73,16 +73,14 @@ Make each change as soon as the user answers, and show them the new text.
 5. **When the agent reads it.** "Should the agent read `{cdb}/` only when you
    run a `/context-db` command?" Options: only then (recommended: notes loaded
    on every task crowd out the code); also on its own, when a task needs it.
-6. **A note for the agent.** Detected State says whether `AGENTS.md` and
-   `CLAUDE.md` exist and mention `{cdb}/`. "Add a short note about context-db to
-   your agent instructions file?" Options: the file that exists, create
-   `CLAUDE.md` (Claude Code), create `AGENTS.md` (most other agents), or skip.
-   The note is the text of `{agents_snippet}`. If the answer to question 5 was
-   "also on its own", replace its bold sentence with: "**Read `{cdb}/` when a
-   task needs this project's conventions or decisions.** List a folder with
-   `{toc_cmd} <folder>`, starting at the project folder, and open only what
-   bears on the task." If the file
-   already has a note, offer to replace it.
+6. **A note for the agent.** "Which instructions file does your agent read?"
+   Options: `CLAUDE.md` (Claude Code), `AGENTS.md` (most other agents), or
+   neither. Detected State says which exist and mention `{cdb}/`; recommend
+   that one. Add the text of `{agents_snippet}` to the chosen file, creating it
+   if needed, and replace any context-db note already there. If the answer to
+   question 5 was "also on its own", its sentence becomes: "Read `{cdb}/` when
+   a task needs this project's conventions or decisions, starting with
+   `{toc_cmd} <folder>` on the project folder." Add nothing else.
 7. **When the agent writes to it.** "After `/context-db prompt`, may the agent
    update the knowledge base as it works?" Options: yes, as it goes
    (recommended: what was learned is written down while it is fresh); only when

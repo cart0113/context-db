@@ -223,7 +223,8 @@ What the agent does:
      depend on it? What is it, and who uses it? This becomes a rule in
      `ON_PROMPT.md` and the description of the project folder.
    - Should the agent read the knowledge base only when you run a command?
-   - Should it add a short note to `AGENTS.md` or `CLAUDE.md`?
+   - Does your agent read `AGENTS.md` or `CLAUDE.md`? It adds a one-line note
+     about context-db to that file.
    - May the agent update the knowledge base as it works, after `prompt`, or
      only when you run `update`?
    - When a note gets too long, should the agent split it while it is working
