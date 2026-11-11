@@ -1,8 +1,8 @@
 ---
 type: Decision
 description:
-  Why write-command templates put the null-result decision before writing
-  instructions — counters LLM action bias from RLHF
+  Why write-command templates (update, maintain) put the null-result decision
+  before writing instructions — counters LLM action bias from RLHF
 ---
 
 LLMs have an action bias: RLHF rewards producing output, so "nothing to do"
@@ -16,6 +16,9 @@ model has already mentally committed to acting.
 
 [update.md](../../../skill/context-db/prompts/update.md) opens with the decision
 and names the null result in its first paragraph, before any write mechanics.
+[maintain.md](../../../skill/context-db/prompts/maintain.md) does the same: "Check
+first, change second", and a one-line stop when nothing needs changing, before
+any list of what to fix.
 [format.md](../../../skill/context-db/prompts/format.md) stays neutral: it is a
 style guide, not a decision point.
 

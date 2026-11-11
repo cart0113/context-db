@@ -19,5 +19,5 @@ so the descriptor is an ordinary concept with `type: Folder`.
   easy to search for.
 - **Generalizes beyond context-db/.** The convention works for any directory. A
   `docs/api/` directory uses `api.md`.
-- **Script simplicity.** The index generator computes the folder basename and knows
-  exactly which description file to look for. No special-casing.
+- **Script simplicity.** `toc` computes the folder basename and knows exactly
+  which description file to look for. No special-casing.
