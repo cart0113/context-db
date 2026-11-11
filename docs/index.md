@@ -12,25 +12,9 @@ add to it.
 
 :::{div} okf-line
 Built on the **Open Knowledge Format** (OKF), an open standard for knowledge
-that agents can read. It grew out of Andrej Karpathy's LLM wiki idea.
+that agents can read.
 [What OKF is, where it came from, and how context-db uses it](okf.md).
 :::
-
-::::{div} hero-buttons
-```{button-ref} setup
-:color: primary
-:class: hero-button
-
-Setup
-```
-```{button-ref} okf
-:color: secondary
-:outline:
-:class: hero-button
-
-About the Open Knowledge Format
-```
-::::
 
 ## Example
 
@@ -203,6 +187,13 @@ why, the mistakes from last time, and where the current work stands.
 context-db is an explicit memory for that: a folder of short notes in your
 repository that you and the agent keep up as the project goes, and that the
 agent reads when you ask it to.
+
+The idea comes from Andrej Karpathy's
+[LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
+have the LLM keep a wiki of what it has learned, instead of working everything
+out again each time.
+context-db uses that idea to cut down how much context has to be loaded for
+each task, which keeps the agent focused and efficient.
 
 The usual answer is a big `AGENTS.md` or `CLAUDE.md`. That file is loaded into
 every session in full, whatever the task, and as it grows the problems are well

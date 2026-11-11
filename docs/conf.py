@@ -32,7 +32,6 @@ myst_html_meta = {
 html_theme = "pydata_sphinx_theme"
 html_title = "context-db"
 html_baseurl = SITE
-html_logo = "_static/context-db-icon.svg"
 html_favicon = "_static/favicon.svg"
 html_static_path = ["_static"]
 templates_path = ["_templates"]
@@ -40,10 +39,7 @@ templates_path = ["_templates"]
 html_css_files = [
     "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap",
     "custom.css",
-    "looks.css",
 ]
-# The look picker, for trying out style ideas. Delete with looks.css once they are chosen.
-html_js_files = ["looks.js"]
 # Pages open in light mode. The switch in the header still offers dark.
 html_context = {"default_mode": "light"}
 html_show_sourcelink = False

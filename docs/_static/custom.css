@@ -96,14 +96,35 @@ body::before {
   background: var(--cdb-gradient);
 }
 
+/* There is no logo. The name reads /context-db, like the title. */
 .navbar-brand .title {
   font-family: var(--pst-font-family-heading);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
-.bd-header .navbar-nav li a.nav-link {
+.navbar-brand .title::before {
+  content: "/";
+  color: var(--pst-color-primary);
+}
+
+/* The page you are on is a tinted pill, in place of the theme's underline. */
+.bd-header ul.navbar-nav > li.nav-item > .nav-link {
+  padding: 0.3rem 0.85rem;
+  border-radius: 999px;
   font-weight: 500;
+}
+
+.bd-header ul.navbar-nav > li.nav-item > .nav-link::before {
+  display: none;
+}
+
+.bd-header ul.navbar-nav > li.nav-item > .nav-link:hover {
+  background: color-mix(in srgb, var(--pst-color-secondary) 12%, transparent);
+}
+
+.bd-header ul.navbar-nav > li.nav-item.current > .nav-link {
+  background: color-mix(in srgb, var(--pst-color-primary) 15%, transparent);
 }
 
 /* Page titles and section headings. */
@@ -176,23 +197,6 @@ section#context-db > h1 {
 
 .okf-line p {
   margin: 0;
-}
-
-.hero-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.hero-buttons p {
-  margin: 0;
-}
-
-.hero-button {
-  padding: 0.55rem 1.3rem;
-  border-radius: 999px;
-  font-weight: 600;
 }
 
 /* One color per command. */
