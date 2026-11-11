@@ -96,13 +96,14 @@ files and one Python script.
 your-project/
 ├── .claude/skills/context-db/      the skills: SKILL.md, context-db.py, prompts/
 └── context-db/
-    ├── context-db.json             settings
-    ├── context-db-on-markdown/     rules the agent sees on every command
+    ├── configuration/              settings and rules, all plain Markdown
+    │   ├── settings.md             project name, Python command, main branch
+    │   └── ON_PROMPT.md ...        rules the agent sees on each command
     ├── acme-payments-project/      the project folder: your project's knowledge
     │   ├── index.md                generated list of everything in this folder
     │   ├── architecture.md
     │   ├── data-model/
-    │   └── wip/                    plans for the work in progress
+    │   └── wip/                    optional: wip.md lists the work in progress
     └── coding-standards/           a background folder shared with other projects
 ```
 
@@ -112,16 +113,17 @@ your-project/
 | --- | --- | --- |
 | `/context-db prompt` | Before a task | Looks up what the knowledge base says about the task. |
 | `/context-db update` | After a task | Writes down anything the next agent would need. `--push` also commits and pushes. |
-| `/context-db wip` | During long work | Keeps a short plan of the work in progress, and deletes plans for work that has landed. |
-| `/context-db configure` | Once per repository | Sets everything up. |
+| `/context-db wip` | During long work, if you want it | Optional. Keeps a short list of the work in progress with a plan for each. `--list` shows it, `--cleanup` deletes what has landed, `--clear` deletes it all. |
+| `/context-db configure` | Once per repository | A helper that sets things up by asking a few questions. Edit the files it writes by hand afterwards. |
 
-Nothing runs by itself. The agent reads or writes the knowledge base only when
-you run one of these commands.
+Nothing is loaded when a session starts. The agent reads the knowledge base when
+you run one of these commands. After `/context-db prompt` it may also add to it
+as it works; `/context-db configure` asks whether you want that.
 
 Each command gives the agent a set of instructions, so that you do not have to
-type them every time. You control those instructions with a few rule files in
-`context-db/context-db-on-markdown/`, and `/context-db configure` edits them for
-you: it asks what you want and writes it down.
+type them every time. You add your own rules in a few plain Markdown files in
+`context-db/configuration/` and edit them by hand. `/context-db configure` is a
+helper that writes a first version of them by asking you a few questions.
 
 To tell the agent something, type the command, start a new line, and write it
 there. It needs no quotes.
@@ -132,35 +134,38 @@ Outside Claude Code, run the same commands from a terminal:
 python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
 ```
 
-## Why it works this way
+## Motivation
 
-Notes about a project can make an agent worse.
-[Researchers at ETH Zurich](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
-found that context files written by an LLM lowered the success rate by about 3%
-and raised cost by more than 20%. Files written by people helped only a little.
-[Chroma](https://www.trychroma.com/research/context-rot) found that every model
-it tested did worse as its input grew. An agent that is handed a file about the
-project trusts it, reads less of the code, and repeats whatever the file gets
-wrong.
+On a large project that runs for months, every agent session starts knowing
+nothing. It has to rediscover the conventions, the decisions already made and
+why, the mistakes from last time, and where the current work stands.
+context-db is an explicit memory for that: a folder of short notes in your
+repository that you and the agent keep up as the project goes, and that the
+agent reads when you ask it to.
 
-context-db is built around that:
+The usual answer is a big `AGENTS.md` or `CLAUDE.md`. That file is loaded into
+every session in full, whatever the task, and as it grows the problems are well
+known. Most of it has nothing to do with the task at hand, and the part that
+matters gets lost in the rest. The agent trusts it and reads less of the code.
+Nobody notices when it goes out of date, so the agent repeats what it gets
+wrong. Rules read at the start of a long session have faded by the time the
+work they apply to comes up.
 
-- Nothing is loaded when a session starts. The agent reads the knowledge base
-  only when you run a command, and then only the files that match the task.
-- `prompt` fetches the rules immediately before the work they apply to, so a
-  long session does not lose them.
-- The agent is told that the code wins. Where a note and the code disagree, it
-  trusts the code and tells you.
-- `update` asks first whether anything is worth writing down. Most sessions add
-  nothing.
+context-db hands the agent small pieces of text at set points in the work
+instead:
 
-In a test on a real project, a knowledge base of 671 lines made the agent do
-worse than no notes at all. Cut to 143 lines, it halved the time (95 seconds
-against 202), lowered the cost ($0.49 against $0.56), and the agent changed the
-right files.
+- `prompt`, right before a task: the index of the knowledge base, the plans for
+  the work in progress, and your rules. The agent opens only the notes that
+  match the task.
+- `update`, after a task: what belongs in the knowledge base and what does not,
+  so that it stays small.
+- `wip`, during long work: how to keep a short record of where things stand.
 
-So keep it small. Ask of every note: if it were deleted, would the agent make a
-mistake that it does not make now? If the answer is no, delete it.
+The rest stays out of the agent's context. Where a note and the code disagree,
+the agent is told to trust the code and tell you.
+
+Keep it small. If deleting a note would not make the agent do anything wrong,
+delete it.
 
 ## Documentation
 

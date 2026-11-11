@@ -12,8 +12,9 @@ What it changes, in every real (non-symlinked) top-level folder:
 
 And at the top level of context-db/:
 
-  - moves ON_PROMPT.md and ON_UPDATE.md into context-db-on-markdown/
-  - moves <name>-project/wip.md to <name>-project/wip/current-work.md
+  - moves ON_PROMPT.md and ON_UPDATE.md into configuration/
+  - moves <name>-project/wip.md to <name>-project/wip/current-work.md, listed
+    in a new <name>-project/wip/wip.md
 
 It then prints three lists: what it changed, the types it guessed, and what it
 could not decide, including every mention of v0.0 machinery it found. The guide
@@ -29,7 +30,7 @@ import os
 import re
 import sys
 
-ON_DIR = "context-db-on-markdown"
+ON_DIR = "configuration"
 RETIRED_STATUSES = ("experiment", "work-in-progress", "refactor")
 OLD_DESCRIPTOR_NAMES = ("SKILL.md", "CONTEXT.md", "AGENT.md", "AGENTS.md")
 TYPE_GUESSES = (
@@ -51,9 +52,14 @@ FENCE_RE = re.compile(r"^[ \t]*(```|~~~)")
 WIP_DESCRIPTOR = """---
 type: Folder
 description:
-  Current work in progress — plans for what is being built right now. Files
-  here are deleted once the work lands.
+  Work in progress, if the project records it. wip.md lists each effort, when
+  it started, and where it stands. The plans sit next to it and are deleted
+  once the work lands.
 ---
+
+# Work in progress
+
+- [Current work](current-work.md). Moved from the v0.0 wip.md; give it a start date and a status.
 """
 
 

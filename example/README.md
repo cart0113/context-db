@@ -11,13 +11,12 @@ example/
     ├── AGENTS.md
     ├── .claude/skills/context-db       symlink to ../../skill/context-db
     └── context-db/
-        ├── context-db.json
-        ├── context-db-on-markdown/     ON_PROMPT.md carries a PCI reminder
+        ├── configuration/              settings.md; ON_PROMPT.md carries a PCI reminder
         ├── acme-payments-project/      the project folder
         │   ├── architecture.md
         │   ├── api-reference.md
         │   ├── data-model/
-        │   └── wip/refund-endpoint.md
+        │   └── wip/                    wip.md lists refund-endpoint.md
         ├── coding-standards -> ../../shared/coding-standards
         └── git-standards -> ../../shared/git-standards
 ```
@@ -27,7 +26,7 @@ Try it:
 ```bash
 cd example/acme-payments-repo
 python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
-python3 .claude/skills/context-db/context-db.py wip
+python3 .claude/skills/context-db/context-db.py wip --list
 python3 .claude/skills/context-db/context-db.py index --check
 ```
 

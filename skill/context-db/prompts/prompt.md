@@ -6,8 +6,8 @@ Consult it now, for the user instruction at the end of this output.
 
 ## How to navigate
 
-Start with the plans listed under Work In Progress below. Then go to the
-folders listed under Folders. Each folder is a small wiki: its `index.md` has
+If a Work In Progress section appears below, start with the plans it lists
+that bear on the instruction. Then go to the folders listed under Folders. Each folder is a small wiki: its `index.md` has
 one line per file and subfolder, each with a description.
 
 - Open a file only when its description says it bears directly on the

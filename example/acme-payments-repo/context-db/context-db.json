@@ -1,6 +1,0 @@
-{
-  "project": "acme-payments",
-  "python": "python3",
-  "main_branch": "main",
-  "update_mode": "on-command"
-}

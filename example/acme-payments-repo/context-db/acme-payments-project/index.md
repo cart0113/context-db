@@ -5,7 +5,7 @@ okf_version: "0.2"
 # Subfolders
 
 * [data-model](data-model/index.md) - Database schema — the payment, refund, and merchant entities, and the conventions every table follows
-* [wip](wip/index.md) - Current work in progress — plans for what is being built right now. Files here are deleted once the work lands.
+* [wip](wip/index.md) - Work in progress, if the project records it. wip.md lists each effort, when it started, and where it stands. The plans sit next to it and are deleted once the work lands.
 
 # Files
 

@@ -21,10 +21,10 @@ before deleting anything that is not plainly obsolete.
 | Frontmatter: `description`                               | Frontmatter: `type` and `description` (OKF)              |
 | TOC printed by `context-db-generate-toc.py`              | Generated `index.md` in every folder, read directly      |
 | Commands `prompt`, `update`, `maintain`, `read`          | Commands `prompt`, `update`, `wip`, `configure`          |
-| No config                                                | `context-db/context-db.json` plus optional `.local.json` |
-| `context-db/ON_PROMPT.md` at the root                    | `context-db/context-db-on-markdown/ON_PROMPT.md`         |
+| No config                                                | `context-db/configuration/settings.md` (+ `.local.md`)   |
+| `context-db/ON_PROMPT.md` at the root                    | `context-db/configuration/ON_PROMPT.md`                  |
 | `ON_MAINTAIN.md`                                         | Gone. `ON_WIP.md` and `ON_CONFIGURE.md` are new          |
-| `<name>-project/wip.md`                                  | `<name>-project/wip/` folder                             |
+| `<name>-project/wip.md`                                  | Optional `<name>-project/wip/`; `wip/wip.md` is the list |
 | Backticked paths, resolver script for `..`               | Markdown links; a shared folder links only within itself |
 | Six `status` values                                      | `draft`, `stable`, `deprecated`                          |
 | `_drafts/` folders hidden from the TOC                   | No hidden folders; use `wip/`                            |
@@ -94,7 +94,7 @@ python3 .claude/skills/context-db/context-db.py init --project <name> --python <
 - `<branch>` is the repository's main branch, usually `main`. It is not the
   branch you created for this migration.
 
-`init` writes the config, creates the missing ON files and `wip/`, adds one line
+`init` writes the settings, creates the missing ON files and `wip/`, adds one line
 to `.gitignore`, generates every `index.md`, and prints what the checker found.
 It exits with an error when the checker finds problems. That is expected at this
 point; steps 4 and 5 fix them.
@@ -112,15 +112,15 @@ about to delete.
   `/context-db update "audit <folder> and cut"`. If a whole note turns out to be
   about the old machinery, delete it.
 - **`ON_MAINTAIN.md`**: move anything still wanted into
-  `context-db-on-markdown/ON_UPDATE.md`, then delete it.
+  `configuration/ON_UPDATE.md`, then delete it.
 - **The ON files that were moved**: read each one and remove statements that are
   no longer true, such as paths to the old scripts. Their frontmatter is no
   longer needed and can go.
 - **`_drafts/` folders** are now ordinary folders. Move live plans into
   `<name>-project/wip/` and delete the rest.
-- **The old `wip.md`** is now `wip/current-work.md`. Delete finished items. Give
-  what remains a description that says what the work is, and split it into one
-  file per effort if it covers several.
+- **The old `wip.md`** is now `wip/current-work.md`, listed in `wip/wip.md`.
+  Delete finished items, split the rest one file per effort, and give each a
+  line in `wip/wip.md` (start date, branch, status).
 - **Folder descriptors**: after deleting notes, check the description in that
   folder's `<folder>.md` and remove topics that are gone.
 

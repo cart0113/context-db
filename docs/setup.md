@@ -61,8 +61,8 @@ Either way you end up with this:
 
 ```text
 context-db/
-├── context-db.json
-├── context-db-on-markdown/
+├── configuration/
+│   ├── settings.md
 │   ├── ON_PROMPT.md
 │   ├── ON_UPDATE.md
 │   ├── ON_WIP.md
@@ -71,20 +71,20 @@ context-db/
     ├── acme-payments-project.md
     ├── index.md
     └── wip/
+        └── wip.md
 ```
 
 Running it again is safe. It never overwrites a file that already exists.
 
 ## 3. Make it behave the way you want
 
-Four files in `context-db/context-db-on-markdown/` control how the agent
-behaves: `ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, and `ON_CONFIGURE.md`.
-Whatever a file says is added to the agent's instructions every time that
-command runs.
+Four files in `context-db/configuration/` control how the agent behaves:
+`ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, and `ON_CONFIGURE.md`. Whatever a
+file says is added to the agent's instructions every time that command runs.
 
-You do not need to edit them by hand. Run `/context-db configure` again at any
-time. It reads the files, tells you what they make the agent do today, and asks
-what you want changed. Then it edits them for you.
+Open them and edit them by hand. They are plain Markdown, and the agent reads
+exactly what they say. `/context-db configure` is a helper that wrote the first
+version; run it again if you would rather answer questions than edit.
 
 [Commands](commands.md) has examples of rules.
 
@@ -94,9 +94,9 @@ Add the text in `.claude/skills/context-db/starters/AGENTS.md` to your
 `AGENTS.md` or `CLAUDE.md`.
 
 It tells the agent that the knowledge base exists, and that it should not read
-it unless you run a command. This matters. An agent that loads the whole
+it unless you run a command. `configure` offers to add it for you. This matters. An agent that loads the whole
 knowledge base at the start of every session has less attention left for your
-task. [Why it works this way](index.md#why-it-works-this-way) covers the
+task. [Motivation](index.md#motivation) covers the
 research.
 
 ## 5. Use it
@@ -117,33 +117,32 @@ After it:
 ```
 
 That is the whole loop: `prompt`, work for as many turns as it takes, `update
---push`. For work that runs over several sessions, start with
-`/context-db wip`. [Commands](commands.md) explains all four.
+--push`. For work that runs over several sessions, you can also keep a
+record with `/context-db wip`; it is optional. [Commands](commands.md) explains all four.
 
 ## Settings
 
-Settings live in two files.
+Settings live in `context-db/configuration/settings.md`, which is committed, so
+the whole team shares it. They are the `key: value` lines at the top:
 
-`context-db/context-db.json` is committed, so the whole team shares it:
-
-```json
-{
-  "project": "acme-payments",
-  "python": "python3",
-  "main_branch": "main",
-  "update_mode": "on-command"
-}
+```markdown
+---
+project: acme-payments
+python: python3
+main_branch: main
+---
 ```
 
 | Setting | Meaning |
 | --- | --- |
 | `project` | The project's name. The project folder is `context-db/<project>-project/`. |
 | `python` | The command the agent uses to run the script. |
-| `main_branch` | The branch that `wip` compares your current branch against. |
-| `update_mode` | `on-command` or `agent-decides`. Who decides when the knowledge base is updated. |
+| `main_branch` | The branch that `wip --cleanup` compares your current branch against. |
 
-`context-db/context-db.local.json` is yours alone. It is gitignored, and
-anything in it overrides the shared file. Use it when your machine needs
+Edit them by hand. Anything below the `---` lines is yours for notes.
+
+`context-db/configuration/settings.local.md` is yours alone. It is gitignored,
+and anything in it overrides the shared file. Use it when your machine needs
 something different, such as a Python that lives in an unusual place:
 
 ```bash

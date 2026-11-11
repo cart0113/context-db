@@ -4,8 +4,8 @@ Every test runs the real script as a subprocess inside a throwaway project, the
 way an agent would.
 """
 
+import datetime
 import importlib.util
-import json
 import os
 import re
 import shutil
@@ -194,7 +194,7 @@ def test_byte_order_mark_and_bad_bytes_do_not_break_reading(project):
 def test_root_index_declares_okf_version_and_lists_children(project):
     index = (project / "context-db" / "demo-project" / "index.md").read_text()
     assert index.startswith('---\nokf_version: "0.2"\n---\n')
-    assert "* [wip](wip/index.md) - Current work in progress" in index
+    assert "* [wip](wip/index.md) - Work in progress, if the project records it" in index
     assert "* [Title](retry-policy.md) - Retry with backoff" in index
 
 
@@ -381,7 +381,7 @@ def test_oversized_file_warns_but_wip_is_exempt(project):
     result = run(project, "index")
     assert result.returncode == 0
     assert "WARNING" in result.stdout and "big.md" in result.stdout
-    assert "plan.md:" not in result.stdout
+    assert "plan.md: 257 lines" not in result.stdout
 
 
 # ── Things every command shares ──────────────────────────────────────────────
@@ -402,16 +402,16 @@ def test_commands_without_config_ask_for_configure(tmp_path):
         assert "/context-db configure" in result.stdout
 
 
-def test_broken_config_is_reported_cleanly(project):
-    config = project / "context-db" / "context-db.json"
-    config.write_text("{not json")
+def test_broken_settings_are_reported_cleanly(project):
+    settings = project / "context-db" / "configuration" / "settings.md"
+    settings.write_text("project: demo\n")
     result = run(project, "prompt", "x")
     assert result.returncode != 0
-    assert "is not valid JSON" in result.stdout and "Traceback" not in result.stdout
-    config.write_text('{"project": "demo"}')
+    assert "has no `---` block" in result.stdout and "Traceback" not in result.stdout
+    settings.write_text("---\nproject: demo\n---\n")
     result = run(project, "prompt", "x")
     assert result.returncode != 0
-    assert "has no python, main_branch, update_mode" in result.stdout
+    assert "has no python, main_branch" in result.stdout
 
 
 def test_no_placeholder_is_left_unfilled(example):
@@ -420,6 +420,9 @@ def test_no_placeholder_is_left_unfilled(example):
         ("update",),
         ("update", "x", "--push"),
         ("wip", "x"),
+        ("wip", "--list"),
+        ("wip", "--cleanup"),
+        ("wip", "--clear"),
         ("configure",),
     ):
         out = run(example, *args).stdout
@@ -435,7 +438,7 @@ def test_an_unquoted_instruction_is_joined(project):
 
 def test_output_survives_an_ascii_only_stdout(project):
     env = dict(os.environ, PYTHONIOENCODING="ascii", PYTHONUTF8="0")
-    for args in (("prompt", "x"), ("update",), ("wip",), ("configure",), ("index",)):
+    for args in (("prompt", "x"), ("update",), ("wip",), ("wip", "--cleanup"), ("configure",)):
         result = subprocess.run(
             [sys.executable, str(SCRIPT), *args],
             check=False,
@@ -466,9 +469,10 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
     assert "**Project folder** `context-db/acme-payments-project/`" in out
     assert "**Background folder** `context-db/coding-standards/`" in out
     assert "start at `context-db/git-standards/index.md`" in out
-    assert "wip/refund-endpoint.md` — Adding POST /refunds" in out
-    assert "[branch: feature/refunds]" in out
-    assert "context-db-on-markdown" not in out.split("# Folders")[1]
+    wip = out.split("# Work In Progress")[1].split("# Folders")[0]
+    assert "relative to\n`context-db/acme-payments-project/wip/`" in wip
+    assert "- [Refund endpoint](refund-endpoint.md). Started 2026-11-03" in wip
+    assert "configuration" not in out.split("# Folders")[1].split("# Project Rules")[0]
     marks = (
         "# Work In Progress",
         "# Folders",
@@ -480,6 +484,12 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
     assert order == sorted(order)
     assert out.rstrip().endswith("add a refund endpoint")
     assert "<!--" not in out
+
+
+def test_prompt_leaves_out_an_empty_wip_list(project):
+    assert "# Work In Progress" not in run(project, "prompt", "x").stdout
+    shutil.rmtree(project / "context-db" / "demo-project" / "wip")
+    assert "# Work In Progress" not in run(project, "prompt", "x").stdout
 
 
 def test_prompt_handles_unindexed_and_broken_mounts(project):
@@ -523,7 +533,7 @@ def test_update_commit_and_push(project):
 
 def test_on_file_is_inlined_without_comments_or_frontmatter(project):
     write(
-        project / "context-db" / "context-db-on-markdown" / "ON_UPDATE.md",
+        project / "context-db" / "configuration" / "ON_UPDATE.md",
         "---\ndescription: ignored\n---\n<!-- hidden\nnote -->\nAlways cite the ticket.\n",
     )
     out = run(project, "update", "--commit").stdout
@@ -533,7 +543,7 @@ def test_on_file_is_inlined_without_comments_or_frontmatter(project):
 
 
 def test_on_rules_keep_a_heading_the_author_wrote(project):
-    on_file = project / "context-db" / "context-db-on-markdown" / "ON_PROMPT.md"
+    on_file = project / "context-db" / "configuration" / "ON_PROMPT.md"
     write(on_file, "<!-- note -->\nBe careful.\n")
     assert "# Project Rules\n\nBe careful." in run(project, "prompt", "x").stdout
     write(on_file, "# House Rules\n\nBe careful.\n")
@@ -564,14 +574,42 @@ def test_printed_commands_use_the_local_interpreter_override(project):
     assert "/opt/py/bin/python3 " in run(project, "update").stdout
     assert "/opt/py/bin/python3 " in run(project, "wip").stdout
     assert "/opt/py/bin/python3 " in run(project, "configure").stdout
-    shared = json.loads((project / "context-db" / "context-db.json").read_text())
-    assert shared["python"] == "python3"
+    conf = project / "context-db" / "configuration"
+    assert "python: python3\n" in (conf / "settings.md").read_text()
+    local = (conf / "settings.local.md").read_text()
+    assert local.startswith("---\npython: /opt/py/bin/python3\n---\n")
 
 
 # ── wip ──────────────────────────────────────────────────────────────────────
 
 
-def test_wip_shows_git_state_and_every_wip_file(project):
+def add_plan(project, name="x-plan", line=None):
+    wip = project / "context-db" / "demo-project" / "wip"
+    if line is None:
+        write(wip / f"{name}.md", doc("Plan", f"The {name}", extra="branch: feature/x\n"))
+    listing = wip / "wip.md"
+    item = line or f"- [{name}]({name}.md). Started 2026-11-01 on `feature/x`. Half done."
+    heading = "# Work in progress\n"
+    listing.write_text(listing.read_text().replace(heading, f"{heading}\n{item}\n"))
+
+
+def test_wip_records_the_current_work(project):
+    git(project, "init", "-q", "-b", "main")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "base")
+    git(project, "checkout", "-q", "-b", "feature/x")
+    add_plan(project)
+    out = run(project, "wip", "plan the x work").stdout
+    flat = " ".join(out.split())
+    assert "It is optional" in flat
+    assert "today, " + datetime.date.today().isoformat() + ", on `feature/x`" in flat
+    assert "- [x-plan](x-plan.md). Started 2026-11-01" in out
+    assert "# How Work In Progress Is Kept" in out and "# File Format" in out
+    assert "# Git State" not in out
+    assert out.rstrip().endswith("plan the x work")
+
+
+def test_wip_cleanup_shows_git_state_and_the_list(project):
     git(project, "init", "-q", "-b", "main")
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "base")
@@ -579,24 +617,49 @@ def test_wip_shows_git_state_and_every_wip_file(project):
     write(project / "src.py", "print('hi')\n")
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "add src")
-    write(project / "context-db" / "demo-project" / "wip" / "x-plan.md", doc("Plan", "The X plan"))
-    out = run(project, "wip", "plan the x work").stdout
+    add_plan(project)
+    out = run(project, "wip", "--cleanup").stdout
+    assert "# Context-db Wip Cleanup" in out
     assert "- Current branch: `feature/x`" in out
     assert "- Main branch: `main`" in out
     assert "Work has landed when it is merged into `main`" in out
-    assert "add src" in out
-    assert "src.py" in out
+    assert "add src" in out and "src.py" in out
     assert "x-plan.md" in out.split("git status --short")[1]
-    assert "wip/x-plan.md` — The X plan" in out
-    assert "`branch: feature/x`" in out
-    assert out.rstrip().endswith("plan the x work")
+    assert "- [x-plan](x-plan.md)" in out.split("# Work In Progress")[1]
+
+
+def test_wip_list_only_shows_the_list(project):
+    add_plan(project)
+    out = run(project, "wip", "--list").stdout
+    assert "Today is " + datetime.date.today().isoformat() in out
+    assert "Read nothing else and change nothing." in out
+    assert "- [x-plan](x-plan.md). Started 2026-11-01" in out
+    assert "# Git State" not in out and "# File Format" not in out
+    assert "# How Work In Progress Is Kept" not in out
+
+
+def test_wip_clear_asks_before_deleting(project):
+    add_plan(project)
+    out = run(project, "wip", "--clear").stdout
+    assert "Ask the user to confirm. Stop if they do not." in out
+    assert "# Git State" not in out
+
+
+def test_wip_flags_are_exclusive(project):
+    result = run(project, "wip", "--list", "--clear")
+    assert result.returncode != 0 and "not allowed with" in result.stdout
+
+
+def test_wip_with_nothing_listed_says_so(project):
+    out = run(project, "wip", "--list").stdout
+    assert "lists nothing: no work in progress is recorded" in out
 
 
 def test_wip_on_the_main_branch_shows_recent_commits(project):
     git(project, "init", "-q", "-b", "main")
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "only commit")
-    out = run(project, "wip").stdout
+    out = run(project, "wip", "--cleanup").stdout
     assert "## Recent commits" in out and "only commit" in out
 
 
@@ -604,15 +667,25 @@ def test_wip_says_so_when_the_main_branch_does_not_exist(project):
     git(project, "init", "-q", "-b", "trunk")
     git(project, "add", "-A")
     git(project, "commit", "-q", "-m", "base")
-    out = run(project, "wip").stdout
+    out = run(project, "wip", "--cleanup").stdout
     assert "main branch `main` does not exist" in out
+    assert "context-db/configuration/settings.md" in out
     assert "base" in out
 
 
 def test_wip_outside_git(project):
-    out = run(project, "wip").stdout
-    assert "Not a git repository" in out
-    assert "holds no plans" in out
+    assert "Not a git repository" in run(project, "wip", "--cleanup").stdout
+
+
+def test_plans_missing_from_the_list_are_reported(project):
+    wip = project / "context-db" / "demo-project" / "wip"
+    write(wip / "stray.md", doc("Plan", "Forgotten"))
+    write(wip / "big" / "big.md", doc("Plan", "Large effort"))
+    out = run(project, "index").stdout
+    assert "wip/stray.md: not listed in" in out and "wip/big: not listed in" in out
+    add_plan(project, "stray")
+    add_plan(project, "big", line="- [Big](big/big.md). Started 2026-11-01 on `x`. Going.")
+    assert "not listed" not in run(project, "index").stdout
 
 
 # ── configure and init ───────────────────────────────────────────────────────
@@ -634,30 +707,34 @@ def test_configure_says_when_the_main_branch_is_a_guess(tmp_path):
 
 
 def test_an_empty_folder_gets_an_index_that_says_so(project):
-    wip_index = project / "context-db" / "demo-project" / "wip" / "index.md"
-    assert wip_index.read_text() == "<!-- Nothing is in this folder yet. -->\n"
+    empty = project / "context-db" / "demo-project" / "empty"
+    write(empty / "empty.md", doc("Folder", "Nothing yet", body=""))
+    write(empty / "notes" / "notes.md", doc("Folder", "Nothing here either", body=""))
+    assert run(project, "index").returncode == 0
+    assert (empty / "notes" / "index.md").read_text() == "<!-- Nothing is in this folder yet. -->\n"
 
 
 def test_configure_reports_state_and_v0_leftovers(tmp_path):
     write(tmp_path / "context-db" / "ON_PROMPT.md", "old\n")
     write(tmp_path / "context-db" / "acme-project" / "wip.md", "old\n")
     out = run(tmp_path, "configure").stdout
-    assert "context-db.json`: does not exist" in out
+    assert "settings.md`: does not exist" in out
+    assert "`AGENTS.md`: does not exist" in out
     assert "`context-db/acme-project/`" in out
     assert "Suggested project name: `acme` (from the existing project folder)" in out
     assert "v0.0 layout" in out and "ON_PROMPT.md" in out and "wip.md" in out
     assert " init --project <name>" in out
 
 
-def test_configure_still_runs_when_the_config_is_broken(project):
-    config = project / "context-db" / "context-db.json"
-    for broken in ("{not json", '{"project": "demo"}', "[]"):
-        config.write_text(broken)
+def test_configure_still_runs_when_the_settings_are_broken(project):
+    settings = project / "context-db" / "configuration" / "settings.md"
+    for broken in ("project: demo", "---\nproject: demo\n---\n", ""):
+        settings.write_text(broken)
         result = run(project, "configure")
         assert result.returncode == 0, result.stdout
         assert "# Detected State" in result.stdout
-    config.write_text("{not json")
-    assert "is not valid JSON" in run(project, "configure").stdout
+    settings.write_text("no frontmatter")
+    assert "has no `---` block" in run(project, "configure").stdout
 
 
 def test_init_scaffolds_and_never_overwrites(tmp_path):
@@ -667,69 +744,60 @@ def test_init_scaffolds_and_never_overwrites(tmp_path):
     )
     assert result.returncode == 0, result.stdout
     cdb = tmp_path / "context-db"
-    assert (cdb / "context-db.json").read_text() == (
-        '{\n  "project": "demo",\n  "python": "python3.11",\n  "main_branch": "trunk",\n'
-        '  "update_mode": "on-command"\n}\n'
+    settings = cdb / "configuration" / "settings.md"
+    assert settings.read_text().startswith(
+        "---\nproject: demo\npython: python3.11\nmain_branch: trunk\n---\n\n<!--\n"
     )
     for name in ("ON_PROMPT.md", "ON_UPDATE.md", "ON_WIP.md", "ON_CONFIGURE.md"):
-        assert (cdb / "context-db-on-markdown" / name).exists()
+        assert (cdb / "configuration" / name).exists()
     assert (cdb / "demo-project" / "demo-project.md").exists()
-    assert (cdb / "demo-project" / "wip" / "wip.md").exists()
-    assert "context-db/context-db.local.json" in (tmp_path / ".gitignore").read_text()
+    assert (cdb / "demo-project" / "wip" / "wip.md").read_text().startswith("---\ntype: Folder\n")
+    gitignore = (tmp_path / ".gitignore").read_text()
+    assert "context-db/configuration/settings.local.md" in gitignore
 
-    write(cdb / "context-db-on-markdown" / "ON_PROMPT.md", "mine\n")
+    write(cdb / "configuration" / "ON_PROMPT.md", "mine\n")
+    settings.write_text(settings.read_text() + "\nA note of my own.\n")
     again = run(tmp_path, "init", "--main-branch", "main")
     assert again.returncode == 0
-    kept = (cdb / "context-db-on-markdown" / "ON_PROMPT.md").read_text()
-    assert kept.startswith("mine\n") and "context-db update mode" in kept
-    config = json.loads((cdb / "context-db.json").read_text())
-    assert config["main_branch"] == "main" and config["python"] == "python3.11"
-    assert (tmp_path / ".gitignore").read_text().count("context-db.local.json") == 1
+    assert (cdb / "configuration" / "ON_PROMPT.md").read_text() == "mine\n"
+    content = settings.read_text()
+    assert "main_branch: main\n" in content and "python: python3.11\n" in content
+    assert content.endswith("A note of my own.\n")
+    assert (tmp_path / ".gitignore").read_text().count("settings.local.md") == 1
 
 
-def test_update_mode_is_written_into_on_prompt_and_reaches_the_agent(tmp_path):
+def test_the_starter_rules_let_the_agent_update_as_it_goes(tmp_path):
     assert run(tmp_path, "init", "--project", "demo").returncode == 0
-    on_prompt = tmp_path / "context-db" / "context-db-on-markdown" / "ON_PROMPT.md"
     out = run(tmp_path, "prompt", "x").stdout
-    assert "only when the user runs `/context-db update`" in out
-    assert "<!--" not in out
-
-    result = run(tmp_path, "init", "--update-mode", "agent-decides")
-    assert result.returncode == 0, result.stdout
-    out = run(tmp_path, "prompt", "x").stdout
-    assert "You may update the knowledge base without being asked" in out
+    assert "You may update the knowledge base as you work" in out
     assert "context-db.py update '<what you learned>'" in out
-    assert "only when the user runs" not in out
-    config = json.loads((tmp_path / "context-db" / "context-db.json").read_text())
-    assert config["update_mode"] == "agent-decides"
-
-    # The user may reword the paragraph; a later init without the flag keeps it.
-    on_prompt.write_text(on_prompt.read_text().replace("Keep the bar high", "Be picky"))
-    assert run(tmp_path, "init").returncode == 0
-    assert "Be picky" in on_prompt.read_text()
-    assert on_prompt.read_text().count("context-db update mode: written") == 1
-    assert run(tmp_path, "init", "--update-mode", "sometimes").returncode != 0
+    assert "<!--" not in out and "{update_cmd}" not in out
 
 
-def test_configure_asks_its_questions_as_a_menu(tmp_path):
-    out = run(tmp_path, "configure").stdout
+def test_configure_asks_the_questions_that_matter(tmp_path):
+    out = " ".join(run(tmp_path, "configure").stdout.split())
     assert "AskUserQuestion" in out
-    assert "`on-command`" in out and "`agent-decides`" in out
-    assert "--update-mode <mode>" in out
+    assert "`/context-db configure` is a helper" in out
+    assert "sweeping changes that break backwards compatibility" in out
+    assert "only when you run a `/context-db` command?" in out
+    assert "may the agent update the knowledge base as it works?" in out
+    assert "edit them by hand" in out
+    assert " init --project <name> --main-branch <branch> --python <command>" in out
+    assert "context-db.py update '<what you learned>'" in out
 
 
 def test_configure_shows_the_current_rules_so_they_can_be_changed(project):
-    on = project / "context-db" / "context-db-on-markdown"
+    on = project / "context-db" / "configuration"
     write(on / "ON_UPDATE.md", "<!-- note -->\nCommit messages follow Conventional Commits.\n")
     out = run(project, "configure").stdout
     rules = out.split("# Current Rules")[1]
     assert "ON_UPDATE.md`, added to every `/context-db update`" in rules
     assert "Commit messages follow Conventional Commits." in rules
-    assert "only when the user runs `/context-db update`" in rules
+    assert "You may update the knowledge base as you work" in rules
     assert "ON_WIP.md`, added to every `/context-db wip`\n\n(empty: it adds nothing)" in rules
     assert "begin by asking what the user wants to do" in out
     assert "Does this project rely on other repositories?" in out
-    assert "**What controls context-db**" in out
+    assert "**This was a helper.**" in out
 
 
 def test_init_rejects_bad_input_without_writing_anything(tmp_path):
@@ -841,7 +909,7 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
 
     result = run(tmp_path, "context-db", script=MIGRATE)
     assert result.returncode == 0, result.stdout
-    assert (cdb / "context-db-on-markdown" / "ON_PROMPT.md").exists()
+    assert (cdb / "configuration" / "ON_PROMPT.md").exists()
     plan = (bundle / "wip" / "current-work.md").read_text()
     assert plan.startswith("---\ntype: Plan\n")
     assert "[standards.md](../standards.md)" in plan

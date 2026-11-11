@@ -9,9 +9,10 @@ The file format is the [Open Knowledge Format](okf.md).
 
 ```text
 context-db/
-├── context-db.json              shared settings
-├── context-db.local.json        your own settings, gitignored (optional)
-├── context-db-on-markdown/      rules the agent sees on every command
+├── configuration/               settings and rules, all plain Markdown
+│   ├── settings.md              shared settings
+│   ├── settings.local.md        your own settings, gitignored (optional)
+│   └── ON_PROMPT.md ...         rules the agent sees on each command
 ├── acme-payments-project/       the project folder
 │   ├── acme-payments-project.md describes the folder
 │   ├── index.md                 generated
@@ -20,7 +21,8 @@ context-db/
 │   │   ├── data-model.md
 │   │   ├── index.md
 │   │   └── entities.md
-│   └── wip/
+│   └── wip/                     optional
+│       ├── wip.md               the list of work in progress
 │       └── refund-endpoint.md
 └── coding-standards/            a background folder
 ```
@@ -108,7 +110,7 @@ Every folder has an `index.md` that lists what is in it:
 # Subfolders
 
 * [data-model](data-model/index.md) - Database schema — the payment, refund, and merchant entities
-* [wip](wip/index.md) - Plans for what is being built right now
+* [wip](wip/index.md) - Work in progress, if the project records it
 
 # Files
 
@@ -134,9 +136,17 @@ and the link breaks.
 
 ## The wip folder
 
-`wip/` inside the project folder holds plans for work in progress, one file per
-piece of work. Plans are deleted when the work lands. They can be as long as
-they need to be.
+`wip/` inside the project folder is optional. It records the work in progress.
+`wip/wip.md` is a short list with one line per piece of work: a link to its
+plan, the date it started, the branch, and where it stands.
+
+```markdown
+- [Refund endpoint](refund-endpoint.md). Started 2026-11-03 on `feature/refunds`. Validation done; partial refunds undecided.
+```
+
+Each plan is a file next to `wip.md`, or a folder of files for a large piece of
+work. Plans are deleted when the work lands. They can be as long as they need
+to be.
 
 ```markdown
 ---
@@ -147,7 +157,8 @@ branch: feature/refunds
 ---
 ```
 
-The [`wip` command](commands.md) keeps this folder up to date.
+The [`wip` command](commands.md) keeps this folder up to date, and `index`
+warns about a plan that `wip.md` does not list.
 
 ## Sharing
 

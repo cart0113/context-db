@@ -31,7 +31,8 @@ your project's rules.
 
 What the agent does:
 
-1. Reads the plans in `wip/` that bear on the task.
+1. Reads the plans listed in `wip/wip.md` that bear on the task, if there are
+   any.
 2. Opens the `index.md` of each knowledge folder that looks relevant.
 3. Opens only the files whose descriptions match the task.
 4. Gets on with the task, and checks what it read against the code.
@@ -43,7 +44,7 @@ code and to tell you.
 :color: secondary
 
 Words in braces are filled in when the command runs. After this text the agent
-sees the plans in `wip/`, the folder list, your `ON_PROMPT.md` rules, and your
+sees the list from `wip/wip.md` (when it lists anything), the folder list, your `ON_PROMPT.md` rules, and your
 instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/prompt.md
@@ -114,33 +115,61 @@ With `--commit` or `--push` it receives this as well:
 We are adding receipts. Emailing them is out of scope for now.
 ```
 
-Use it for work that takes more than one session. Plans live in the `wip/`
-folder inside the project folder.
+This command is optional. Use it for work that takes more than one session, and
+ignore it otherwise; a project that never runs it loses nothing.
 
-What the agent does:
+It keeps one short file, `wip/wip.md` inside the project folder, with one line
+for each piece of work in progress: a link to its plan, the date it started, the
+branch, and where it stands.
 
-1. Reads every plan in `wip/`.
-2. Looks at git: the current branch, uncommitted changes, and what has been
-   committed since the main branch.
-3. Deletes the plans for work that has landed, meaning merged into the main
-   branch. Anything worth keeping for the long term is moved into the main
-   knowledge base first.
-4. Writes or updates the plan for what you are doing now.
+```markdown
+- [Refund endpoint](refund-endpoint.md). Started 2026-11-03 on `feature/refunds`. Validation done; partial refunds undecided.
+```
 
-`prompt` lists the plans in `wip/` every time it runs, so each new session
-starts by knowing what is in progress.
+Most plans are one file next to `wip.md`. A large piece of work gets a folder of
+its own, and its line links to the folder.
 
-A plan can name the branch it belongs to. The agent asks you before it touches a
-plan for a different branch. Typed with nothing after it, `wip` only cleans up
-and tells you what is in progress.
+`prompt` shows the list every time it runs, so each new session starts by
+knowing what is in progress. When the list is empty, `prompt` leaves it out.
+
+| Typed | What the agent does |
+| --- | --- |
+| `/context-db wip` | Writes or updates the plan for the current work, and its line in `wip.md`. |
+| `/context-db wip --list` | Shows what is in progress and how long each piece has been going. Changes nothing. |
+| `/context-db wip --cleanup` | Looks at git, deletes the plans for work that has been merged into the main branch, and brings the other lines up to date. Anything worth keeping for the long term is moved into the main knowledge base first. |
+| `/context-db wip --clear` | Shows you every plan, asks you to confirm, then deletes them all and empties the list. |
 
 :::{dropdown} The text the agent receives
 :color: secondary
 
-After this text the agent sees the git state, every plan in `wip/`, the format
-rules, your `ON_WIP.md`, and your instruction.
+For `/context-db wip`, followed by the list, the rules below, the format rules,
+your `ON_WIP.md`, and your instruction:
 
 ```{literalinclude} ../skill/context-db/prompts/wip.md
+:language: markdown
+```
+
+For `--list`:
+
+```{literalinclude} ../skill/context-db/prompts/wip-list.md
+:language: markdown
+```
+
+For `--cleanup`, followed by the git state:
+
+```{literalinclude} ../skill/context-db/prompts/wip-cleanup.md
+:language: markdown
+```
+
+For `--clear`:
+
+```{literalinclude} ../skill/context-db/prompts/wip-clear.md
+:language: markdown
+```
+
+How `wip.md` and the plans are kept, for every form except `--list`:
+
+```{literalinclude} ../skill/context-db/prompts/wip-format.md
 :language: markdown
 ```
 :::
@@ -151,40 +180,41 @@ rules, your `ON_WIP.md`, and your instruction.
 /context-db configure
 ```
 
-Run it once per repository to set things up. Run it again whenever you want the
-agent to behave differently.
+`configure` is a helper. It gets context-db working and starts a short
+conversation about how the agent should treat the knowledge base. Everything it
+writes is plain Markdown, and you are expected to open those files afterwards
+and edit them by hand until they say what you want.
 
 What the agent does:
 
 1. Looks at what is already there: the Python on your machine, the repository
-   name, the main branch, and any existing settings.
-2. Asks you a few questions, one at a time, as a menu: the project name, who
-   updates the knowledge base, whether to add a note for the agent to
-   `AGENTS.md` or `CLAUDE.md`, and which other repositories this project relies
-   on. Those repositories, by path or URL, are listed in `ON_PROMPT.md` so that
-   the agent knows where to look.
-3. Reads the rule files, tells you what they make the agent do today, and asks
-   whether you want to change anything. You say what you want in your own
-   words, and the agent edits the files and shows you the result.
-4. Writes the settings and creates whatever is missing. It never overwrites
-   anything.
-5. Ends with a short summary: the files it changed, and the files that control
-   context-db.
+   name, the main branch, any existing settings, and whether `AGENTS.md` or
+   `CLAUDE.md` mention context-db.
+2. Asks for the project name, and the main branch and Python command when it
+   cannot tell. Then it writes the settings and creates whatever is missing. It
+   never overwrites anything.
+3. Asks a few questions, one at a time, as a menu, and writes each answer into
+   the files as you give it:
+   - Is this a new project, where breaking changes are fine, or does other code
+     depend on it? What is it, and who uses it? This becomes a rule in
+     `ON_PROMPT.md` and the description of the project folder.
+   - Should the agent read the knowledge base only when you run a command?
+   - Should it add a short note to `AGENTS.md` or `CLAUDE.md`?
+   - May the agent update the knowledge base as it works, after `prompt`, or
+     only when you run `update`?
+   - Which other repositories does this project rely on?
+   - Is there anything else the agent should always do?
+4. Ends with a short summary: the files it changed, and a reminder that this
+   was only a first draft for you to edit.
 
-These are the files that control context-db:
+These are the files it writes:
 
 | File | What it controls |
 | --- | --- |
-| `context-db/context-db.json` | Shared settings |
-| `context-db/context-db.local.json` | Your own settings, if you have any |
-| `context-db/context-db-on-markdown/ON_*.md` | The rules added to each command |
-| `AGENTS.md` or `CLAUDE.md` | The note that keeps the agent out of the knowledge base until asked |
-
-The question about updates has two answers. With `on-command`, the agent writes
-to the knowledge base only when you run `/context-db update`. With
-`agent-decides`, it also writes when it thinks it has learned something worth
-keeping, and tells you each time. Your answer is written as a short paragraph
-into `ON_PROMPT.md`, where you can reword it.
+| `context-db/configuration/settings.md` | Shared settings |
+| `context-db/configuration/settings.local.md` | Your own settings, if you have any |
+| `context-db/configuration/ON_*.md` | The rules added to each command |
+| `AGENTS.md` or `CLAUDE.md` | The note that tells the agent about the knowledge base |
 
 :::{dropdown} The text the agent receives
 :color: secondary
@@ -198,12 +228,12 @@ into `ON_PROMPT.md`, where you can reword it.
 
 The commands come with built-in instructions, shown in the dropdowns above. You
 do not edit those. To change what the agent does, you add your own rules to four
-files in `context-db/context-db-on-markdown/`. Whatever a file says is added to
-the agent's instructions every time that command runs.
+files in `context-db/configuration/`. Whatever a file says is added to the
+agent's instructions every time that command runs.
 
-The easy way to change them is `/context-db configure`. It reads the files,
-tells you what they say now, and asks what you want changed. You can also edit
-them by hand; they are plain Markdown.
+They are plain Markdown. Edit them by hand. `/context-db configure` writes a
+first version and can change them for you, but there is nothing it does that
+you cannot do in an editor.
 
 Some examples of what goes in them:
 
@@ -241,8 +271,8 @@ python3 .claude/skills/context-db/context-db.py index --check
 ```
 
 `init` writes the settings and creates whatever is missing. Its options are
-`--project`, `--update-mode`, `--main-branch`, `--python`, and `--local
-KEY=VALUE` for a setting that applies only to you.
+`--project`, `--main-branch`, `--python`, and `--local KEY=VALUE` for a
+setting that applies only to you.
 
 `index` regenerates every `index.md` in the project folder and checks the
 format. Give it a folder to work on a different one. With `--check` it changes

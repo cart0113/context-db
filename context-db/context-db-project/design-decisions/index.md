@@ -1,6 +1,6 @@
 # Files
 
-* [Config layering](config-layering.md) - Why there is a committed context-db.json plus a gitignored context-db.local.json, why the interpreter is a config value the agent reads rather than something the script resolves, and why the key set is closed
+* [The configuration folder](configuration-folder.md) - Why every setting and rule is plain Markdown in context-db/configuration/ (settings.md plus gitignored settings.local.md, the ON files), why there is no update_mode key, why configure is only a helper, why the interpreter is read by the agent, and why the settings key set is closed. Owner decisions of 2026-11-11; also called config layering.
 * [Frontmatter fields](frontmatter-fields.md) - Why frontmatter is limited to type, description, optional status, and branch on wip files — and why OKF's tags, trust, provenance, and timestamp keys are tolerated but never written
 * [gate-before-action](gate-before-action.md) - Why write-command templates put the null-result decision before writing instructions — counters LLM action bias from RLHF
 * [Links and symlinks](links-and-symlinks.md) - Why links are file-relative Markdown links, why symlinks are allowed only at the top level of context-db/, and why a shared folder may not link outside itself — together these removed the v0.0 path resolver script

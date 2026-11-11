@@ -32,13 +32,14 @@ file when it covers the topic. Create a file only for a genuinely new topic.
 Delete content that has become false or has drifted into a summary of the code.
 A smaller, accurate knowledge base beats a larger one.
 
-Plans and the status of ongoing work do not go in the main tree. They live in
-`{project_dir}/wip/`, which `/context-db wip` manages.
+Plans and the status of ongoing work do not go in the main tree. If the
+project records them, they live in `{wip_dir}/`, which `/context-db wip`
+manages.
 
-The one place outside the project folder that you may write to is `{on_dir}/`.
-Its files are inlined on every matching command, so each line in them costs
-tokens every time. Put something there only when it must be seen every time, and
-ask the user first.
+The one place outside the project folder that you may write to is the ON files
+in `{conf_dir}/`. Each is inlined on every run of its command, so each line in
+them costs tokens every time. Put something there only when it must be seen
+every time, and ask the user first.
 
 Context-db is the project's memory. Do not also save this to an auto-memory or
 any vendor-specific memory file.

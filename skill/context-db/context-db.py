@@ -6,21 +6,23 @@ Commands the user invokes. Each prints instructions that the calling agent follo
 
   prompt "<task>"         Look up what the knowledge base says about a task.
   update ["<learning>"]   Write down what was learned (--commit / --push to commit too).
-  wip ["<instruction>"]   Bring the work-in-progress plans up to date.
-  configure               Set up or repair context-db in this repository.
+  wip ["<instruction>"]   Optional. Record the work in progress (--list, --cleanup, --clear).
+  configure               A helper that sets context-db up by asking a few questions.
 
 Helpers the agent runs when the instructions say to. They do the file work:
 
-  init                    Write the config and create whatever is missing.
+  init                    Write the settings and create whatever is missing.
   index [folder]          Regenerate index.md files and check the format.
 
 Layout (the file format is described in prompts/format.md):
 
   context-db/
-    context-db.json             shared config, committed
-    context-db.local.json       per-user overrides, gitignored
-    context-db-on-markdown/     ON_PROMPT.md ON_UPDATE.md ON_WIP.md ON_CONFIGURE.md
+    configuration/              plain Markdown the agent or the script reads
+      settings.md               project, python, main_branch; committed
+      settings.local.md         per-user overrides; gitignored
+      ON_PROMPT.md ...          rules added to each command (ON_UPDATE, ON_WIP, ON_CONFIGURE)
     <project>-project/          the project folder: the only place commands write
+      wip/wip.md                optional list of the work in progress
     <anything-else>/            background folders: read-only
 
 Each top-level folder is an Open Knowledge Format (OKF) bundle.
@@ -29,7 +31,7 @@ Requires Python 3.8+ and nothing outside the standard library.
 """
 
 import argparse
-import json
+import datetime
 import os
 import re
 import shlex
@@ -41,14 +43,15 @@ from urllib.parse import unquote
 VERSION = "0.1"
 OKF_VERSION = "0.2"
 CONTEXT_DB = "context-db"
-CONFIG_NAME = "context-db.json"
-LOCAL_CONFIG_NAME = "context-db.local.json"
-ON_DIR_NAME = "context-db-on-markdown"
-CONFIG_KEYS = ("project", "python", "main_branch", "update_mode")
-UPDATE_MODES = ("on-command", "agent-decides")
+CONF_DIR_NAME = "configuration"
+SETTINGS_NAME = "settings.md"
+LOCAL_SETTINGS_NAME = "settings.local.md"
+SETTINGS_KEYS = ("project", "python", "main_branch")
+WIP_LIST_NAME = "wip.md"
 RESERVED_FILES = ("index.md", "log.md")
 STATUSES = ("draft", "stable", "deprecated")
 ON_COMMANDS = ("prompt", "update", "wip", "configure")
+AGENT_NOTE_FILES = ("AGENTS.md", "CLAUDE.md")
 MAX_FILE_LINES = 200
 MAX_FOLDER_ITEMS = 12
 MIGRATION_GUIDE = (
@@ -64,7 +67,7 @@ SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 # prompts/. Edit wording here or there, never inside the functions below.
 
 NOT_CONFIGURED = """
-context-db is not set up in this repository: `{config_path}` does not exist.
+context-db is not set up in this repository: `{settings_path}` does not exist.
 
 Tell the user, and offer to run `/context-db configure`. Do nothing else.
 """
@@ -90,17 +93,17 @@ BROKEN_MOUNT = """
 """
 
 WIP_FOR_PROMPT = """
-These files describe the work happening right now. Read the ones that bear on the
-instruction{on_branch} before anything else.
+The work happening right now, from `{wip_list}`. Its links are relative to
+`{wip_dir}/`. Open the plans that bear on the instruction{on_branch} before
+anything else.
 """
 
-WIP_FOR_WIP = """
-Read every one of these files now, unless you have already read it in this session
-and it has not changed since.
+WIP_LISTED = """
+From `{wip_list}`. Its links are relative to `{wip_dir}/`.
 """
 
 WIP_EMPTY = """
-`{wip_dir}/` holds no plans: no work in progress is recorded.
+`{wip_list}` lists nothing: no work in progress is recorded.
 """
 
 NOTHING_TO_ADD = """
@@ -126,39 +129,14 @@ themselves and ask the user when unsure.
 
 MAIN_BRANCH_MISSING = """
 The configured main branch `{main}` does not exist in this repository, so there is
-nothing to compare against. Tell the user to fix `main_branch` with
-`/context-db configure`.
+nothing to compare against. Tell the user to fix `main_branch` in
+`{settings_path}`.
 """
 
 V0_LAYOUT_FOUND = """
 This repository still has the v0.0 layout ({leftovers}). Follow the migration
 guide before step 2: {guide}
 """
-
-# What `configure` writes into ON_PROMPT.md for each update mode. The user may
-# reword it afterwards; init replaces the block only when the mode is given.
-
-UPDATE_MODE_START = "<!-- context-db update mode: written by configure. Reword it freely. -->"
-UPDATE_MODE_END = "<!-- end of context-db update mode -->"
-
-UPDATE_MODE_TEXT = {
-    "on-command": """
-Write to the knowledge base only when the user runs `/context-db update`. At
-any other time, leave `{cdb}/` alone. If you learn something worth keeping, say
-so in one line and suggest that command.
-""",
-    "agent-decides": """
-You may update the knowledge base without being asked. When this session
-produces something the next agent would get wrong without it, such as a
-correction from the user, a decision and its reason, or a pitfall, run:
-
-    {update_cmd} '<what you learned>'
-
-and follow what it prints. Keep the bar high: most turns produce nothing worth
-storing. Tell the user in one line whenever you do this. Never commit or push
-on your own.
-""",
-}
 
 EMPTY_INDEX = """
 <!-- Nothing is in this folder yet. -->
@@ -176,9 +154,38 @@ WIP_DESCRIPTOR = """
 ---
 type: Folder
 description:
-  Current work in progress — plans for what is being built right now. Files
-  here are deleted once the work lands.
+  Work in progress, if the project records it. wip.md lists each effort, when
+  it started, and where it stands. The plans sit next to it and are deleted
+  once the work lands.
 ---
+
+# Work in progress
+
+<!--
+One line per effort, linking its plan. /context-db wip keeps this list.
+Example:
+- [Refund endpoint](refund-endpoint.md). Started 2026-11-02 on `feature/refunds`. Endpoint done, idempotency next.
+-->
+"""
+
+SETTINGS_BODY = """
+<!--
+Settings for the context-db skills. Edit them by hand whenever you like.
+
+- project: the project folder is context-db/<project>-project/.
+- python: the command that runs the skills' script, Python 3.8 or newer.
+- main_branch: the branch that `/context-db wip --cleanup` compares against.
+
+settings.local.md in this folder, if it exists, overrides any of these for one
+user. It is gitignored.
+-->
+"""
+
+LOCAL_SETTINGS_BODY = """
+<!--
+Your own overrides of settings.md, for this machine only. This file is
+gitignored.
+-->
 """
 
 
@@ -239,45 +246,56 @@ def write_text(path, content):
         f.write(content)
 
 
-# ── Config ───────────────────────────────────────────────────────────────────
-# context-db.json is committed and shared. context-db.local.json is gitignored;
-# any key it sets overrides the shared value for this user only.
+# ── Settings ─────────────────────────────────────────────────────────────────
+# settings.md is committed and shared. settings.local.md is gitignored; any key
+# it sets overrides the shared value for this user only. Both are Markdown with
+# the settings as `key: value` lines in the frontmatter, so the user and the
+# agent read them like any other file and the script parses them like any
+# other frontmatter.
 
 
-def load_json(path):
-    """Return (data, problem). The problem is None when the file is usable."""
-    try:
-        data = json.loads(read_text(path))
-    except ValueError as error:
-        return None, f"is not valid JSON ({error})"
-    if not isinstance(data, dict):
-        return None, "is not a JSON object"
-    return data, None
+def conf_dir(cdb):
+    return os.path.join(cdb, CONF_DIR_NAME)
 
 
-def read_json(path):
-    data, problem = load_json(path)
+def settings_path(cdb, local=False):
+    return os.path.join(conf_dir(cdb), LOCAL_SETTINGS_NAME if local else SETTINGS_NAME)
+
+
+def load_settings(path):
+    """Return (values, problem). The problem is None when the file is usable."""
+    meta, _ = read_doc(path)
+    if meta is None:
+        return None, "has no `---` block at the top holding the settings"
+    return meta, None
+
+
+def read_settings(path):
+    values, problem = load_settings(path)
     if problem:
         sys.exit(f"Error: {path} {problem}. Fix it by hand, or delete it and run configure.")
-    return data
+    return values
 
 
-def write_json(path, data):
-    ordered = {key: data[key] for key in CONFIG_KEYS if key in data}
-    ordered.update(data)
-    write_text(path, json.dumps(ordered, indent=2) + "\n")
+def write_settings(path, values, default_body):
+    """Rewrite the frontmatter of a settings file, keeping whatever body it has."""
+    body = read_doc(path)[1] if os.path.isfile(path) else "\n" + text(default_body) + "\n"
+    keys = [key for key in SETTINGS_KEYS if key in values]
+    keys += [key for key in values if key not in SETTINGS_KEYS]
+    header = "\n".join(f"{key}: {values[key]}" for key in keys)
+    write_text(path, f"---\n{header}\n---\n{body}")
 
 
 def load_config(cdb):
-    """The shared config with user overrides applied, or None when there is no config."""
-    shared_path = os.path.join(cdb, CONFIG_NAME)
+    """The shared settings with user overrides applied, or None when there are none."""
+    shared_path = settings_path(cdb)
     if not os.path.isfile(shared_path):
         return None
-    config = read_json(shared_path)
-    local_path = os.path.join(cdb, LOCAL_CONFIG_NAME)
+    config = read_settings(shared_path)
+    local_path = settings_path(cdb, local=True)
     if os.path.isfile(local_path):
-        config.update(read_json(local_path))
-    missing = [key for key in CONFIG_KEYS if key not in config]
+        config.update(read_settings(local_path))
+    missing = [key for key in SETTINGS_KEYS if not config.get(key)]  # frontmatter: all optional
     if missing:
         sys.exit(f"Error: {shared_path} has no {', '.join(missing)}. Run /context-db configure.")
     return config
@@ -286,7 +304,7 @@ def load_config(cdb):
 def require_config(cdb):
     config = load_config(cdb)
     if config is None:
-        print(text(NOT_CONFIGURED, config_path=os.path.join(cdb, CONFIG_NAME)))
+        print(text(NOT_CONFIGURED, settings_path=settings_path(cdb)))
         sys.exit(0)
     return config
 
@@ -600,7 +618,7 @@ SCHEME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
 
 def lint_links(path, body):
     problems = []
-    for target in LINK_RE.findall(strip_code(body)):
+    for target in LINK_RE.findall(strip_code(without_comments(body))):
         if SCHEME_RE.match(target) or target.startswith("#"):
             continue
         target = unquote(target.split("#")[0])
@@ -609,6 +627,25 @@ def lint_links(path, body):
         elif not os.path.exists(os.path.join(os.path.dirname(path), target)):
             problems.append(f"{path}: broken link `{target}`")
     return problems
+
+
+def unlisted_wip(wip):
+    """Plans in wip/ that wip/wip.md does not link to."""
+    list_path = os.path.join(wip, WIP_LIST_NAME)
+    if not os.path.isfile(list_path):
+        return []
+    _, body = read_doc(list_path)
+    listed = {
+        os.path.normpath(unquote(target.split("#")[0])).split(os.sep)[0]
+        for target in LINK_RE.findall(strip_code(without_comments(body)))
+    }
+    items = [name for name in folder_files(wip) if name != WIP_LIST_NAME]
+    items += folder_subfolders(wip)
+    return [
+        f"{os.path.join(wip, name)}: not listed in {list_path} — add a line for it"
+        for name in sorted(items)
+        if name not in listed
+    ]
 
 
 def lint_file(path, in_wip):
@@ -647,6 +684,8 @@ def lint_bundle(bundle):
             warnings.append(f"{dirpath}/: holds only an index.md — delete it")
 
     wip = os.path.join(bundle, "wip")
+    if is_real_dir(wip):
+        warnings.extend(unlisted_wip(wip))
     for folder in bundle_folders(bundle):
         files = folder_files(folder)
         if not descriptor_path(folder):
@@ -676,17 +715,17 @@ def load_prompt(name, **values):
     return content.strip()
 
 
-def on_dir(cdb):
-    return os.path.join(cdb, ON_DIR_NAME)
+def without_comments(content):
+    return re.sub(r"(?s)<!--.*?-->", "", content).strip()
 
 
 def on_file_text(cdb, command):
     """The body of ON_<COMMAND>.md with frontmatter and HTML comments removed."""
-    path = os.path.join(on_dir(cdb), f"ON_{command.upper()}.md")
+    path = os.path.join(conf_dir(cdb), f"ON_{command.upper()}.md")
     if not os.path.isfile(path):
         return ""
     _, body = read_doc(path)
-    rules = re.sub(r"(?s)<!--.*?-->", "", body).strip()
+    rules = without_comments(body)
     if rules and not rules.startswith("#"):
         rules = f"# Project Rules\n\n{rules}"
     return rules
@@ -733,7 +772,7 @@ def folders_section(cdb, config):
 
     for name in sorted(os.listdir(cdb)):
         folder = os.path.join(cdb, name)
-        if not visible(name) or name == ON_DIR_NAME or name == os.path.basename(project):
+        if not visible(name) or name == CONF_DIR_NAME or name == os.path.basename(project):
             continue
         if os.path.islink(folder) and not os.path.exists(folder):
             lines.append(text(BROKEN_MOUNT, folder=folder))
@@ -742,36 +781,36 @@ def folders_section(cdb, config):
     return "\n".join(lines)
 
 
-def wip_files(wip):
-    """(path, meta) for every plan under wip/, descriptors and indexes excluded."""
-    found = []
-    if not os.path.isdir(wip):
-        return found
-    for folder in bundle_folders(wip):
-        descriptor = descriptor_path(folder)
-        for name in folder_files(folder):
-            path = os.path.join(folder, name)
-            if descriptor and os.path.samefile(path, descriptor):
-                continue
-            meta, _ = read_doc(path)
-            found.append((path, meta or {}))
-    return found
+def wip_dir(cdb, config):
+    return os.path.join(project_dir(cdb, config), "wip")
 
 
-def wip_section(cdb, config, intro):
-    wip = os.path.join(project_dir(cdb, config), "wip")
-    files = wip_files(wip)
-    lines = ["# Work In Progress", ""]
-    if not files:
-        lines.append(text(WIP_EMPTY, wip_dir=wip))
-        return "\n".join(lines)
-    lines.extend([intro, ""])
-    for path, meta in files:
-        tags = status_tag(meta)
-        if meta.get("branch"):
-            tags += f" [branch: {meta['branch']}]"
-        lines.append(f"- `{path}` — {meta.get('description') or '(no description)'}{tags}")
-    return "\n".join(lines)
+def wip_list_path(cdb, config):
+    return os.path.join(wip_dir(cdb, config), WIP_LIST_NAME)
+
+
+def wip_list(cdb, config):
+    """The list in wip/wip.md, without its frontmatter, comments, or headings.
+
+    Empty when the file is missing or lists nothing, which is how a project
+    that does not use wip/ looks.
+    """
+    path = wip_list_path(cdb, config)
+    if not os.path.isfile(path):
+        return ""
+    _, body = read_doc(path)
+    lines = [line for line in without_comments(body).split("\n") if not line.startswith("#")]
+    items = "\n".join(lines).strip()
+    return items if re.search(r"(?m)^\s*([-*+]|\d+\.)\s", items) else ""
+
+
+def wip_section(cdb, config, intro, show_empty, **values):
+    """The list of work in progress. When it is empty, "" unless show_empty."""
+    items = wip_list(cdb, config)
+    names = dict(wip_list=wip_list_path(cdb, config), wip_dir=wip_dir(cdb, config), **values)
+    if not items:
+        return "# Work In Progress\n\n" + text(WIP_EMPTY, **names) if show_empty else ""
+    return f"# Work In Progress\n\n{text(intro, **names)}\n\n{items}"
 
 
 def current_branch():
@@ -785,7 +824,7 @@ def capped(output, limit):
     return "\n".join(lines[:limit]) + f"\n... ({len(lines) - limit} more lines)"
 
 
-def git_state_section(config):
+def git_state_section(cdb, config):
     branch = current_branch()
     if not branch:
         return "# Git State\n\n" + text(NOT_A_GIT_REPO)
@@ -805,7 +844,7 @@ def git_state_section(config):
 
     block("Uncommitted changes (`git status --short`)", git("status", "--short"), 40)
     if base is None:
-        lines.extend(["", text(MAIN_BRANCH_MISSING, main=main)])
+        lines.extend(["", text(MAIN_BRANCH_MISSING, main=main, settings_path=settings_path(cdb))])
         block("Recent commits", git("log", "--oneline", "-n", "15"), 15)
     elif branch == main:
         block("Recent commits", git("log", "--oneline", "-n", "15"), 15)
@@ -832,7 +871,7 @@ def cmd_prompt(args):
     emit(
         [
             load_prompt("prompt", cdb=cdb, project_dir=project_dir(cdb, config)),
-            wip_section(cdb, config, text(WIP_FOR_PROMPT, on_branch=on_branch)),
+            wip_section(cdb, config, WIP_FOR_PROMPT, show_empty=False, on_branch=on_branch),
             folders_section(cdb, config),
             on_file_text(cdb, "prompt"),
             instruction_section(instruction),
@@ -849,7 +888,8 @@ def cmd_update(args):
             "update",
             cdb=cdb,
             project_dir=project_dir(cdb, config),
-            on_dir=on_dir(cdb),
+            conf_dir=conf_dir(cdb),
+            wip_dir=wip_dir(cdb, config),
             index_cmd=f"{script_command(config['python'])} index",
             nothing_to_add=text(NOTHING_TO_ADD_BUT_COMMIT if commit else NOTHING_TO_ADD),
         ),
@@ -865,26 +905,30 @@ def cmd_update(args):
 
 
 def cmd_wip(args):
+    """Record the current work, or with a flag: list, clean up, or clear it all."""
     cdb = context_db_dir()
     config = require_config(cdb)
-    project = project_dir(cdb, config)
-    emit(
-        [
-            load_prompt(
-                "wip",
-                project_dir=project,
-                wip_dir=os.path.join(project, "wip"),
-                branch=current_branch() or "<branch>",
-                main=config["main_branch"],
-                index_cmd=f"{script_command(config['python'])} index",
-            ),
-            git_state_section(config),
-            wip_section(cdb, config, text(WIP_FOR_WIP)),
-            load_prompt("format"),
-            on_file_text(cdb, "wip"),
-            instruction_section(instruction_of(args)),
-        ]
-    )
+    mode = "list" if args.list else "cleanup" if args.cleanup else "clear" if args.clear else ""
+    values = {
+        "project_dir": project_dir(cdb, config),
+        "wip_dir": wip_dir(cdb, config),
+        "wip_list": wip_list_path(cdb, config),
+        "branch": current_branch() or "<branch>",
+        "main": config["main_branch"],
+        "today": datetime.date.today().isoformat(),
+        "index_cmd": f"{script_command(config['python'])} index",
+    }
+    sections = [load_prompt(f"wip-{mode}" if mode else "wip", **values)]
+    if mode == "cleanup":
+        sections.append(git_state_section(cdb, config))
+    sections.append(wip_section(cdb, config, WIP_LISTED, show_empty=True))
+    if mode != "list":
+        sections.append(load_prompt("wip-format", **values))
+    if mode in ("", "cleanup"):
+        sections.append(load_prompt("format"))
+    sections.append(on_file_text(cdb, "wip"))
+    sections.append(instruction_section(instruction_of(args)))
+    emit(sections)
 
 
 # ── configure and init ───────────────────────────────────────────────────────
@@ -973,12 +1017,12 @@ def current_rules_section(cdb):
     """What each ON file tells the agent today, for configure to show the user."""
     lines = ["# Current Rules", ""]
     for command in ON_COMMANDS:
-        path = os.path.join(on_dir(cdb), f"ON_{command.upper()}.md")
+        path = os.path.join(conf_dir(cdb), f"ON_{command.upper()}.md")
         if not os.path.isfile(path):
             lines.append(f"## `{path}` (does not exist yet; `init` creates it)")
             continue
         _, body = read_doc(path)
-        rules = re.sub(r"(?s)<!--.*?-->", "", body).strip()
+        rules = without_comments(body)
         lines.extend([f"## `{path}`, added to every `/context-db {command}`", ""])
         lines.extend([rules or "(empty: it adds nothing)", ""])
     return "\n".join(lines).rstrip()
@@ -1001,39 +1045,45 @@ def cmd_configure(args):
     lines.append(f"- Suggested project name: `{name}` (from {name_source})")
     lines.append(f"- Suggested main branch: `{main_branch}` ({main_branch_source})")
 
-    configured_python = None
-    for label, filename in (("Shared config", CONFIG_NAME), ("User overrides", LOCAL_CONFIG_NAME)):
-        path = os.path.join(cdb, filename)
+    for label, local in (("Shared settings", False), ("Your own settings", True)):
+        path = settings_path(cdb, local)
         if not os.path.isfile(path):
             lines.append(f"- {label} `{path}`: does not exist")
             continue
-        data, problem = load_json(path)
+        values, problem = load_settings(path)
         if problem:
-            lines.append(f"- {label} `{path}`: {problem}. Rewrite it by hand before step 2.")
+            lines.append(f"- {label} `{path}`: {problem}. Rewrite it by hand first.")
             continue
-        lines.append(f"- {label} `{path}`: `{json.dumps(data)}`")
-        configured_python = data.get("python", configured_python)  # either file may omit it
+        shown = ", ".join(f"`{key}: {value}`" for key, value in values.items()) or "empty"
+        lines.append(f"- {label} `{path}`: {shown}")
 
     found = ", ".join(f"`{os.path.join(cdb, n)}/`" for n in project_folders(cdb)) or "none"
     lines.append(f"- Project folders found: {found}")
-    state = "exists" if os.path.isdir(on_dir(cdb)) else "does not exist"
-    lines.append(f"- ON files folder `{on_dir(cdb)}/`: {state}")
+    for note in AGENT_NOTE_FILES:
+        path = os.path.join(root, note)
+        if not os.path.isfile(path):
+            lines.append(f"- `{rel(path)}`: does not exist")
+        else:
+            says = "mentions" if CONTEXT_DB in read_text(path) else "does not mention"
+            lines.append(f"- `{rel(path)}`: exists, {says} `{CONTEXT_DB}/`")
     leftovers = v0_leftovers(root, cdb)
     if leftovers:
         listed = ", ".join(f"`{path}`" for path in leftovers)
         lines.extend(["", text(V0_LAYOUT_FOUND, leftovers=listed, guide=MIGRATION_GUIDE)])
 
+    python = configured_python(cdb, default=suggested_python)
     emit(
         [
             load_prompt(
                 "configure",
                 cdb=cdb,
-                config_name=CONFIG_NAME,
-                local_config_name=LOCAL_CONFIG_NAME,
-                init_cmd=f"{script_command(configured_python or suggested_python)} init",
-                index_cmd=f"{script_command(configured_python or suggested_python)} index",
+                conf_dir=conf_dir(cdb),
+                settings=settings_path(cdb),
+                local_settings=settings_path(cdb, local=True),
+                init_cmd=f"{script_command(python)} init",
+                index_cmd=f"{script_command(python)} index",
+                update_cmd=f"{script_command(python)} update",
                 agents_snippet=rel(os.path.join(SKILL_DIR, "starters", "AGENTS.md")),
-                on_dir=on_dir(cdb),
             ),
             "\n".join(lines),
             current_rules_section(cdb),
@@ -1051,16 +1101,16 @@ def write_if_missing(path, content, created):
     created.append(path)
 
 
-def ignore_local_config(root, cdb):
-    """Make sure the per-user override file can never be committed."""
-    local = os.path.join(cdb, LOCAL_CONFIG_NAME)
-    if not git("rev-parse", "--show-toplevel") or git("check-ignore", local).strip():
-        return False
+def ignore_local_settings(root, cdb):
+    """Make sure the per-user settings file can never be committed. Returns the line added."""
+    if not git("rev-parse", "--show-toplevel") or git("check-ignore", settings_path(cdb, True)):
+        return ""
+    line = f"{CONTEXT_DB}/{CONF_DIR_NAME}/{LOCAL_SETTINGS_NAME}"
     path = os.path.join(root, ".gitignore")
     existing = read_text(path) if os.path.isfile(path) else ""
     separator = "" if not existing or existing.endswith("\n") else "\n"
-    write_text(path, f"{existing}{separator}{CONTEXT_DB}/{LOCAL_CONFIG_NAME}\n")
-    return True
+    write_text(path, f"{existing}{separator}{line}\n")
+    return line
 
 
 def check_project_name(cdb, name):
@@ -1079,78 +1129,48 @@ def check_project_name(cdb, name):
         )
 
 
-def write_update_mode(cdb, config, replace):
-    """Put the update-mode paragraph into ON_PROMPT.md. Returns True when it wrote.
-
-    An existing block is the user's to reword, so it is replaced only when the
-    mode was passed on this run.
-    """
-    path = os.path.join(on_dir(cdb), "ON_PROMPT.md")
-    content = read_text(path)
-    paragraph = text(
-        UPDATE_MODE_TEXT[config["update_mode"]],
-        cdb=cdb,
-        update_cmd=f"{script_command(config['python'])} update",
-    )
-    block = f"{UPDATE_MODE_START}\n{paragraph}\n{UPDATE_MODE_END}"
-    start, end = content.find(UPDATE_MODE_START), content.find(UPDATE_MODE_END)
-    if start != -1 and end != -1:
-        if not replace:
-            return False
-        content = content[:start] + block + content[end + len(UPDATE_MODE_END) :]
-    else:
-        content = content.rstrip("\n") + "\n\n" + block + "\n"
-    write_text(path, content)
-    return True
-
-
 def cmd_init(args):
     root = find_repo_root()
     cdb = context_db_dir()
-    shared_path = os.path.join(cdb, CONFIG_NAME)
-    local_path = os.path.join(cdb, LOCAL_CONFIG_NAME)
+    shared_path = settings_path(cdb)
+    local_path = settings_path(cdb, local=True)
 
-    config = read_json(shared_path) if os.path.isfile(shared_path) else {}
-    previous_project = config.get("project")  # absent on the first run
+    config = read_settings(shared_path) if os.path.isfile(shared_path) else {}
+    previous_project = config.get("project")  # frontmatter: absent on the first run
     for key, value in (
         ("project", args.project),
         ("python", args.python),
         ("main_branch", args.main_branch),
-        ("update_mode", args.update_mode),
     ):
         if value:
             config[key] = value
-    if "project" not in config:
+    if not config.get("project"):
         sys.exit("Error: no project name. Pass --project <name>.")
     check_project_name(cdb, config["project"])
-    if "python" not in config:
-        config["python"] = "python3"
-    if "main_branch" not in config:
-        config["main_branch"] = detect_main_branch()[0]
-    if "update_mode" not in config:
-        config["update_mode"] = UPDATE_MODES[0]
-    if config["update_mode"] not in UPDATE_MODES:
-        sys.exit(f"Error: update_mode must be one of {', '.join(UPDATE_MODES)}.")
+    config.setdefault("python", "python3")
+    config.setdefault("main_branch", detect_main_branch()[0])
 
     local = None
     if args.local:
-        local = read_json(local_path) if os.path.isfile(local_path) else {}
+        local = read_settings(local_path) if os.path.isfile(local_path) else {}
         for item in args.local:
             key, separator, value = item.partition("=")
-            if not separator or not value or key not in CONFIG_KEYS:
+            if not separator or not value or key not in SETTINGS_KEYS:
                 sys.exit(
-                    f"Error: --local takes KEY=VALUE, where KEY is one of {', '.join(CONFIG_KEYS)}."
+                    "Error: --local takes KEY=VALUE, where KEY is one of "
+                    f"{', '.join(SETTINGS_KEYS)}."
                 )
             local[key] = value
 
-    os.makedirs(cdb, exist_ok=True)
-    write_json(shared_path, config)
-    print(f"Wrote {shared_path}: {json.dumps(read_json(shared_path))}")
+    os.makedirs(conf_dir(cdb), exist_ok=True)
+    write_settings(shared_path, config, SETTINGS_BODY)
+    print(f"Wrote {shared_path}")
     if local is not None:
-        write_json(local_path, local)
-        print(f"Wrote {local_path}: {json.dumps(read_json(local_path))}")
-    if ignore_local_config(root, cdb):
-        print(f"Added {CONTEXT_DB}/{LOCAL_CONFIG_NAME} to .gitignore")
+        write_settings(local_path, local, LOCAL_SETTINGS_BODY)
+        print(f"Wrote {local_path}")
+    ignored = ignore_local_settings(root, cdb)
+    if ignored:
+        print(f"Added {ignored} to .gitignore")
 
     name = config["project"]
     project = project_dir(cdb, config)
@@ -1159,20 +1179,22 @@ def cmd_init(args):
         if os.path.isdir(old):
             print(f"Note: the project folder is now {project}/. {old}/ is treated as background.")
 
+    # The starters may name the command that runs this script; fill it in once,
+    # with the shared interpreter, because the ON files are committed.
+    python = config["python"]
     created = []
     starters = os.path.join(SKILL_DIR, "starters")
     for command in ON_COMMANDS:
         filename = f"ON_{command.upper()}.md"
         starter = read_text(os.path.join(starters, filename))
-        write_if_missing(os.path.join(on_dir(cdb), filename), starter, created)
-    if write_update_mode(cdb, config, replace=bool(args.update_mode)):
-        print(f"Wrote the update mode ({config['update_mode']}) into {on_dir(cdb)}/ON_PROMPT.md")
+        starter = starter.replace("{update_cmd}", f"{script_command(python)} update")
+        write_if_missing(os.path.join(conf_dir(cdb), filename), starter, created)
     write_if_missing(
         os.path.join(project, f"{name}-project.md"),
         text(PROJECT_DESCRIPTOR, name=name) + "\n",
         created,
     )
-    write_if_missing(os.path.join(project, "wip", "wip.md"), text(WIP_DESCRIPTOR) + "\n", created)
+    write_if_missing(wip_list_path(cdb, config), text(WIP_DESCRIPTOR) + "\n", created)
     for path in created:
         print(f"Created {path}")
     print()
@@ -1234,14 +1256,14 @@ def bundle_root(folder):
         folder = rel(parent)
 
 
-def configured_python(cdb):
-    """The `python` setting if it can be read, else python3. Never fails."""
-    python = "python3"
-    for filename in (CONFIG_NAME, LOCAL_CONFIG_NAME):
-        path = os.path.join(cdb, filename)
-        data = load_json(path)[0] if os.path.isfile(path) else None
-        if data:
-            python = data.get("python", python)  # either file may leave it out
+def configured_python(cdb, default="python3"):
+    """The `python` setting if it can be read, else the default. Never fails."""
+    python = default
+    for local in (False, True):
+        path = settings_path(cdb, local)
+        values = load_settings(path)[0] if os.path.isfile(path) else None
+        if values and values.get("python"):  # frontmatter: either file may leave it out
+            python = values["python"]
     return python
 
 
@@ -1297,26 +1319,34 @@ def build_parser():
     p.add_argument("--commit", action="store_true", help="Then commit the whole session")
     p.add_argument("--push", action="store_true", help="Then commit and push")
 
-    p = subs.add_parser("wip", help="Bring the work-in-progress plans up to date")
+    p = subs.add_parser(
+        "wip", help="(optional) Record the work in progress; or list, clean up, or clear it"
+    )
+    instruction(p)
+    modes = p.add_mutually_exclusive_group()
+    modes.add_argument(
+        "--list", action="store_true", help="Show what is in progress; change nothing"
+    )
+    modes.add_argument(
+        "--cleanup", action="store_true", help="Delete the plans for work that has landed"
+    )
+    modes.add_argument("--clear", action="store_true", help="Delete every plan, after asking")
+
+    p = subs.add_parser(
+        "configure",
+        help="(helper) Set context-db up by asking a few questions; edit the files by hand after",
+    )
     instruction(p)
 
-    p = subs.add_parser("configure", help="Set up or repair context-db in this repository")
-    instruction(p)
-
-    p = subs.add_parser("init", help="(helper) Write the config and create whatever is missing")
+    p = subs.add_parser("init", help="(helper) Write the settings and create whatever is missing")
     p.add_argument("--project", help="Project name; its folder is context-db/<name>-project/")
     p.add_argument("--python", help="Interpreter command used to run this script")
     p.add_argument("--main-branch", help="Branch that work in progress is compared against")
     p.add_argument(
-        "--update-mode",
-        choices=UPDATE_MODES,
-        help="Who decides when the knowledge base is updated; written into ON_PROMPT.md",
-    )
-    p.add_argument(
         "--local",
         action="append",
         metavar="KEY=VALUE",
-        help=f"Per-user override, written to {LOCAL_CONFIG_NAME} (repeatable)",
+        help=f"Per-user override, written to {LOCAL_SETTINGS_NAME} (repeatable)",
     )
 
     p = subs.add_parser("index", help="(helper) Regenerate index.md files and check the format")
