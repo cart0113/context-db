@@ -2,7 +2,7 @@
 html_theme.sidebar_secondary.remove: true
 ---
 
-# context-db
+# /context-db
 
 :::{div} lead
 A set of skills for coding agents. They keep a knowledge base for your project
@@ -31,6 +31,35 @@ Setup
 About the Open Knowledge Format
 ```
 ::::
+
+## Example
+
+Before a task, type the command, then the task on a new line. It needs no
+quotes:
+
+```text
+/context-db prompt
+
+Users report a bug here:
+
+https://issues.example.com/PAY-482
+
+It looks like it is in the new receipts database code.
+Can you investigate and propose a fix?
+```
+
+The agent reads the index, opens the notes on the database schema and the plan
+for the receipts work, and skips everything else. Then it finds the cause and
+proposes a fix.
+
+When the work is done:
+
+```text
+/context-db update --push
+```
+
+The agent writes down anything the next agent would need, then commits and
+pushes. Most of the time there is nothing to write down, and it says so.
 
 ## Install
 
@@ -163,29 +192,6 @@ Every refund request carries an idempotency key. See
 ```
 :::
 ::::
-
-## A typical session
-
-1. You type the command, then the task on a new line. It needs no quotes:
-
-   ```text
-   /context-db prompt
-
-   Users report a bug here:
-
-   https://issues.example.com/PAY-482
-
-   It looks like it is in the new receipts database code.
-   Can you investigate and propose a fix?
-   ```
-
-2. The agent reads the index, opens the notes on the database schema and the
-   plan for the receipts work, and skips everything else.
-3. It finds the cause and proposes a fix.
-4. You type `/context-db update --push`. The agent asks itself whether it
-   learned anything that the next agent would get wrong without being told.
-   Usually the answer is no, and it says so. If there is something, it writes a
-   short note in the right place. Then it commits and pushes.
 
 ## Why it works this way
 

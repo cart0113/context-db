@@ -1,65 +1,103 @@
 /*
  * context-db docs theme.
  *
- * The palette starts from the logo (a green page with a lavender arrow) and
- * turns the saturation up: emerald, cyan, violet, pink.
+ * Cool colors that run teal, sky, blue, indigo. Headings are set in JetBrains
+ * Mono (loaded in conf.py), because the name of the thing is a command.
  */
 
 :root {
-  --cdb-green: #10b981;
-  --cdb-cyan: #06b6d4;
-  --cdb-violet: #8b5cf6;
-  --cdb-pink: #ec4899;
-  --cdb-amber: #f59e0b;
+  --cdb-teal: #14b8a6;
+  --cdb-sky: #0ea5e9;
+  --cdb-blue: #3b82f6;
+  --cdb-indigo: #6366f1;
   --cdb-gradient: linear-gradient(
     90deg,
-    var(--cdb-green),
-    var(--cdb-cyan) 35%,
-    var(--cdb-violet) 68%,
-    var(--cdb-pink)
+    var(--cdb-teal),
+    var(--cdb-sky) 35%,
+    var(--cdb-blue) 68%,
+    var(--cdb-indigo)
   );
+  --pst-font-family-heading: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+/* --cdb-prompt, -update, -wip, -configure: one color per command, dark enough
+   to read as text. The theme gives dropdowns a fixed tint, so the two
+   --sd-color-*-bg lines point it at this palette. */
 html[data-theme="light"] {
-  --pst-color-primary: #0f766e;
-  --pst-color-primary-bg: #ccfbf1;
-  --pst-color-secondary: #7c3aed;
-  --pst-color-secondary-bg: #ede9fe;
-  --pst-color-accent: #db2777;
-  --pst-color-link: #0f766e;
-  --pst-color-link-hover: #7c3aed;
-  --pst-color-inline-code: #be185d;
+  --pst-color-primary: #1d4ed8;
+  --pst-color-primary-bg: #dbeafe;
+  --pst-color-secondary: #4338ca;
+  --pst-color-secondary-bg: #e0e7ff;
+  --pst-color-accent: #0f766e;
+  --pst-color-link: #1d4ed8;
+  --pst-color-link-hover: #4338ca;
+  --pst-color-inline-code: #0e7490;
   --pst-color-target: #fef3c7;
-  --cdb-tint: #f5f3ff;
-  --cdb-tint-border: #ddd6fe;
-  --cdb-code-bg: #faf9ff;
+  --sd-color-primary-bg: var(--pst-color-primary-bg);
+  --sd-color-secondary-bg: var(--pst-color-secondary-bg);
+  --cdb-tint: #eff6ff;
+  --cdb-tint-border: #bfdbfe;
+  --cdb-code-bg: #f8fbff;
+  --cdb-prompt: #0f766e;
+  --cdb-update: #0369a1;
+  --cdb-wip: #1d4ed8;
+  --cdb-configure: #4338ca;
 }
 
 html[data-theme="dark"] {
-  --pst-color-primary: #2dd4bf;
-  --pst-color-primary-bg: #134e4a;
-  --pst-color-secondary: #c4b5fd;
-  --pst-color-secondary-bg: #3b2f6b;
-  --pst-color-accent: #f9a8d4;
-  --pst-color-link: #2dd4bf;
-  --pst-color-link-hover: #c4b5fd;
-  --pst-color-inline-code: #f9a8d4;
+  --pst-color-primary: #60a5fa;
+  --pst-color-primary-bg: #1e3a8a;
+  --pst-color-secondary: #a5b4fc;
+  --pst-color-secondary-bg: #312e81;
+  --pst-color-accent: #5eead4;
+  --pst-color-link: #60a5fa;
+  --pst-color-link-hover: #a5b4fc;
+  --pst-color-inline-code: #67e8f9;
   --pst-color-target: #4a3a12;
-  --cdb-tint: #1d1b33;
-  --cdb-tint-border: #3b3566;
-  --cdb-code-bg: #161a26;
+  --sd-color-primary-bg: var(--pst-color-primary-bg);
+  --sd-color-secondary-bg: var(--pst-color-secondary-bg);
+  --cdb-tint: #131c33;
+  --cdb-tint-border: #2a3f7a;
+  --cdb-code-bg: #10172a;
+  --cdb-prompt: #2dd4bf;
+  --cdb-update: #38bdf8;
+  --cdb-wip: #60a5fa;
+  --cdb-configure: #818cf8;
 }
 
-/* A stripe of the whole palette across the top of every page. */
+/* Three soft patches of color behind the top of every page. */
+body::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 auto 0;
+  height: 46rem;
+  background:
+    radial-gradient(38rem 22rem at 12% 10%, color-mix(in srgb, var(--cdb-teal) 26%, transparent), transparent 70%),
+    radial-gradient(36rem 24rem at 52% 0%, color-mix(in srgb, var(--cdb-blue) 24%, transparent), transparent 70%),
+    radial-gradient(32rem 20rem at 92% 12%, color-mix(in srgb, var(--cdb-indigo) 22%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+/* The header is see-through and blurred, with the palette along its bottom
+   edge. The theme sets its background with !important. */
+.bd-header {
+  background: color-mix(in srgb, var(--pst-color-on-background) 66%, transparent) !important;
+  -webkit-backdrop-filter: saturate(1.8) blur(14px);
+  backdrop-filter: saturate(1.8) blur(14px);
+  box-shadow: none;
+}
+
 .bd-header::before {
   content: "";
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
+  inset: auto 0 0 0;
+  height: 2px;
   background: var(--cdb-gradient);
 }
 
 .navbar-brand .title {
+  font-family: var(--pst-font-family-heading);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
@@ -71,28 +109,54 @@ html[data-theme="dark"] {
 /* Page titles and section headings. */
 .bd-article h1 {
   font-weight: 800;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.05em;
 }
 
 .bd-article h2 {
   font-weight: 700;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.05em;
   margin-top: 2.75rem;
   padding-bottom: 0.4rem;
   border-bottom: 3px solid transparent;
-  border-image: linear-gradient(90deg, var(--cdb-green), var(--cdb-violet) 30%, transparent 62%) 1;
+  border-image: linear-gradient(90deg, var(--cdb-teal), var(--cdb-blue) 30%, transparent 62%) 1;
 }
 
-/* The home page. */
+/* The home page. Its title is the gradient, drifting sideways: the stops are
+   written out twice so that the loop has no seam. */
 section#context-db > h1 {
   display: inline-block;
   margin: 2rem 0 0.75rem;
   font-size: clamp(2.8rem, 7vw, 4.5rem);
   line-height: 1.1;
-  background: var(--cdb-gradient);
+  background: linear-gradient(
+    90deg,
+    var(--cdb-teal),
+    var(--cdb-sky),
+    var(--cdb-blue),
+    var(--cdb-indigo),
+    var(--cdb-teal),
+    var(--cdb-sky),
+    var(--cdb-blue),
+    var(--cdb-indigo),
+    var(--cdb-teal)
+  );
+  background-size: 300% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: cdb-title-flow 9s linear infinite;
+}
+
+@keyframes cdb-title-flow {
+  to {
+    background-position: 75% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  section#context-db > h1 {
+    animation: none;
+  }
 }
 
 .lead {
@@ -105,7 +169,7 @@ section#context-db > h1 {
   max-width: 44rem;
   margin: 1.25rem 0 1.5rem;
   padding: 0.85rem 1.1rem;
-  border-left: 4px solid var(--cdb-violet);
+  border-left: 4px solid var(--cdb-blue);
   border-radius: 0 0.5rem 0.5rem 0;
   background: var(--cdb-tint);
 }
@@ -153,50 +217,45 @@ section#context-db > h1 {
 }
 
 .command-prompt {
-  --command-color: var(--cdb-green);
+  --command-color: var(--cdb-prompt);
 }
 .command-update {
-  --command-color: var(--cdb-cyan);
+  --command-color: var(--cdb-update);
 }
 .command-wip {
-  --command-color: var(--cdb-violet);
+  --command-color: var(--cdb-wip);
 }
 .command-configure {
-  --command-color: var(--cdb-pink);
+  --command-color: var(--cdb-configure);
 }
 
-html[data-theme="dark"] .command-prompt {
-  --command-color: #34d399;
-}
-html[data-theme="dark"] .command-update {
-  --command-color: #22d3ee;
-}
-html[data-theme="dark"] .command-wip {
-  --command-color: #a78bfa;
-}
-html[data-theme="dark"] .command-configure {
-  --command-color: #f472b6;
+/* Code blocks look like small windows: three dots and a rule under them. */
+.bd-article div.highlight pre {
+  padding-top: 2.6rem;
+  border: 1px solid var(--cdb-tint-border);
+  border-radius: 0.7rem;
+  background: var(--cdb-code-bg) linear-gradient(var(--cdb-tint-border), var(--cdb-tint-border)) no-repeat 0
+    2.05rem / 100% 1px;
 }
 
-html[data-theme="light"] .command-prompt {
-  --command-color: #059669;
-}
-html[data-theme="light"] .command-update {
-  --command-color: #0891b2;
-}
-html[data-theme="light"] .command-wip {
-  --command-color: #7c3aed;
-}
-html[data-theme="light"] .command-configure {
-  --command-color: #db2777;
+.bd-article div.highlight::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0.9rem;
+  left: 1rem;
+  width: 0.68rem;
+  height: 0.68rem;
+  border-radius: 50%;
+  background: #ff5f57;
+  box-shadow:
+    1.1rem 0 0 #febc2e,
+    2.2rem 0 0 #28c840;
 }
 
-/* Code. */
-.bd-article div.highlight pre,
 .bd-article pre.literal-block {
   border: 1px solid var(--cdb-tint-border);
-  border-left: 4px solid var(--cdb-violet);
-  border-radius: 0.6rem;
+  border-radius: 0.7rem;
   background: var(--cdb-code-bg);
 }
 
@@ -207,12 +266,12 @@ html[data-theme="light"] .command-configure {
 /* Tables. */
 .bd-article table.table thead th {
   background: var(--cdb-tint);
-  border-bottom: 2px solid var(--cdb-violet);
+  border-bottom: 2px solid var(--cdb-blue);
 }
 
 /* Quotes from the instruction files. */
 .bd-article blockquote {
-  border-left: 4px solid var(--cdb-green);
+  border-left: 4px solid var(--cdb-teal);
   border-radius: 0 0.5rem 0.5rem 0;
   background: var(--cdb-tint);
 }
@@ -221,18 +280,18 @@ html[data-theme="light"] .command-configure {
 .bd-article .sd-tab-set > .sd-tab-content {
   padding: 0.75rem 0 0;
   border: 0;
-  border-top: 2px solid var(--cdb-violet);
+  border-top: 2px solid var(--cdb-blue);
   box-shadow: none;
 }
 
 .bd-article .sd-tab-set > input:checked + label {
-  border-color: var(--cdb-violet);
+  border-color: var(--cdb-blue);
   color: var(--pst-color-secondary);
 }
 
 /* The page outline on the right. */
 .bd-sidebar-secondary .nav-link.active {
-  border-left-color: var(--cdb-violet);
+  border-left-color: var(--cdb-blue);
 }
 
 /* Definition lists: the term stands out, the explanation sits under it. */

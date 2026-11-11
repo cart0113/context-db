@@ -36,9 +36,11 @@ html_logo = "_static/context-db-icon.svg"
 html_favicon = "_static/favicon.svg"
 html_static_path = ["_static"]
 templates_path = ["_templates"]
-html_css_files = ["custom.css", "looks.css"]
-# The look picker, for trying out styles. Delete with looks.css once a look is chosen.
-html_js_files = ["looks.js"]
+# JetBrains Mono is the heading font; custom.css names it.
+html_css_files = [
+    "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap",
+    "custom.css",
+]
 # Pages open in light mode. The switch in the header still offers dark.
 html_context = {"default_mode": "light"}
 html_show_sourcelink = False
