@@ -27,12 +27,7 @@ Try it:
 cd example/acme-payments-repo
 python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
 python3 .claude/skills/context-db/context-db.py wip --list
-python3 .claude/skills/context-db/context-db.py index --check
-```
-
-The two symlinked folders are indexed from the folder that owns them:
-
-```bash
-cd example/shared
-python3 ../../skill/context-db/context-db.py index coding-standards
+python3 .claude/skills/context-db/context-db.py toc
+python3 .claude/skills/context-db/context-db.py toc context-db/coding-standards
+python3 .claude/skills/context-db/context-db.py toc --check
 ```

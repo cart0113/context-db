@@ -48,8 +48,9 @@ the wip loop. Those stay context-db's own.
   [frontmatter-fields.md](./frontmatter-fields.md).
 - **Links are file-relative**, not the bundle-relative form OKF recommends. See
   [links-and-symlinks.md](./links-and-symlinks.md).
-- **The index is flat**, not grouped by type as the reference tool does. See
-  [static-index.md](./static-index.md).
+- **The index is built on demand** and never written as `index.md`, and it is
+  flat, not grouped by type as the reference tool does. See
+  [dynamic-index.md](./dynamic-index.md).
 - **Folders get a descriptor file.** OKF has no field for a folder's
   description; its reference implementation has an LLM synthesize one from the
   folder's children. A descriptor is deterministic and reviewable.

@@ -20,7 +20,7 @@
   --pst-font-family-heading: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* --cdb-prompt, -update, -wip, -configure: one color per command, dark enough
+/* --cdb-prompt, -update, -maintain, -wip, -configure: one color per command, dark enough
    to read as text. The theme gives dropdowns a fixed tint, so the two
    --sd-color-*-bg lines point it at this palette. */
 html[data-theme="light"] {
@@ -40,6 +40,7 @@ html[data-theme="light"] {
   --cdb-code-bg: #f8fbff;
   --cdb-prompt: #0f766e;
   --cdb-update: #0369a1;
+  --cdb-maintain: #0b5cad;
   --cdb-wip: #1d4ed8;
   --cdb-configure: #4338ca;
 }
@@ -61,6 +62,7 @@ html[data-theme="dark"] {
   --cdb-code-bg: #10172a;
   --cdb-prompt: #2dd4bf;
   --cdb-update: #38bdf8;
+  --cdb-maintain: #4fb0f9;
   --cdb-wip: #60a5fa;
   --cdb-configure: #818cf8;
 }
@@ -220,6 +222,9 @@ section#context-db > h1 {
 }
 .command-update {
   --command-color: var(--cdb-update);
+}
+.command-maintain {
+  --command-color: var(--cdb-maintain);
 }
 .command-wip {
   --command-color: var(--cdb-wip);

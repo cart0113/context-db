@@ -97,9 +97,9 @@ These are the parts of the specification that context-db uses:
 | `description` | 4.1 | OKF recommends it. context-db requires it, because it is what the agent reads to decide whether to open a file. |
 | `status` | 5.4 | Used as defined: `draft`, `stable`, or `deprecated`. |
 | Links | 6.1 | Ordinary Markdown links, always in the relative form. |
-| `index.md` | 8 | Generated in every folder, in the list layout OKF gives. |
-| `okf_version` | 12 | Written at the top of each bundle's root `index.md`. |
-| Conformance | 11 | `index --check` tests the three rules above, and a few stricter ones. |
+| `index.md` | 8 | Built on demand by `toc`, in the list layout OKF gives, and never written to disk. See [Dynamic indexing](#dynamic-indexing). |
+| `okf_version` | 12 | context-db implements OKF 0.2; `--version` and `toc --check` say so. With no root `index.md`, nothing in the folder records it. |
+| Conformance | 11 | `toc --check` tests the three rules above, and a few stricter ones. |
 
 The suggested values for `type` are `Decision`, `Convention`, `Rule`,
 `Architecture`, `Gotcha`, `Reference`, `Research`, `Plan`, and `Folder`. OKF keeps no
@@ -111,7 +111,7 @@ You can still use any of these in your own files. The checker ignores keys it
 does not know about.
 
 `title` (section 4.1)
-: The page heading already gives the title. The index uses the heading.
+: The page heading already gives the title. The listing uses the heading.
 
 `tags` and `resource` (section 4.1)
 : Tags only help when everyone uses the same words. Descriptions and folders
@@ -141,7 +141,7 @@ Links that start at the bundle root (section 6.1)
 
 OKF is a file format and nothing else. It does not say when an agent should
 read the files, or what is worth writing down. That is what the
-[four commands](commands.md) are for.
+[five commands](commands.md) are for.
 
 context-db also adds a few conventions. All of them are valid OKF.
 
@@ -165,19 +165,43 @@ Settings and rules kept outside the bundles
   them, so every Markdown file inside a bundle is a real concept.
 
 Stricter checks
-: Besides the three OKF rules, `index --check` fails on a missing description,
+: Besides the three OKF rules, `toc --check` fails on a missing description,
   a broken link, a folder with no descriptor, or a symlink inside a bundle. It
   also catches the common ways a description stops being valid YAML, such as a
   colon followed by a space.
+
+## Dynamic indexing
+
+OKF lets every folder carry an `index.md`: a list of what is in the folder, one
+line per item with its description, so a reader can see what is there before
+opening anything. The spec does not require the file. It says only that an
+`index.md`, if there is one, follows its layout.
+
+context-db implements the index dynamically. It never writes an `index.md`.
+Whenever the agent looks into a folder, it runs the skill's `toc` command,
+which reads the frontmatter of the files in that folder and prints the same
+list, in OKF's layout, at that moment. The agent reads it, opens what it needs,
+and runs `toc` again on a subfolder when it wants to go deeper.
+
+The reason is that a generated file that is committed goes out of date. It
+has to be rebuilt after every change, checked in CI, and regenerated after
+every merge conflict, and an agent that reads a stale one misses notes or looks
+for notes that are gone. A listing built on demand from the files cannot drift.
+It also lets a folder shared from another repository work without that
+repository generating anything, and it lets each user see their own private,
+gitignored notes.
+
+The cost is small. Someone browsing the folders on GitHub or in Obsidian sees
+the files without their one-line descriptions.
 
 ## Where context-db departs from the LLM wiki
 
 Karpathy's wiki is meant to grow. Every source the LLM reads adds pages,
 because the LLM cannot cheaply read those sources again.
 
-A code repository is different. The source is the code, and the agent can read
-it whenever it wants. A page that repeats the code is a second copy that goes
-out of date. So context-db takes the format and not the habit of writing
+A code repository is different. The source is the code and its comments, and
+the agent can read them whenever it wants. A page that repeats them is a second
+copy that goes out of date. So context-db takes the format and not the habit of writing
 everything down. Most sessions add nothing.
 [Motivation](index.md#motivation) explains the reasoning.
 
@@ -195,5 +219,5 @@ OKF's reference parser makes.
 
 OKF is young and still changing. context-db relies mainly on the parts that have
 not changed since version 0.1: frontmatter with a `type` and a `description`,
-`index.md`, and Markdown links. The one newer piece it uses is `status`, which
-arrived in version 0.2.
+the `index.md` list layout, and Markdown links. The one newer piece it uses is
+`status`, which arrived in version 0.2.

@@ -32,15 +32,16 @@ description in double quotes.
 `<folder>/<folder>.md`, with `type: Folder` and a description of what the folder
 holds. A body is optional. Aim for 5–10 items per folder.
 
-**Index files.** `index.md` is generated from frontmatter. Never write or edit
-one.
+**No index files.** Context-db lists a folder on the fly from the frontmatter of
+its files, so the description is what makes a file findable. Never create an
+`index.md`.
 
 **Links.** Use real Markdown links, relative to the file that contains them:
 `[retry policy](./retry-policy.md)`, `[the dispatcher](../../src/dispatch.py)`.
 Never start a link with `/`.
 
-**Size.** About 150 lines per file, 200 at most. Split a larger file into a
-subfolder of the same name. Files in `wip/` are exempt.
+**Size.** About 150 lines per file, 200 at most. A larger file becomes smaller
+files, or a subfolder of the same name. Files in `wip/` are exempt.
 
 **Style.** State the fact, the convention, the pitfall. No exposition, and no
 justification unless the reason is the point. If a file reads like

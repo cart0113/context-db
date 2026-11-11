@@ -2,17 +2,26 @@
 """
 context-db.py — the one script behind the /context-db skill.
 
-Commands the user invokes. Each prints instructions that the calling agent follows:
+Commands the user invokes. Each prints instructions that the calling agent
+follows; COMMAND_SUMMARIES below is the one-line description of each, shown by
+--help and repeated word for word in the README and on the docs home page.
 
-  prompt "<task>"         Look up what the knowledge base says about a task.
-  update ["<learning>"]   Write down what was learned (--commit / --push to commit too).
-  wip ["<instruction>"]   Optional. Record the work in progress (--list, --cleanup, --clear).
-  configure               A helper that sets context-db up by asking a few questions.
+  prompt "<task>"         Before a task.
+  update ["<learning>"]   After a task (--commit / --push to commit too).
+  wip ["<instruction>"]   Optional (--list, --cleanup, --clear).
+  configure               First, and whenever you like. With --project and the
+                          other setting flags it writes the files itself.
+  maintain ["<scope>"]    Now and then: tidy the knowledge base (--use-git-diff).
 
-Helpers the agent runs when the instructions say to. They do the file work:
+One step the agent runs whenever it looks into the knowledge base, and CI runs
+with --check. It is not listed in --help:
 
-  init                    Write the settings and create whatever is missing.
-  index [folder]          Regenerate index.md files and check the format.
+  toc [folder]            List a folder's files and subfolders with their
+                          descriptions, read from the files just now.
+  toc --check [folder]    Check the format of the folder the given one is in.
+
+There are no index.md files. OKF lets a folder carry one; context-db builds the
+same listing on demand instead, so it can never be out of date.
 
 Layout (the file format is described in prompts/format.md):
 
@@ -50,7 +59,7 @@ SETTINGS_KEYS = ("project", "python", "main_branch")
 WIP_LIST_NAME = "wip.md"
 RESERVED_FILES = ("index.md", "log.md")
 STATUSES = ("draft", "stable", "deprecated")
-ON_COMMANDS = ("prompt", "update", "wip", "configure")
+ON_COMMANDS = ("prompt", "update", "wip", "configure", "maintain")
 AGENT_NOTE_FILES = ("AGENTS.md", "CLAUDE.md")
 MAX_FILE_LINES = 200
 MAX_FOLDER_ITEMS = 12
@@ -66,6 +75,50 @@ SKILL_DIR = os.path.dirname(os.path.abspath(__file__))
 # Short pieces of text the agent reads. The long instructions are the files in
 # prompts/. Edit wording here or there, never inside the functions below.
 
+COMMAND_SUMMARIES = {
+    "prompt": """
+Before a task. Looks up what the knowledge base says about it.
+""",
+    "update": """
+After a task. Writes down what the next agent would need, if anything. --push
+also commits and pushes.
+""",
+    "wip": """
+Optional, for long work. Keeps a short list of the work in progress. --list,
+--cleanup, --clear.
+""",
+    "configure": """
+First, and whenever you like. Sets context-db up by asking a few questions;
+edit the files by hand afterwards.
+""",
+    "maintain": """
+Now and then. Removes what the code and its comments already say, fixes what
+has drifted, and splits and reorganizes. --use-git-diff also reads the git
+history for what has gone out of date.
+""",
+}
+
+NO_HISTORY = """
+Not a git repository, or git is unavailable, so there is no history to read.
+Tell the user, and maintain the knowledge base without it.
+"""
+
+HISTORY_ROW = """
+- `{path}`: last changed {date} ({commit}); {behind} commits to the project since
+"""
+
+HISTORY_LINKED = """
+; linked files changed since: {files}
+"""
+
+HISTORY_NOT_COMMITTED = """
+- `{path}`: not committed yet
+"""
+
+HISTORY_EMPTY = """
+(The project folder holds no notes yet.)
+"""
+
 NOT_CONFIGURED = """
 context-db is not set up in this repository: `{settings_path}` does not exist.
 
@@ -74,14 +127,6 @@ Tell the user, and offer to run `/context-db configure`. Do nothing else.
 
 NO_INSTRUCTION = """
 No instruction was given. Ask the user what they want to work on.
-"""
-
-FOLDER_HAS_INDEX = """
-start at `{index}`
-"""
-
-FOLDER_HAS_NO_INDEX = """
-it has no `index.md`, so list the folder and read the frontmatter descriptions to find your way
 """
 
 PROJECT_FOLDER_MISSING = """
@@ -138,8 +183,18 @@ This repository still has the v0.0 layout ({leftovers}). Follow the migration
 guide before step 2: {guide}
 """
 
-EMPTY_INDEX = """
-<!-- Nothing is in this folder yet. -->
+TOC_HEADING = """
+# Contents of `{folder}/`
+
+Read from its files just now. To look inside a subfolder, run `{toc_cmd} <subfolder>`.
+"""
+
+TOC_EMPTY = """
+Nothing is in this folder yet.
+"""
+
+STRAY_INDEX = """
+{path}: context-db lists folders on the fly with `toc`, so index.md files are not used — delete it
 """
 
 PROJECT_DESCRIPTOR = """
@@ -458,46 +513,12 @@ def is_real_dir(path):
     return os.path.isdir(path) and not os.path.islink(path)
 
 
-# Paths that git ignores, filled in by load_git_ignored() before a bundle is
-# indexed. A committed index must list only what every clone has, so private,
-# gitignored notes inside a bundle are left out of it.
-GIT_IGNORED = set()
-
-
-def load_git_ignored(bundle):
-    GIT_IGNORED.clear()
-    candidates = [bundle]
-    for dirpath, dirnames, filenames in os.walk(bundle):
-        dirnames[:] = [d for d in dirnames if visible(d)]
-        candidates.extend(os.path.join(dirpath, name) for name in dirnames)
-        candidates.extend(os.path.join(dirpath, name) for name in filenames if name.endswith(".md"))
-    try:
-        result = subprocess.run(
-            ["git", "check-ignore", "--stdin"],
-            check=False,
-            input="\n".join(candidates) + "\n",
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            timeout=15,
-        )
-    except (OSError, subprocess.SubprocessError):
-        return
-    ignored = set(result.stdout.splitlines())
-    if bundle not in ignored:  # a wholly private folder is indexed as it stands
-        GIT_IGNORED.update(ignored)
-
-
-def in_tree(folder, name):
-    return visible(name) and os.path.join(folder, name) not in GIT_IGNORED
-
-
 def folder_files(folder):
     """The folder's own documents: every visible .md except index.md and log.md."""
     return sorted(
         name
         for name in os.listdir(folder)
-        if in_tree(folder, name)
+        if visible(name)
         and name.endswith(".md")
         and name not in RESERVED_FILES
         and os.path.isfile(os.path.join(folder, name))
@@ -511,7 +532,7 @@ def has_knowledge(folder):
     return any(
         has_knowledge(os.path.join(folder, name))
         for name in os.listdir(folder)
-        if in_tree(folder, name) and is_real_dir(os.path.join(folder, name))
+        if visible(name) and is_real_dir(os.path.join(folder, name))
     )
 
 
@@ -519,7 +540,7 @@ def folder_subfolders(folder):
     return sorted(
         name
         for name in os.listdir(folder)
-        if in_tree(folder, name)
+        if visible(name)
         and is_real_dir(os.path.join(folder, name))
         and has_knowledge(os.path.join(folder, name))
     )
@@ -554,60 +575,45 @@ def folder_description(folder):
     return (meta or {}).get("description", "")
 
 
-# ── Index generation ─────────────────────────────────────────────────────────
-# index.md is OKF's progressive-disclosure file: one line per child, each with
-# its description. It is derived entirely from frontmatter, so it is generated
-# and never edited by hand.
+# ── Folder listings ──────────────────────────────────────────────────────────
+# OKF's index.md is a progressive-disclosure file: one line per child, each with
+# its description. context-db never writes one. `toc` prints the same listing
+# from the frontmatter as it is at that moment, so there is nothing to keep in
+# step and nothing to commit.
 
 
-def index_entry(title, target, description):
+def toc_entry(title, target, description):
     title = title.replace("[", "\\[").replace("]", "\\]")
     line = f"* [{title}]({target})"
     return f"{line} - {description}" if description else line
 
 
-def build_index(folder, is_root):
+def folder_listing(folder, toc_cmd):
+    """The OKF index of a folder, built now. Paths are relative to the caller's cwd."""
     descriptor = descriptor_path(folder)
     sub_lines = []
     for name in folder_subfolders(folder):
-        description = folder_description(os.path.join(folder, name))
-        sub_lines.append(index_entry(name, f"{name}/index.md", description))
+        path = os.path.join(folder, name)
+        sub_lines.append(toc_entry(name, f"{path}/", folder_description(path)))
 
     file_lines = []
     for name in folder_files(folder):
         path = os.path.join(folder, name)
         meta, body = read_doc(path)
         if descriptor and os.path.samefile(path, descriptor) and not body.strip():
-            continue  # a frontmatter-only descriptor is shown by the parent's index
+            continue  # a frontmatter-only descriptor is shown by the parent's listing
         meta = meta or {}
         description = (meta.get("description", "") + status_tag(meta)).strip()
-        file_lines.append(index_entry(doc_title(path, meta, body), name, description))
+        file_lines.append(toc_entry(doc_title(path, meta, body), path, description))
 
-    parts = []
-    if is_root:
-        parts.append(f'---\nokf_version: "{OKF_VERSION}"\n---')
+    parts = [text(TOC_HEADING, folder=folder, toc_cmd=toc_cmd)]
     if sub_lines:
         parts.append("# Subfolders\n\n" + "\n".join(sub_lines))
     if file_lines:
         parts.append("# Files\n\n" + "\n".join(file_lines))
     if not sub_lines and not file_lines:
-        parts.append(EMPTY_INDEX.strip())
-    return "\n\n".join(parts) + "\n"
-
-
-def sync_indexes(bundle, check):
-    """Write (or, with check, only compare) every index.md. Returns the stale paths."""
-    stale = []
-    for folder in bundle_folders(bundle):
-        path = os.path.join(folder, "index.md")
-        wanted = build_index(folder, folder == bundle)
-        current = read_text(path) if os.path.isfile(path) else None
-        if current == wanted:
-            continue
-        stale.append(path)
-        if not check:
-            write_text(path, wanted)
-    return stale
+        parts.append(text(TOC_EMPTY))
+    return "\n\n".join(parts)
 
 
 # ── Lint ─────────────────────────────────────────────────────────────────────
@@ -674,14 +680,14 @@ def lint_bundle(bundle):
     for dirpath, dirnames, filenames in os.walk(bundle):
         for name in sorted(dirnames):
             path = os.path.join(dirpath, name)
-            if os.path.islink(path) and in_tree(dirpath, name):
+            if os.path.islink(path) and visible(name):
                 errors.append(
                     f"{path}: symlink inside a bundle — "
                     f"mount shared folders at the top level of {CONTEXT_DB}/ instead"
                 )
-        dirnames[:] = [d for d in dirnames if in_tree(dirpath, d)]
-        if dirpath != bundle and "index.md" in filenames and not has_knowledge(dirpath):
-            warnings.append(f"{dirpath}/: holds only an index.md — delete it")
+        dirnames[:] = [d for d in dirnames if visible(d)]
+        if "index.md" in filenames:
+            errors.append(text(STRAY_INDEX, path=os.path.join(dirpath, "index.md")))
 
     wip = os.path.join(bundle, "wip")
     if is_real_dir(wip):
@@ -705,6 +711,11 @@ def lint_bundle(bundle):
 # ── Prompt composition ───────────────────────────────────────────────────────
 # Each command prints a list of sections. Rules from the ON file come second to
 # last and the user's instruction comes last, because recency wins.
+
+
+def navigate_section(config):
+    """How to look into the knowledge base: run toc, never read an index file."""
+    return load_prompt("navigate", toc_cmd=f"{script_command(config['python'])} toc")
 
 
 def load_prompt(name, **values):
@@ -759,11 +770,7 @@ def folders_section(cdb, config):
 
     def entry(label, folder):
         description = folder_description(folder) or "(no description)"
-        index = os.path.join(folder, "index.md")
-        start = text(
-            FOLDER_HAS_INDEX if os.path.isfile(index) else FOLDER_HAS_NO_INDEX, index=index
-        )
-        return f"- **{label}** `{folder}/` ({start}): {description}"
+        return f"- **{label}** `{folder}/`: {description}"
 
     if os.path.isdir(project):
         lines.append(entry("Project folder", project))
@@ -856,6 +863,75 @@ def git_state_section(cdb, config):
     return "\n".join(lines)
 
 
+# The history behind `maintain --use-git-diff`: for each note, how far the
+# project has moved since the note last changed.
+
+MAX_HISTORY_NOTES = 60
+OUTSIDE_CONTEXT_DB = (":/", f":(top,exclude){CONTEXT_DB}")
+
+
+def project_notes(bundle):
+    """Every note in the project folder outside wip/, descriptors with a body included."""
+    wip = os.path.join(bundle, "wip")
+    notes = []
+    for folder in bundle_folders(bundle):
+        if os.path.commonpath([wip, folder]) == wip:
+            continue
+        descriptor = descriptor_path(folder)
+        for name in folder_files(folder):
+            path = os.path.join(folder, name)
+            body = read_doc(path)[1]
+            if descriptor and os.path.samefile(path, descriptor) and not body.strip():
+                continue
+            notes.append((path, body))
+    return notes
+
+
+def linked_project_files(cdb, path, body):
+    """The files outside context-db/ that a note links to and that exist."""
+    found = []
+    top = os.path.abspath(cdb)
+    for target in LINK_RE.findall(strip_code(without_comments(body))):
+        if SCHEME_RE.match(target) or target.startswith(("#", "/")):
+            continue
+        linked = os.path.normpath(
+            os.path.join(os.path.dirname(path), unquote(target.split("#")[0]))
+        )
+        if os.path.exists(linked) and os.path.commonpath([top, os.path.abspath(linked)]) != top:
+            found.append(linked)
+    return sorted(set(found))
+
+
+def git_history_section(cdb, config):
+    """Each note against the commits made outside context-db/ since it last changed."""
+    if not current_branch():
+        return "# Git History\n\n" + text(NO_HISTORY)
+    rows = []  # (linked files changed, commits behind, line), most out of date sorts first
+    for path, body in project_notes(project_dir(cdb, config)):
+        last = git("log", "-1", "--format=%h %as", "--", path).split()
+        if not last:
+            rows.append((False, -1, text(HISTORY_NOT_COMMITTED, path=path)))
+            continue
+        commit, date = last
+        behind = int(git("rev-list", "--count", f"{commit}..HEAD", "--", *OUTSIDE_CONTEXT_DB) or 0)
+        line = text(HISTORY_ROW, path=path, date=date, commit=commit, behind=behind)
+        linked = linked_project_files(cdb, path, body)
+        changed = (
+            git("diff", "--name-only", f"{commit}..HEAD", "--", *linked).split() if linked else []
+        )
+        if changed:
+            line += text(HISTORY_LINKED, files=", ".join(f"`{name}`" for name in changed))
+        rows.append((bool(changed), behind, line))
+    rows.sort(key=lambda row: (row[0], row[1]), reverse=True)
+    lines = [load_prompt("maintain-git", cdb=cdb), ""]
+    lines.extend(line for _, _, line in rows[:MAX_HISTORY_NOTES])
+    if len(rows) > MAX_HISTORY_NOTES:
+        lines.append(f"- ... ({len(rows) - MAX_HISTORY_NOTES} more notes)")
+    if not rows:
+        lines.append(text(HISTORY_EMPTY))
+    return "\n".join(lines)
+
+
 # ── Commands ─────────────────────────────────────────────────────────────────
 
 
@@ -871,6 +947,8 @@ def cmd_prompt(args):
     emit(
         [
             load_prompt("prompt", cdb=cdb, project_dir=project_dir(cdb, config)),
+            navigate_section(config),
+            load_prompt("not-a-mirror"),
             wip_section(cdb, config, WIP_FOR_PROMPT, show_empty=False, on_branch=on_branch),
             folders_section(cdb, config),
             on_file_text(cdb, "prompt"),
@@ -890,9 +968,12 @@ def cmd_update(args):
             project_dir=project_dir(cdb, config),
             conf_dir=conf_dir(cdb),
             wip_dir=wip_dir(cdb, config),
-            index_cmd=f"{script_command(config['python'])} index",
+            toc_cmd=f"{script_command(config['python'])} toc",
+            check_cmd=f"{script_command(config['python'])} toc --check",
             nothing_to_add=text(NOTHING_TO_ADD_BUT_COMMIT if commit else NOTHING_TO_ADD),
         ),
+        load_prompt("not-a-mirror"),
+        navigate_section(config),
         folders_section(cdb, config),
         load_prompt("format"),
     ]
@@ -902,6 +983,30 @@ def cmd_update(args):
     sections.append(on_file_text(cdb, "update"))
     sections.append(instruction_section(instruction_of(args)))
     emit(sections)
+
+
+def cmd_maintain(args):
+    cdb = context_db_dir()
+    config = require_config(cdb)
+    emit(
+        [
+            load_prompt(
+                "maintain",
+                cdb=cdb,
+                project_dir=project_dir(cdb, config),
+                wip_dir=wip_dir(cdb, config),
+                toc_cmd=f"{script_command(config['python'])} toc",
+                check_cmd=f"{script_command(config['python'])} toc --check",
+            ),
+            load_prompt("not-a-mirror"),
+            navigate_section(config),
+            git_history_section(cdb, config) if args.use_git_diff else "",
+            folders_section(cdb, config),
+            load_prompt("format"),
+            on_file_text(cdb, "maintain"),
+            instruction_section(instruction_of(args)),
+        ]
+    )
 
 
 def cmd_wip(args):
@@ -916,7 +1021,8 @@ def cmd_wip(args):
         "branch": current_branch() or "<branch>",
         "main": config["main_branch"],
         "today": datetime.date.today().isoformat(),
-        "index_cmd": f"{script_command(config['python'])} index",
+        "toc_cmd": f"{script_command(config['python'])} toc",
+        "check_cmd": f"{script_command(config['python'])} toc --check",
     }
     sections = [load_prompt(f"wip-{mode}" if mode else "wip", **values)]
     if mode == "cleanup":
@@ -925,13 +1031,16 @@ def cmd_wip(args):
     if mode != "list":
         sections.append(load_prompt("wip-format", **values))
     if mode in ("", "cleanup"):
+        sections.append(load_prompt("not-a-mirror"))
+        sections.append(navigate_section(config))
+    if mode in ("", "cleanup"):
         sections.append(load_prompt("format"))
     sections.append(on_file_text(cdb, "wip"))
     sections.append(instruction_section(instruction_of(args)))
     emit(sections)
 
 
-# ── configure and init ───────────────────────────────────────────────────────
+# ── configure ───────────────────────────────────────────────────────────────
 
 
 def detect_main_branch():
@@ -1019,7 +1128,7 @@ def current_rules_section(cdb):
     for command in ON_COMMANDS:
         path = os.path.join(conf_dir(cdb), f"ON_{command.upper()}.md")
         if not os.path.isfile(path):
-            lines.append(f"## `{path}` (does not exist yet; `init` creates it)")
+            lines.append(f"## `{path}` (does not exist yet; setting up creates it)")
             continue
         _, body = read_doc(path)
         rules = without_comments(body)
@@ -1029,6 +1138,9 @@ def current_rules_section(cdb):
 
 
 def cmd_configure(args):
+    if wants_setup(args):
+        cmd_setup(args)
+        return
     root = find_repo_root()
     cdb = context_db_dir()
     version = ".".join(str(part) for part in sys.version_info[:3])
@@ -1080,8 +1192,9 @@ def cmd_configure(args):
                 conf_dir=conf_dir(cdb),
                 settings=settings_path(cdb),
                 local_settings=settings_path(cdb, local=True),
-                init_cmd=f"{script_command(python)} init",
-                index_cmd=f"{script_command(python)} index",
+                setup_cmd=f"{script_command(python)} configure",
+                toc_cmd=f"{script_command(python)} toc",
+                check_cmd=f"{script_command(python)} toc --check",
                 update_cmd=f"{script_command(python)} update",
                 agents_snippet=rel(os.path.join(SKILL_DIR, "starters", "AGENTS.md")),
             ),
@@ -1129,7 +1242,13 @@ def check_project_name(cdb, name):
         )
 
 
-def cmd_init(args):
+def wants_setup(args):
+    """configure writes the files itself when any setting is passed."""
+    return bool(args.project or args.python or args.main_branch or args.local)
+
+
+def cmd_setup(args):
+    """Write the settings and create whatever is missing. Never overwrites a file."""
     root = find_repo_root()
     cdb = context_db_dir()
     shared_path = settings_path(cdb)
@@ -1198,29 +1317,19 @@ def cmd_init(args):
     for path in created:
         print(f"Created {path}")
     print()
-    rerun = f"{script_command(config['python'])} index"
-    sys.exit(run_index(project, check=False, rerun=rerun))
+    rerun = f"{script_command(config['python'])} toc --check"
+    sys.exit(run_check(project, rerun))
 
 
-# ── index ────────────────────────────────────────────────────────────────────
+# ── toc ──────────────────────────────────────────────────────────────────────
 
 
-def run_index(bundle, check, rerun):
-    """Sync the indexes, print the lint report, and return the exit code.
+def run_check(bundle, rerun):
+    """Print the format report for a bundle and return the exit code.
 
-    `rerun` is the command to print for running the index again.
+    `rerun` is the command to print for checking again.
     """
-    load_git_ignored(bundle)
-    stale = sync_indexes(bundle, check)
     errors, warnings = lint_bundle(bundle)
-    if check:
-        errors = [f"{path}: out of date" for path in stale] + errors
-    elif stale:
-        print(f"Regenerated {len(stale)} index file(s):")
-        for path in stale:
-            print(f"  {path}")
-    else:
-        print("Index files are up to date.")
     for label, problems in (("ERROR", errors), ("WARNING", warnings)):
         for problem in problems:
             print(f"{label}: {problem}")
@@ -1229,18 +1338,6 @@ def run_index(bundle, check, rerun):
         return 1
     print(f"{bundle}/ is a conformant OKF v{OKF_VERSION} bundle.")
     return 0
-
-
-def symlink_on_the_way(folder):
-    """The first symlink in a relative path, or None."""
-    if os.path.isabs(folder):
-        return folder if os.path.islink(folder) else None
-    path = ""
-    for part in folder.split(os.sep):
-        path = os.path.join(path, part)
-        if os.path.islink(path):
-            return path
-    return None
 
 
 def bundle_root(folder):
@@ -1267,28 +1364,25 @@ def configured_python(cdb, default="python3"):
     return python
 
 
-def cmd_index(args):
+def cmd_toc(args):
     cdb = context_db_dir()
-    rerun = f"{script_command(configured_python(cdb))} index"
+    toc_cmd = f"{script_command(configured_python(cdb))} toc"
     if args.folder:
         folder = os.path.normpath(args.folder)
         if not os.path.isdir(folder):
             sys.exit(f"Error: {folder}/ is not a folder.")
-        link = symlink_on_the_way(folder)
-        if link:
-            sys.exit(
-                f"Error: {link} is a symlink to a folder owned elsewhere. "
-                "Run index in the repository that owns it."
-            )
-        bundle = bundle_root(folder)
-        if bundle != folder:
-            print(f"{folder}/ is inside {bundle}/; indexing all of {bundle}/.")
-        rerun = f"{rerun} {shlex.quote(bundle)}"
     else:
-        bundle = project_dir(cdb, require_config(cdb))
-        if not os.path.isdir(bundle):
-            sys.exit(f"Error: {bundle}/ does not exist. Run /context-db configure.")
-    sys.exit(run_index(bundle, args.check, rerun))
+        folder = project_dir(cdb, require_config(cdb))
+        if not os.path.isdir(folder):
+            sys.exit(f"Error: {folder}/ does not exist. Run /context-db configure.")
+    if not args.check:
+        print(folder_listing(folder, toc_cmd))
+        return
+    bundle = bundle_root(folder)
+    if bundle != folder:
+        print(f"{folder}/ is inside {bundle}/; checking all of {bundle}/.")
+    rerun = f"{toc_cmd} --check" + (f" {shlex.quote(bundle)}" if args.folder else "")
+    sys.exit(run_check(bundle, rerun))
 
 
 # ── CLI ──────────────────────────────────────────────────────────────────────
@@ -1304,25 +1398,23 @@ def build_parser():
     )
     subs = parser.add_subparsers(dest="command", metavar="<command>")
 
-    def instruction(sub):
+    def command(name):
+        summary = text(COMMAND_SUMMARIES[name])
+        sub = subs.add_parser(name, help=summary, description=summary)
         sub.add_argument(
             "instruction",
             nargs="*",
             help="Free text, as one single-quoted argument; or `-` to read it from stdin",
         )
+        return sub
 
-    p = subs.add_parser("prompt", help="Look up what the knowledge base says about a task")
-    instruction(p)
+    command("prompt")
 
-    p = subs.add_parser("update", help="Write down what was learned")
-    instruction(p)
+    p = command("update")
     p.add_argument("--commit", action="store_true", help="Then commit the whole session")
     p.add_argument("--push", action="store_true", help="Then commit and push")
 
-    p = subs.add_parser(
-        "wip", help="(optional) Record the work in progress; or list, clean up, or clear it"
-    )
-    instruction(p)
+    p = command("wip")
     modes = p.add_mutually_exclusive_group()
     modes.add_argument(
         "--list", action="store_true", help="Show what is in progress; change nothing"
@@ -1332,28 +1424,35 @@ def build_parser():
     )
     modes.add_argument("--clear", action="store_true", help="Delete every plan, after asking")
 
-    p = subs.add_parser(
-        "configure",
-        help="(helper) Set context-db up by asking a few questions; edit the files by hand after",
+    p = command("configure")
+    setting = p.add_argument_group(
+        "settings", "Pass any of these to write the files directly, with no questions asked"
     )
-    instruction(p)
-
-    p = subs.add_parser("init", help="(helper) Write the settings and create whatever is missing")
-    p.add_argument("--project", help="Project name; its folder is context-db/<name>-project/")
-    p.add_argument("--python", help="Interpreter command used to run this script")
-    p.add_argument("--main-branch", help="Branch that work in progress is compared against")
-    p.add_argument(
+    setting.add_argument("--project", help="Project name; its folder is context-db/<name>-project/")
+    setting.add_argument("--python", help="Command that runs this script (Python 3.8 or newer)")
+    setting.add_argument("--main-branch", help="Branch that wip --cleanup compares against")
+    setting.add_argument(
         "--local",
         action="append",
         metavar="KEY=VALUE",
         help=f"Per-user override, written to {LOCAL_SETTINGS_NAME} (repeatable)",
     )
 
-    p = subs.add_parser("index", help="(helper) Regenerate index.md files and check the format")
-    p.add_argument("folder", nargs="?", default="", help="Default: the project folder")
-    p.add_argument("--check", action="store_true", help="Change nothing; exit 1 on any problem")
+    p = command("maintain")
+    p.add_argument(
+        "--use-git-diff",
+        action="store_true",
+        help="Also list each note against the commits made to the project since it changed",
+    )
 
-    subs.add_parser("help", help="Show this help message")
+    # Left out of --help on purpose (no help= keyword): the agent runs it, and CI.
+    p = subs.add_parser(
+        "toc",
+        description="List a folder's files and subfolders with their descriptions, "
+        "read from the files now. With --check, check the format instead.",
+    )
+    p.add_argument("folder", nargs="?", default="", help="Default: the project folder")
+    p.add_argument("--check", action="store_true", help="Check the format; exit 1 on any error")
     return parser
 
 
@@ -1368,8 +1467,8 @@ def main():
         "update": cmd_update,
         "wip": cmd_wip,
         "configure": cmd_configure,
-        "init": cmd_init,
-        "index": cmd_index,
+        "maintain": cmd_maintain,
+        "toc": cmd_toc,
     }
     if args.command not in handlers:
         parser.print_help()

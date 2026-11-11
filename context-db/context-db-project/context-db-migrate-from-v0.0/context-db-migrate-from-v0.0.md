@@ -19,11 +19,11 @@ before deleting anything that is not plainly obsolete.
 | v0.0                                                     | v0.1                                                     |
 | -------------------------------------------------------- | -------------------------------------------------------- |
 | Frontmatter: `description`                               | Frontmatter: `type` and `description` (OKF)              |
-| TOC printed by `context-db-generate-toc.py`              | Generated `index.md` in every folder, read directly      |
-| Commands `prompt`, `update`, `maintain`, `read`          | Commands `prompt`, `update`, `wip`, `configure`          |
+| TOC printed by `context-db-generate-toc.py`              | TOC printed on demand by `context-db.py toc`, as before  |
+| Commands `prompt`, `update`, `maintain`, `read`          | `prompt`, `update`, `wip`, `configure`, `maintain`       |
 | No config                                                | `context-db/configuration/settings.md` (+ `.local.md`)   |
 | `context-db/ON_PROMPT.md` at the root                    | `context-db/configuration/ON_PROMPT.md`                  |
-| `ON_MAINTAIN.md`                                         | Gone. `ON_WIP.md` and `ON_CONFIGURE.md` are new          |
+| `ON_MAINTAIN.md` at the root                             | In `configuration/`; `ON_WIP.md`, `ON_CONFIGURE.md` new  |
 | `<name>-project/wip.md`                                  | Optional `<name>-project/wip/`; `wip/wip.md` is the list |
 | Backticked paths, resolver script for `..`               | Markdown links; a shared folder links only within itself |
 | Six `status` values                                      | `draft`, `stable`, `deprecated`                          |
@@ -79,12 +79,12 @@ It prints four lists. Keep the output; steps 4 and 5 work through "Types
 guessed", "Needs a decision", and "Mentions of v0.0 machinery".
 
 Notes that git ignores are private to this user. The script updates them like
-any other note, and the index leaves them out.
+any other note.
 
 ## 3. Configure
 
 ```bash
-python3 .claude/skills/context-db/context-db.py init --project <name> --python <command> --main-branch <branch>
+python3 .claude/skills/context-db/context-db.py configure --project <name> --python <command> --main-branch <branch>
 ```
 
 - `<name>` is the existing project folder's name without the `-project` suffix.
@@ -94,8 +94,9 @@ python3 .claude/skills/context-db/context-db.py init --project <name> --python <
 - `<branch>` is the repository's main branch, usually `main`. It is not the
   branch you created for this migration.
 
-`init` writes the settings, creates the missing ON files and `wip/`, adds one line
-to `.gitignore`, generates every `index.md`, and prints what the checker found.
+With these flags `configure` asks nothing. It writes the settings, creates the
+missing ON files and `wip/`, adds one line to `.gitignore`, and prints what the
+checker found.
 It exits with an error when the checker finds problems. That is expected at this
 point; steps 4 and 5 fix them.
 
@@ -105,14 +106,11 @@ Do this before fixing checker errors, so that you do not repair notes you are
 about to delete.
 
 - **Notes about the v0.0 machinery itself**, such as how the TOC script or the
-  resolver works, or how to run `maintain`: delete them.
+  resolver works: delete them.
 - **Mentions of v0.0 machinery** in notes that are about something else: the
   script listed each one with its line. Rewrite the sentence so that it is true
-  for v0.1, using the table above. A step that said to run `maintain` becomes
-  `/context-db update "audit <folder> and cut"`. If a whole note turns out to be
-  about the old machinery, delete it.
-- **`ON_MAINTAIN.md`**: move anything still wanted into
-  `configuration/ON_UPDATE.md`, then delete it.
+  for v0.1, using the table above. `maintain` still exists and needs no change.
+  If a whole note turns out to be about the old machinery, delete it.
 - **The ON files that were moved**: read each one and remove statements that are
   no longer true, such as paths to the old scripts. Their frontmatter is no
   longer needed and can go.
@@ -129,7 +127,7 @@ about to delete.
 Run this after each round, until it prints no errors:
 
 ```bash
-python3 .claude/skills/context-db/context-db.py index
+python3 .claude/skills/context-db/context-db.py toc --check
 ```
 
 - **Guessed types.** The guess comes from keywords and defaults to `Reference`.
@@ -156,17 +154,17 @@ push a line past the wrap width.
 
 ## 6. Shared folders
 
-The migration script and `index` both refuse to touch symlinked folders. For
-each one, go to the repository that owns it and there:
+The migration script refuses to touch symlinked folders. For each one, go to
+the repository that owns it and there:
 
 ```bash
 python3 <cdb-repo>/context-db/context-db-project/context-db-migrate-from-v0.0/migrate-v0.0.py context-db
-python3 <cdb-repo>/skill/context-db/context-db.py index context-db/<folder>
+python3 <cdb-repo>/skill/context-db/context-db.py toc context-db/<folder> --check
 ```
 
-Naming the folder means that repository needs no config of its own. Work through
-steps 4 and 5 there, then commit there. Until then the folder still works here:
-`prompt` tells the agent to list it instead of reading an index.
+Naming the folder means that repository needs no settings of its own. Work
+through steps 4 and 5 there, then commit there. The folder is listed here on
+demand like any other, before and after.
 
 ## 7. Standing instructions, docs, and hooks
 
@@ -175,16 +173,16 @@ Everything in this step is outside `context-db/`.
 - Replace the context-db section of `AGENTS.md` or `CLAUDE.md` with
   `.claude/skills/context-db/starters/AGENTS.md`.
 - Search the project's own docs, such as the README, for anything in the "What
-  changed" table: `maintain` and `read`, the old script paths, `ON_*.md` at the
+  changed" table: `read`, the old script paths, `ON_*.md` at the
   root of `context-db/`. Bring each up to date.
 - If the project has a pre-commit hook or CI, add
-  `<python> .claude/skills/context-db/context-db.py index --check`, and remove
+  `<python> .claude/skills/context-db/context-db.py toc --check`, and remove
   any call to the old scripts.
 
 ## 8. Verify and commit
 
 ```bash
-python3 .claude/skills/context-db/context-db.py index --check
+python3 .claude/skills/context-db/context-db.py toc --check
 python3 .claude/skills/context-db/context-db.py prompt "test"
 ```
 

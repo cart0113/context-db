@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 #
-# pre-commit — keep the index, the code, and the tests honest.
+# pre-commit — keep the knowledge base, the code, and the tests honest.
 #
 #   1. ruff format + fix on staged Python files (if ruff is installed)
-#   2. context-db index --check on this repo's own knowledge base
+#   2. context-db toc --check on this repo's own knowledge base
 #   3. pytest when the skill, the migration script, the example, or tests change
 #
 # Install:
@@ -32,8 +32,8 @@ if [ -n "$RUFF" ]; then
     done <<< "$STAGED"
 fi
 
-if ! "$PYTHON" skill/context-db/context-db.py index --check; then
-    echo "pre-commit: run  python3 skill/context-db/context-db.py index  and stage the result."
+if ! "$PYTHON" skill/context-db/context-db.py toc --check; then
+    echo "pre-commit: fix what  python3 skill/context-db/context-db.py toc --check  reports."
     exit 1
 fi
 

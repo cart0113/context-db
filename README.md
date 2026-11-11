@@ -5,10 +5,7 @@ as Markdown files in your repo, and tell the agent when to read it and when to
 add to it.
 
 **Built on the [Open Knowledge Format](https://github.com/GoogleCloudPlatform/open-knowledge-format)
-(OKF)**, an open standard for knowledge that agents can read. OKF grew out of
-Andrej Karpathy's
-[LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
-idea.
+(OKF)**, an open standard for knowledge that agents can read.
 [What OKF is, where it came from, and how context-db uses it](https://cart0113.github.io/context-db/okf.html).
 
 Documentation: <https://cart0113.github.io/context-db/>
@@ -29,7 +26,7 @@ It looks like it is in the new receipts database code.
 Can you investigate and propose a fix?
 ```
 
-The agent reads the index, opens the notes on the database schema and the plan
+The agent lists the knowledge base, opens the notes on the database schema and the plan
 for the receipts work, and skips everything else. Then it finds the cause and
 proposes a fix.
 
@@ -71,23 +68,26 @@ them yourself. You need Python 3.8 or newer.
    ```
 
    In Claude Code you can type `/context-db configure` instead. To set it up
-   with no agent at all, run the same script with `init --project <name>`.
+   with no agent at all, run the same script with `configure --project <name>`.
 
 [Setup](https://cart0113.github.io/context-db/setup.html) has the full steps.
 
 ## What it is
 
 context-db is a set of skills that you install in a coding agent such as Claude
-Code. They come as one folder and show up as four commands under `/context-db`.
+Code. They come as one folder and show up as five commands under `/context-db`.
 
 The commands work on a folder in your repository called `context-db/`. That
 folder is the knowledge base. It holds what an agent cannot work out by reading
-your code: your conventions, the decisions you made and why, the mistakes to
-avoid, and the plan for the work in progress.
+your code and its comments: your conventions, the decisions you made and why,
+the mistakes to avoid, and the plan for the work in progress. It is never a copy
+of the code. What the code already says stays in the code.
 
-Everything in it is a Markdown file with a short description at the top. Every
-folder has an `index.md` that lists what is inside, one line each. The agent
-reads the index, opens the one or two files it needs, and leaves the rest alone.
+Everything in it is a Markdown file with a short description at the top. When
+the agent looks into a folder, the script lists what is inside, one line each
+with its description, built from the files on the spot. The agent reads that
+list, opens the one or two files it needs, and leaves the rest alone. Nothing is
+generated ahead of time, so the list is never out of date.
 
 There is no database and no server, in spite of the name. It is a folder of text
 files and one Python script.
@@ -100,21 +100,23 @@ your-project/
     │   ├── settings.md             project name, Python command, main branch
     │   └── ON_PROMPT.md ...        rules the agent sees on each command
     ├── acme-payments-project/      the project folder: your project's knowledge
-    │   ├── index.md                generated list of everything in this folder
     │   ├── architecture.md
     │   ├── data-model/
     │   └── wip/                    optional: wip.md lists the work in progress
     └── coding-standards/           a background folder shared with other projects
 ```
 
-## The four commands
+## The commands
 
-| Command | When to run it | What the agent does |
-| --- | --- | --- |
-| `/context-db prompt` | Before a task | Looks up what the knowledge base says about the task. |
-| `/context-db update` | After a task | Writes down anything the next agent would need. `--push` also commits and pushes. |
-| `/context-db wip` | During long work, if you want it | Optional. Keeps a short list of the work in progress with a plan for each. `--list` shows it, `--cleanup` deletes what has landed, `--clear` deletes it all. |
-| `/context-db configure` | Once per repository | A helper that sets things up by asking a few questions. Edit the files it writes by hand afterwards. |
+| Command | What it does |
+| --- | --- |
+| `/context-db prompt` | Before a task. Looks up what the knowledge base says about it. |
+| `/context-db update` | After a task. Writes down what the next agent would need, if anything. `--push` also commits and pushes. |
+| `/context-db wip` | Optional, for long work. Keeps a short list of the work in progress. `--list`, `--cleanup`, `--clear`. |
+| `/context-db configure` | First, and whenever you like. Sets context-db up by asking a few questions; edit the files by hand afterwards. |
+| `/context-db maintain` | Now and then. Removes what the code and its comments already say, fixes what has drifted, and splits and reorganizes. `--use-git-diff` also reads the git history for what has gone out of date. |
+
+`/context-db --help` prints the same list.
 
 Nothing is loaded when a session starts. The agent reads the knowledge base when
 you run one of these commands. After `/context-db prompt` it may also add to it
@@ -143,6 +145,13 @@ context-db is an explicit memory for that: a folder of short notes in your
 repository that you and the agent keep up as the project goes, and that the
 agent reads when you ask it to.
 
+The idea builds on Andrej Karpathy's
+[LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
+have the LLM keep a wiki of what it has learned, instead of working everything
+out again each time.
+context-db uses that idea to cut down how much context has to be loaded for
+each task, which keeps the agent focused and efficient.
+
 The usual answer is a big `AGENTS.md` or `CLAUDE.md`. That file is loaded into
 every session in full, whatever the task, and as it grows the problems are well
 known. Most of it has nothing to do with the task at hand, and the part that
@@ -151,14 +160,26 @@ Nobody notices when it goes out of date, so the agent repeats what it gets
 wrong. Rules read at the start of a long session have faded by the time the
 work they apply to comes up.
 
-context-db hands the agent small pieces of text at set points in the work
-instead:
+context-db keeps one rule above all, and repeats it to the agent on every
+command: the knowledge base is not a mirror of the code. Anything an agent can
+learn by reading the code and its comments stays there. A note that copies it is
+a second version, and it drifts out of date every time the code changes, while
+the next agent goes on trusting it. So the knowledge base keeps only what the
+code cannot say: why a decision was made, the conventions and pitfalls the code
+does not show, rules that come from outside, and the plan for the work in
+progress. `update` follows that rule when it writes. `maintain` goes looking for
+notes that break it.
 
-- `prompt`, right before a task: the index of the knowledge base, the plans for
+context-db hands the agent small pieces of text at set points in the work
+instead of one big file:
+
+- `prompt`, right before a task: how to list the knowledge base, the plans for
   the work in progress, and your rules. The agent opens only the notes that
   match the task.
 - `update`, after a task: what belongs in the knowledge base and what does not,
   so that it stays small.
+- `maintain`, now and then: how to find notes that repeat the code or have
+  drifted from it, and remove them.
 - `wip`, during long work: how to keep a short record of where things stand.
 
 The rest stays out of the agent's context. Where a note and the code disagree,

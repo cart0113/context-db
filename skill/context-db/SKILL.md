@@ -2,7 +2,8 @@
 name: context-db
 description:
   'Project knowledge base in Open Knowledge Format. Sub-commands: prompt,
-  update, wip (optional), configure (a setup helper). Type help for usage.'
+  update, wip (optional), configure (run it first), maintain. Type --help for
+  usage.'
 allowed-tools: Bash,Read,Write,Edit,Glob,Grep
 ---
 
@@ -15,7 +16,8 @@ Run the script from the repository root with the user's arguments:
 otherwise the one in `context-db/configuration/settings.md`, otherwise
 `python3`.
 
-Sub-commands: `prompt`, `update`, `wip`, `configure`, `help`. Flags such as
+Sub-commands: `prompt`, `update`, `wip`, `configure`, `maintain`. With no
+sub-command, or with `--help`, the script prints the list. Flags such as
 `--commit`, `--push`, `--list`, `--cleanup`, and `--clear` go outside the
 quotes.
 
@@ -32,4 +34,9 @@ feed the text on standard input:
     EOF_INSTRUCTION
 
 The script prints instructions for you. Follow them. They may tell you to run
-two helper sub-commands, `init` and `index`, in the same way.
+`configure` with setting flags in the same way.
+
+Whenever you look into `context-db/`, list a folder with the `toc` helper,
+run the same way: `<python> .claude/skills/context-db/context-db.py toc <folder>`.
+It builds the folder's index from its files on the spot; there are no
+`index.md` files to read. `toc --check` checks the format after you write.

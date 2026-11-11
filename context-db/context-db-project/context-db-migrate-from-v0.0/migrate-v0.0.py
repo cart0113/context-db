@@ -12,7 +12,7 @@ What it changes, in every real (non-symlinked) top-level folder:
 
 And at the top level of context-db/:
 
-  - moves ON_PROMPT.md and ON_UPDATE.md into configuration/
+  - moves ON_PROMPT.md, ON_UPDATE.md and ON_MAINTAIN.md into configuration/
   - moves <name>-project/wip.md to <name>-project/wip/current-work.md, listed
     in a new <name>-project/wip/wip.md
 
@@ -43,7 +43,7 @@ TYPE_GUESSES = (
 )
 V0_MACHINERY_RE = re.compile(
     r"TOC script|context-db-generate-toc|context-db-resolve-path|context-db-main-agent"
-    r"|/context-db (?:maintain|read)\b|ON_MAINTAIN|_drafts/|-instructions\.md|templates/skills"
+    r"|/context-db read\b|_drafts/|-instructions\.md|templates/skills"
 )
 PATH_SPAN_RE = re.compile(r"`((?:\.\.?/)?[\w./-]+\.md)`")
 LINK_RE = re.compile(r"(\[[^\]]*\])\(([^)\s]+)\)")
@@ -273,15 +273,10 @@ def main():
 
     report = {"changed": [], "types": [], "decide": [], "mentions": []}
 
-    for name in ("ON_PROMPT.md", "ON_UPDATE.md"):
+    for name in ("ON_PROMPT.md", "ON_UPDATE.md", "ON_MAINTAIN.md"):
         src = os.path.join(cdb, name)
         if os.path.isfile(src):
             move(src, os.path.join(cdb, ON_DIR, name), args.dry_run, report)
-    if os.path.isfile(os.path.join(cdb, "ON_MAINTAIN.md")):
-        report["decide"].append(
-            f"{os.path.join(cdb, 'ON_MAINTAIN.md')}: maintain is gone — fold what still matters "
-            f"into {ON_DIR}/ON_UPDATE.md, then delete it"
-        )
     on_dir = os.path.join(cdb, ON_DIR)
     if os.path.isdir(on_dir):
         for name in sorted(os.listdir(on_dir)):

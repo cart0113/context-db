@@ -61,11 +61,11 @@ def git(cwd, *args):
 @pytest.fixture
 def project(tmp_path):
     """A minimal configured project with one document."""
-    result = run(tmp_path, "init", "--project", "demo", "--main-branch", "main")
+    result = run(tmp_path, "configure", "--project", "demo", "--main-branch", "main")
     assert result.returncode == 0, result.stdout
     bundle = tmp_path / "context-db" / "demo-project"
     write(bundle / "retry-policy.md", doc("Convention", "Retry with backoff"))
-    assert run(tmp_path, "index").returncode == 0
+    assert run(tmp_path, "toc", "--check").returncode == 0
     return tmp_path
 
 
@@ -178,32 +178,54 @@ def test_the_yaml_check_agrees_with_a_real_yaml_parser(case):
     assert (not context_db.yaml_problems(content)) == real_yaml_agrees, case
 
 
+def toc(cwd, folder="context-db/demo-project"):
+    result = run(cwd, "toc", folder)
+    assert result.returncode == 0, result.stdout
+    return result.stdout
+
+
 def test_byte_order_mark_and_bad_bytes_do_not_break_reading(project):
     bundle = project / "context-db" / "demo-project"
     (bundle / "bom.md").write_bytes(b"\xef\xbb\xbf" + doc(description="Has a BOM").encode())
     (bundle / "bytes.md").write_bytes(doc(description="Bad byte").encode() + b"\xff\xfe\n")
-    result = run(project, "index")
-    assert result.returncode == 0, result.stdout
-    index = (bundle / "index.md").read_text(encoding="utf-8")
-    assert "Has a BOM" in index and "Bad byte" in index
+    assert run(project, "toc", "--check").returncode == 0
+    listing = toc(project)
+    assert "Has a BOM" in listing and "Bad byte" in listing
 
 
-# ── Index generation ─────────────────────────────────────────────────────────
+# ── Dynamic index (toc) ──────────────────────────────────────────────────────
 
 
-def test_root_index_declares_okf_version_and_lists_children(project):
-    index = (project / "context-db" / "demo-project" / "index.md").read_text()
-    assert index.startswith('---\nokf_version: "0.2"\n---\n')
-    assert "* [wip](wip/index.md) - Work in progress, if the project records it" in index
-    assert "* [Title](retry-policy.md) - Retry with backoff" in index
+def test_toc_lists_a_folder_from_its_files_as_they_are_now(project):
+    listing = toc(project)
+    assert listing.startswith("# Contents of `context-db/demo-project/`")
+    assert "* [wip](context-db/demo-project/wip/) - Work in progress, if the project" in listing
+    assert "* [Title](context-db/demo-project/retry-policy.md) - Retry with backoff" in listing
+    write(project / "context-db" / "demo-project" / "new.md", doc(description="Brand new"))
+    assert "(context-db/demo-project/new.md) - Brand new" in toc(project)
+    assert toc(project) == run(project, "toc").stdout  # the project folder is the default
+
+
+def test_toc_writes_nothing(project):
+    before = sorted(str(p) for p in (project / "context-db").rglob("*"))
+    toc(project)
+    run(project, "toc", "--check")
+    assert sorted(str(p) for p in (project / "context-db").rglob("*")) == before
+    assert not list((project / "context-db").rglob("index.md"))
+
+
+def test_toc_entries_follow_the_okf_index_shape(project):
+    entry = re.compile(r"^\* \[.+\]\([^)\s]+\)( - .+)?$")
+    body = toc(project).split("\n\n", 2)[2]
+    for line in body.splitlines():
+        assert not line or line in ("# Subfolders", "# Files") or entry.match(line), line
 
 
 def test_frontmatter_only_descriptor_is_not_listed_but_one_with_body_is(project):
     bundle = project / "context-db" / "demo-project"
-    assert "demo-project.md" not in (bundle / "index.md").read_text()
+    assert "demo-project.md" not in toc(project)
     write(bundle / "demo-project.md", doc("Folder", "The demo", body="# Demo overview\n\nText.\n"))
-    run(project, "index")
-    assert "* [Demo overview](demo-project.md) - The demo" in (bundle / "index.md").read_text()
+    assert "* [Demo overview](context-db/demo-project/demo-project.md) - The demo" in toc(project)
 
 
 def test_title_falls_back_from_frontmatter_to_h1_to_filename(project):
@@ -212,120 +234,75 @@ def test_title_falls_back_from_frontmatter_to_h1_to_filename(project):
     write(bundle / "b.md", doc(body="```\n# not a heading\n```\n\n# From Heading\n"))
     write(bundle / "c.md", doc(body="No heading here.\n"))
     write(bundle / "d.md", doc(body="# Uses [brackets]\n"))
-    run(project, "index")
-    index = (bundle / "index.md").read_text()
-    assert "* [From Frontmatter](a.md)" in index
-    assert "* [From Heading](b.md)" in index
-    assert "* [c](c.md)" in index
-    assert "* [Uses \\[brackets\\]](d.md)" in index
+    listing = toc(project)
+    assert "* [From Frontmatter](context-db/demo-project/a.md)" in listing
+    assert "* [From Heading](context-db/demo-project/b.md)" in listing
+    assert "* [c](context-db/demo-project/c.md)" in listing
+    assert "* [Uses \\[brackets\\]](context-db/demo-project/d.md)" in listing
 
 
-def test_non_stable_status_is_shown_in_the_index(project):
+def test_non_stable_status_is_shown_in_the_listing(project):
     bundle = project / "context-db" / "demo-project"
     write(bundle / "old.md", doc(extra="status: deprecated\n"))
     write(bundle / "fine.md", doc(extra="status: stable\n"))
-    run(project, "index")
-    index = (bundle / "index.md").read_text()
-    assert "(old.md) - A thing [deprecated]" in index
-    assert "(fine.md) - A thing\n" in index
+    listing = toc(project)
+    assert "(context-db/demo-project/old.md) - A thing [deprecated]" in listing
+    assert "(context-db/demo-project/fine.md) - A thing\n" in listing
 
 
 def test_subfolder_entry_uses_the_descriptor_description(project):
     bundle = project / "context-db" / "demo-project"
     write(bundle / "api" / "api.md", "---\ntype: Folder\ndescription: HTTP API notes\n---\n")
     write(bundle / "api" / "errors.md", doc(description="Error codes"))
-    assert run(project, "index").returncode == 0
-    assert "* [api](api/index.md) - HTTP API notes" in (bundle / "index.md").read_text()
-    sub = (bundle / "api" / "index.md").read_text()
-    assert "okf_version" not in sub
-    assert "* [Title](errors.md) - Error codes" in sub
+    assert "* [api](context-db/demo-project/api/) - HTTP API notes" in toc(project)
+    sub = toc(project, "context-db/demo-project/api")
+    assert "* [Title](context-db/demo-project/api/errors.md) - Error codes" in sub
 
 
 def test_folders_without_markdown_are_not_part_of_the_tree(project):
     bundle = project / "context-db" / "demo-project"
     write(bundle / "images" / "diagram.svg", "<svg/>")
     write(bundle / "scripts" / "nested" / "tool.py", "print()\n")
-    result = run(project, "index")
+    assert run(project, "toc", "--check").returncode == 0
+    assert "images" not in toc(project) and "scripts" not in toc(project)
+
+
+def test_an_empty_folder_says_so(project):
+    empty = project / "context-db" / "demo-project" / "empty"
+    write(empty / "empty.md", doc("Folder", "Nothing yet", body=""))
+    assert "Nothing is in this folder yet." in toc(project, "context-db/demo-project/empty")
+
+
+def test_toc_reads_through_a_mounted_folder(example):
+    listing = toc(example, "context-db/coding-standards")
+    assert listing.startswith("# Contents of `context-db/coding-standards/`")
+    assert "context-db/coding-standards/" in listing.split("# Files")[1]
+    result = run(example, "toc", "context-db/coding-standards", "--check")
     assert result.returncode == 0, result.stdout
-    assert not (bundle / "images" / "index.md").exists()
-    assert not (bundle / "scripts" / "nested" / "index.md").exists()
-    assert "images" not in (bundle / "index.md").read_text()
 
 
-def test_a_folder_left_with_only_its_index_is_reported(project):
-    bundle = project / "context-db" / "demo-project"
-    write(bundle / "gone" / "gone.md", "---\ntype: Folder\ndescription: Soon empty\n---\n")
-    assert run(project, "index").returncode == 0
-    (bundle / "gone" / "gone.md").unlink()
-    result = run(project, "index")
-    assert result.returncode == 0
-    assert "gone/: holds only an index.md" in result.stdout
-    assert "gone" not in (bundle / "index.md").read_text()
-
-
-def test_what_git_ignores_stays_out_of_the_index_and_the_checks(project, tmp_path):
-    git(project, "init", "-q", "-b", "main")
-    bundle = project / "context-db" / "demo-project"
-    write(
-        project / ".gitignore",
-        "context-db/demo-project/private/\ncontext-db/demo-project/secret.md\n"
-        "context-db/demo-project/mine\ncontext-db/notes\n",
-    )
-    write(bundle / "private" / "scratch.md", "no frontmatter at all\n")
-    write(bundle / "secret.md", "no frontmatter either\n")
-    (tmp_path / "elsewhere").mkdir(exist_ok=True)
-    (bundle / "mine").symlink_to(tmp_path / "elsewhere")
-    result = run(project, "index")
-    assert result.returncode == 0, result.stdout
-    index = (bundle / "index.md").read_text()
-    assert "private" not in index and "secret" not in index
-    assert not (bundle / "private" / "index.md").exists()
-    assert run(project, "index", "--check").returncode == 0
-
-    # A folder that is ignored as a whole is private, and is indexed as it stands.
-    notes = project / "context-db" / "notes"
-    write(notes / "notes.md", "---\ntype: Folder\ndescription: My notes\n---\n")
-    write(notes / "idea.md", doc(description="An idea"))
-    result = run(project, "index", "context-db/notes")
-    assert result.returncode == 0, result.stdout
-    assert "An idea" in (notes / "index.md").read_text()
-
-
-def test_index_is_idempotent_and_check_detects_drift(project):
-    assert "up to date" in run(project, "index").stdout
-    assert run(project, "index", "--check").returncode == 0
-    write(project / "context-db" / "demo-project" / "new.md", doc())
-    result = run(project, "index", "--check")
-    assert result.returncode == 1
-    assert "out of date" in result.stdout
-    assert "Fix them, then run:  python3 " in result.stdout and " index" in result.stdout
-    assert "new.md" not in (project / "context-db" / "demo-project" / "index.md").read_text()
-
-
-def test_index_refuses_to_write_through_a_symlink(example):
-    for target in ("context-db/coding-standards", "context-db/git-standards/"):
-        result = run(example, "index", target)
-        assert result.returncode != 0
-        assert "symlink" in result.stdout
-    assert not (example / "context-db" / "coding-standards" / "stray.md").exists()
-
-
-def test_index_accepts_an_explicit_folder_without_any_config(tmp_path):
+def test_toc_works_on_any_folder_without_any_config(tmp_path):
     write(tmp_path / "shared" / "shared.md", "---\ntype: Folder\ndescription: Shared\n---\n")
     write(tmp_path / "shared" / "rule.md", doc())
-    result = run(tmp_path, "index", "shared")
-    assert result.returncode == 0, result.stdout
-    assert (tmp_path / "shared" / "index.md").exists()
+    assert "* [Title](shared/rule.md) - A thing" in toc(tmp_path, "shared")
+    assert run(tmp_path, "toc", "shared", "--check").returncode == 0
 
 
-def test_index_on_a_subfolder_indexes_the_whole_bundle(project):
-    bundle = project / "context-db" / "demo-project"
-    write(bundle / "new.md", doc(description="Brand new"))
-    result = run(project, "index", "context-db/demo-project/wip")
-    assert result.returncode == 0, result.stdout
-    assert "indexing all of context-db/demo-project/" in result.stdout
-    assert "Brand new" in (bundle / "index.md").read_text()
-    assert "okf_version" not in (bundle / "wip" / "index.md").read_text()
+def test_toc_check_on_a_subfolder_checks_the_whole_bundle(project):
+    write(project / "context-db" / "demo-project" / "bad.md", "# No frontmatter\n")
+    result = run(project, "toc", "context-db/demo-project/wip", "--check")
+    assert result.returncode == 1
+    assert "checking all of context-db/demo-project/" in result.stdout
+    assert "bad.md: no YAML frontmatter" in result.stdout
+    assert "Fix them, then run:  python3 " in result.stdout and " toc --check" in result.stdout
+
+
+def test_a_stray_index_file_is_an_error(project):
+    write(project / "context-db" / "demo-project" / "index.md", "# Files\n")
+    result = run(project, "toc", "--check")
+    assert result.returncode == 1
+    assert "index.md files are not used" in result.stdout
+    assert "index.md" not in toc(project)
 
 
 # ── Lint ─────────────────────────────────────────────────────────────────────
@@ -347,7 +324,7 @@ def test_index_on_a_subfolder_indexes_the_whole_bundle(project):
 )
 def test_lint_errors(project, name, content, message):
     write(project / "context-db" / "demo-project" / name, content)
-    result = run(project, "index")
+    result = run(project, "toc", "--check")
     assert result.returncode == 1
     assert message in result.stdout
 
@@ -361,14 +338,14 @@ def test_lint_ignores_links_in_code_and_external_links(project):
         "```\n[b](./gone.md)\n```\n"
     )
     write(bundle / "x.md", doc(body=body))
-    result = run(project, "index")
+    result = run(project, "toc", "--check")
     assert result.returncode == 0, result.stdout
 
 
 def test_symlink_inside_a_bundle_is_an_error(project, tmp_path):
     (tmp_path / "elsewhere").mkdir(exist_ok=True)
     (project / "context-db" / "demo-project" / "linked").symlink_to(tmp_path / "elsewhere")
-    result = run(project, "index")
+    result = run(project, "toc", "--check")
     assert result.returncode == 1
     assert "symlink inside a bundle" in result.stdout
 
@@ -378,7 +355,7 @@ def test_oversized_file_warns_but_wip_is_exempt(project):
     long_body = "# T\n\n" + "line\n" * 250
     write(bundle / "big.md", doc(body=long_body))
     write(bundle / "wip" / "plan.md", doc("Plan", body=long_body))
-    result = run(project, "index")
+    result = run(project, "toc", "--check")
     assert result.returncode == 0
     assert "WARNING" in result.stdout and "big.md" in result.stdout
     assert "plan.md: 257 lines" not in result.stdout
@@ -387,11 +364,50 @@ def test_oversized_file_warns_but_wip_is_exempt(project):
 # ── Things every command shares ──────────────────────────────────────────────
 
 
+USER_COMMANDS = ("prompt", "update", "wip", "configure", "maintain")
+
+
+def help_commands(out):
+    """The command names --help lists, in order."""
+    section = out.split("  <command>\n", 1)[1].split("\noptions:")[0]
+    return tuple(re.findall(r"(?m)^    (\w+) ", section))
+
+
 def test_version_and_help():
     assert run(REPO, "--version").stdout.strip() == "context-db 0.1 (OKF 0.2)"
-    for args in ((), ("help",)):
-        out = run(REPO, *args).stdout
-        assert "prompt" in out and "configure" in out
+    for args in ((), ("--help",)):
+        assert help_commands(run(REPO, *args).stdout) == USER_COMMANDS
+    assert run(REPO, "help").returncode != 0
+    assert run(REPO, "init", "--project", "x").returncode != 0
+
+
+def test_toc_runs_but_is_not_listed(project):
+    assert "toc" not in help_commands(run(REPO, "--help").stdout)
+    assert run(project, "toc", "--check").returncode == 0
+    assert "read from the" in run(REPO, "toc", "--help").stdout
+    assert run(REPO, "index").returncode != 0
+
+
+def flat(markdown):
+    return " ".join(markdown.replace("`", "").split())
+
+
+def test_help_readme_and_docs_home_describe_the_commands_alike():
+    """The one-line summaries in the script are the README table and the docs cards."""
+    summaries = {name: flat(context_db.COMMAND_SUMMARIES[name]) for name in USER_COMMANDS}
+    readme = (REPO / "README.md").read_text(encoding="utf-8")
+    rows = re.findall(r"(?m)^\| `/context-db (\w+)` \| (.+?) \|$", readme)
+    assert {name: flat(text) for name, text in rows} == summaries
+    assert tuple(name for name, _ in rows) == USER_COMMANDS
+    home = (REPO / "docs" / "index.md").read_text(encoding="utf-8")
+    cards = re.findall(
+        r"(?ms)^:::\{grid-item-card\} /context-db (\w+)\n(?::.*?\n)+\n(.+?)\n:::$", home
+    )
+    assert {name: flat(text) for name, text in cards} == summaries
+    assert tuple(name for name, _ in cards) == USER_COMMANDS
+    commands = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
+    sections = tuple(re.findall(r"(?m)^## /context-db (\w+)$", commands))
+    assert sections == USER_COMMANDS
 
 
 def test_commands_without_config_ask_for_configure(tmp_path):
@@ -423,6 +439,9 @@ def test_no_placeholder_is_left_unfilled(example):
         ("wip", "--list"),
         ("wip", "--cleanup"),
         ("wip", "--clear"),
+        ("maintain",),
+        ("maintain", "data-model"),
+        ("maintain", "--use-git-diff"),
         ("configure",),
     ):
         out = run(example, *args).stdout
@@ -468,7 +487,7 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
     out = run(example, "prompt", "add a refund endpoint").stdout
     assert "**Project folder** `context-db/acme-payments-project/`" in out
     assert "**Background folder** `context-db/coding-standards/`" in out
-    assert "start at `context-db/git-standards/index.md`" in out
+    assert "**Background folder** `context-db/git-standards/`:" in out
     wip = out.split("# Work In Progress")[1].split("# Folders")[0]
     assert "relative to\n`context-db/acme-payments-project/wip/`" in wip
     assert "- [Refund endpoint](refund-endpoint.md). Started 2026-11-03" in wip
@@ -497,7 +516,7 @@ def test_prompt_handles_unindexed_and_broken_mounts(project):
     write(cdb / "legacy" / "legacy.md", "---\ndescription: Old format folder\n---\n")
     (cdb / "dangling").symlink_to(project / "does-not-exist")
     out = run(project, "prompt", "x").stdout
-    assert "`context-db/legacy/` (it has no `index.md`" in out
+    assert "**Background folder** `context-db/legacy/`:" in out
     assert "Old format folder" in out
     assert "`context-db/dangling/` is a broken symlink" in out
 
@@ -517,9 +536,22 @@ def test_update_puts_the_gate_before_the_mechanics(project):
     marks = ("nothing to add and stop", "## Where it goes", "# Folders", "# File Format")
     order = [out.index(mark) for mark in marks]
     assert order == sorted(order)
-    assert "context-db.py index" in out
+    assert "context-db.py toc --check" in out
     assert "# Commit" not in out
     assert "# User Instruction" not in out
+
+
+def test_update_changes_only_what_the_lesson_needs(project):
+    out = " ".join(run(project, "update").stdout.split())
+    assert "change only what it needs" in out
+    assert "that is what `/context-db maintain` is for" in out
+    assert "If it reports problems in files you did not touch, leave them" in out
+
+
+def test_update_carries_the_split_as_you_go_rule(project):
+    out = " ".join(run(project, "update").stdout.split())
+    rules = out.split("# Project Rules")[1]
+    assert "When a file you are editing grows past about 150 lines, split it" in rules
 
 
 def test_update_commit_and_push(project):
@@ -570,7 +602,7 @@ def test_an_instruction_can_come_from_standard_input(project):
 
 
 def test_printed_commands_use_the_local_interpreter_override(project):
-    assert run(project, "init", "--local", "python=/opt/py/bin/python3").returncode == 0
+    assert run(project, "configure", "--local", "python=/opt/py/bin/python3").returncode == 0
     assert "/opt/py/bin/python3 " in run(project, "update").stdout
     assert "/opt/py/bin/python3 " in run(project, "wip").stdout
     assert "/opt/py/bin/python3 " in run(project, "configure").stdout
@@ -578,6 +610,92 @@ def test_printed_commands_use_the_local_interpreter_override(project):
     assert "python: python3\n" in (conf / "settings.md").read_text()
     local = (conf / "settings.local.md").read_text()
     assert local.startswith("---\npython: /opt/py/bin/python3\n---\n")
+
+
+# ── maintain ─────────────────────────────────────────────────────────────────
+
+
+def test_maintain_checks_first_and_can_stop(project):
+    write(
+        project / "context-db" / "configuration" / "ON_MAINTAIN.md",
+        "<!-- note -->\nNever delete anything under legal/.\n",
+    )
+    out = run(project, "maintain", "the api notes").stdout
+    flat_out = " ".join(out.split())
+    assert "Check first, change second." in flat_out
+    assert "If you find nothing worth changing, say so in one line and stop." in flat_out
+    assert "context-db.py toc --check" in out
+    assert "**Project folder** `context-db/demo-project/`" in out
+    marks = ("# Context-db Maintain", "# Folders", "# File Format", "legal/", "# User Instruction")
+    order = [out.index(mark) for mark in marks]
+    assert order == sorted(order)
+    assert out.rstrip().endswith("the api notes")
+
+
+def test_maintain_without_config_asks_for_configure(tmp_path):
+    (tmp_path / "context-db").mkdir()
+    assert "/context-db configure" in run(tmp_path, "maintain").stdout
+
+
+RULE = "# Context-db Is Not a Mirror of the Code"
+
+
+def test_every_command_that_reads_or_writes_notes_repeats_the_rule(project):
+    for args in (("prompt", "x"), ("update",), ("maintain",), ("wip",), ("wip", "--cleanup")):
+        out = run(project, *args).stdout
+        assert out.count(RULE) == 1, args
+        assert "could an agent learn this by reading the code and its\ncomments?" in out
+    for args in (("wip", "--list"), ("configure",)):
+        assert RULE not in run(project, *args).stdout
+
+
+def test_every_command_that_reads_notes_says_how_to_navigate(project):
+    for args in (("prompt", "x"), ("update",), ("maintain",), ("wip",), ("wip", "--cleanup")):
+        out = run(project, *args).stdout
+        assert out.count("# How to Navigate Context-db") == 1, args
+        assert "context-db.py toc <folder>" in out, args
+    prompts = REPO / "skill" / "context-db" / "prompts"
+    mentions = sorted(p.name for p in prompts.glob("*.md") if "index.md" in p.read_text())
+    assert mentions == ["format.md"]  # only to say: never create one
+
+
+def test_maintain_enforces_the_rule_against_code_and_comments(project):
+    out = " ".join(run(project, "maintain").stdout.split())
+    assert "Your main job is to enforce the rule" in out
+    assert "open the code it is about, comments included" in out
+    assert "do not edit the code yourself" in out
+    assert "# Git History" not in out
+
+
+def test_maintain_with_git_diff_ranks_notes_by_how_far_the_code_moved(project):
+    bundle = project / "context-db" / "demo-project"
+    write(project / "src" / "retry.py", "DELAY = 1\n")
+    write(
+        bundle / "retry-policy.md",
+        doc("Convention", "Retry", body="See [retry](../../src/retry.py).\n"),
+    )
+    write(bundle / "naming.md", doc("Convention", "Naming"))
+    git(project, "init", "-q", "-b", "main")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "base")
+    write(project / "src" / "retry.py", "DELAY = 2\n")
+    write(project / "src" / "other.py", "x = 1\n")
+    git(project, "add", "-A")
+    git(project, "commit", "-q", "-m", "code moves on")
+    write(bundle / "fresh.md", doc("Reference", "New"))
+    out = run(project, "maintain", "--use-git-diff").stdout
+    history = out.split("# Git History")[1].split("# Folders")[0]
+    rows = [line for line in history.splitlines() if line.startswith("- `")]
+    assert "retry-policy.md`: last changed" in rows[0]
+    assert "1 commits to the project since; linked files changed since: `src/retry.py`" in rows[0]
+    assert "naming.md`" in rows[1] and "linked files" not in rows[1]
+    assert rows[-1].endswith("fresh.md`: not committed yet")
+    assert "Age alone proves nothing." in history
+    assert out.index(RULE) < out.index("# Git History") < out.index("# Folders")
+
+
+def test_maintain_with_git_diff_outside_git(project):
+    assert "no history to read" in run(project, "maintain", "--use-git-diff").stdout
 
 
 # ── wip ──────────────────────────────────────────────────────────────────────
@@ -681,14 +799,14 @@ def test_plans_missing_from_the_list_are_reported(project):
     wip = project / "context-db" / "demo-project" / "wip"
     write(wip / "stray.md", doc("Plan", "Forgotten"))
     write(wip / "big" / "big.md", doc("Plan", "Large effort"))
-    out = run(project, "index").stdout
+    out = run(project, "toc", "--check").stdout
     assert "wip/stray.md: not listed in" in out and "wip/big: not listed in" in out
     add_plan(project, "stray")
     add_plan(project, "big", line="- [Big](big/big.md). Started 2026-11-01 on `x`. Going.")
-    assert "not listed" not in run(project, "index").stdout
+    assert "not listed" not in run(project, "toc", "--check").stdout
 
 
-# ── configure and init ───────────────────────────────────────────────────────
+# ── configure ──────────────────────────────────────────────────────────────────
 
 
 def test_configure_says_when_the_main_branch_is_a_guess(tmp_path):
@@ -706,14 +824,6 @@ def test_configure_says_when_the_main_branch_is_a_guess(tmp_path):
     assert "Suggested main branch: `develop` (origin's default branch)" in out
 
 
-def test_an_empty_folder_gets_an_index_that_says_so(project):
-    empty = project / "context-db" / "demo-project" / "empty"
-    write(empty / "empty.md", doc("Folder", "Nothing yet", body=""))
-    write(empty / "notes" / "notes.md", doc("Folder", "Nothing here either", body=""))
-    assert run(project, "index").returncode == 0
-    assert (empty / "notes" / "index.md").read_text() == "<!-- Nothing is in this folder yet. -->\n"
-
-
 def test_configure_reports_state_and_v0_leftovers(tmp_path):
     write(tmp_path / "context-db" / "ON_PROMPT.md", "old\n")
     write(tmp_path / "context-db" / "acme-project" / "wip.md", "old\n")
@@ -723,7 +833,7 @@ def test_configure_reports_state_and_v0_leftovers(tmp_path):
     assert "`context-db/acme-project/`" in out
     assert "Suggested project name: `acme` (from the existing project folder)" in out
     assert "v0.0 layout" in out and "ON_PROMPT.md" in out and "wip.md" in out
-    assert " init --project <name>" in out
+    assert " configure --project <name>" in out
 
 
 def test_configure_still_runs_when_the_settings_are_broken(project):
@@ -737,10 +847,17 @@ def test_configure_still_runs_when_the_settings_are_broken(project):
     assert "has no `---` block" in run(project, "configure").stdout
 
 
-def test_init_scaffolds_and_never_overwrites(tmp_path):
+def test_configure_with_settings_scaffolds_and_never_overwrites(tmp_path):
     subprocess.run(["git", "init", "-q"], cwd=str(tmp_path), check=True)
     result = run(
-        tmp_path, "init", "--main-branch", "trunk", "--python", "python3.11", "--project", "demo"
+        tmp_path,
+        "configure",
+        "--main-branch",
+        "trunk",
+        "--python",
+        "python3.11",
+        "--project",
+        "demo",
     )
     assert result.returncode == 0, result.stdout
     cdb = tmp_path / "context-db"
@@ -748,7 +865,13 @@ def test_init_scaffolds_and_never_overwrites(tmp_path):
     assert settings.read_text().startswith(
         "---\nproject: demo\npython: python3.11\nmain_branch: trunk\n---\n\n<!--\n"
     )
-    for name in ("ON_PROMPT.md", "ON_UPDATE.md", "ON_WIP.md", "ON_CONFIGURE.md"):
+    for name in (
+        "ON_PROMPT.md",
+        "ON_UPDATE.md",
+        "ON_MAINTAIN.md",
+        "ON_WIP.md",
+        "ON_CONFIGURE.md",
+    ):
         assert (cdb / "configuration" / name).exists()
     assert (cdb / "demo-project" / "demo-project.md").exists()
     assert (cdb / "demo-project" / "wip" / "wip.md").read_text().startswith("---\ntype: Folder\n")
@@ -757,7 +880,7 @@ def test_init_scaffolds_and_never_overwrites(tmp_path):
 
     write(cdb / "configuration" / "ON_PROMPT.md", "mine\n")
     settings.write_text(settings.read_text() + "\nA note of my own.\n")
-    again = run(tmp_path, "init", "--main-branch", "main")
+    again = run(tmp_path, "configure", "--main-branch", "main")
     assert again.returncode == 0
     assert (cdb / "configuration" / "ON_PROMPT.md").read_text() == "mine\n"
     content = settings.read_text()
@@ -767,7 +890,7 @@ def test_init_scaffolds_and_never_overwrites(tmp_path):
 
 
 def test_the_starter_rules_let_the_agent_update_as_it_goes(tmp_path):
-    assert run(tmp_path, "init", "--project", "demo").returncode == 0
+    assert run(tmp_path, "configure", "--project", "demo").returncode == 0
     out = run(tmp_path, "prompt", "x").stdout
     assert "You may update the knowledge base as you work" in out
     assert "context-db.py update '<what you learned>'" in out
@@ -782,7 +905,9 @@ def test_configure_asks_the_questions_that_matter(tmp_path):
     assert "only when you run a `/context-db` command?" in out
     assert "may the agent update the knowledge base as it works?" in out
     assert "edit them by hand" in out
-    assert " init --project <name> --main-branch <branch> --python <command>" in out
+    assert " configure --project <name> --main-branch <branch> --python <command>" in out
+    assert "split it up as it goes, or only when you run `/context-db maintain`?" in out
+    assert "The user runs it first" in out
     assert "context-db.py update '<what you learned>'" in out
 
 
@@ -800,21 +925,21 @@ def test_configure_shows_the_current_rules_so_they_can_be_changed(project):
     assert "**This was a helper.**" in out
 
 
-def test_init_rejects_bad_input_without_writing_anything(tmp_path):
+def test_configure_with_settings_rejects_bad_input_without_writing_anything(tmp_path):
     for args in (
-        (),
+        ("--main-branch", "main"),
         ("--project", "has space"),
         ("--project", "a/b"),
         ("--project", "demo", "--local", "colour=blue"),
         ("--project", "demo", "--local", "python"),
     ):
-        assert run(tmp_path, "init", *args).returncode != 0
+        assert run(tmp_path, "configure", *args).returncode != 0
     assert not (tmp_path / "context-db").exists()
 
 
-def test_init_catches_a_project_name_given_with_its_suffix(tmp_path):
+def test_configure_with_settings_catches_a_project_name_given_with_its_suffix(tmp_path):
     write(tmp_path / "context-db" / "acme-project" / "acme-project.md", doc("Folder", "Acme"))
-    result = run(tmp_path, "init", "--project", "acme-project")
+    result = run(tmp_path, "configure", "--project", "acme-project")
     assert result.returncode != 0
     assert "--project acme" in result.stdout
     assert not (tmp_path / "context-db" / "acme-project-project").exists()
@@ -824,15 +949,15 @@ def test_init_catches_a_project_name_given_with_its_suffix(tmp_path):
 
 
 def test_example_project_and_shared_folders_are_conformant(example):
-    assert run(example, "index", "--check").returncode == 0
+    assert run(example, "toc", "--check").returncode == 0
     shared = example.parent / "shared"
     for name in ("coding-standards", "git-standards"):
-        result = run(shared, "index", name, "--check")
+        result = run(shared, "toc", name, "--check")
         assert result.returncode == 0, result.stdout
 
 
 def test_this_repos_own_knowledge_base_is_conformant():
-    result = run(REPO, "index", "--check")
+    result = run(REPO, "toc", "--check")
     assert result.returncode == 0, result.stdout
 
 
@@ -850,11 +975,6 @@ def test_frontmatter_is_real_yaml_and_the_parser_agrees_with_a_yaml_library():
     yaml = pytest.importorskip("yaml")
     for path in shipped_documents():
         content = path.read_text(encoding="utf-8")
-        if path.name == "index.md":
-            if content.startswith("---"):
-                header = content.split("---")[1]
-                assert yaml.safe_load(header) == {"okf_version": "0.2"}, path
-            continue
         assert content.startswith("---\n"), path
         expected = yaml.safe_load(content.split("\n---", 1)[0][4:])
         meta, _ = context_db.parse_frontmatter(content)
@@ -862,20 +982,6 @@ def test_frontmatter_is_real_yaml_and_the_parser_agrees_with_a_yaml_library():
         for key in ("type", "description", "status", "branch"):
             if key in expected:
                 assert meta[key] == " ".join(str(expected[key]).split()), (path, key)
-
-
-def test_index_files_follow_the_okf_shape():
-    """OKF section 8: headings, then `* [Title](url) - description` entries."""
-    entry = re.compile(r"^\* \[.+\]\([^)\s]+\)( - .+)?$")
-    for path in shipped_documents():
-        if path.name != "index.md":
-            continue
-        body = path.read_text(encoding="utf-8")
-        if body.startswith("---"):
-            body = body.split("---", 2)[2]
-        allowed = ("# Subfolders", "# Files", "<!-- Nothing is in this folder yet. -->")
-        for line in body.splitlines():
-            assert not line or line in allowed or entry.match(line), (path, line)
 
 
 # ── Migration from v0.0 ──────────────────────────────────────────────────────
@@ -918,7 +1024,7 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
     mentions = result.stdout.split("Mentions of v0.0 machinery")[1]
     assert "api/errors.md:6: `TOC script`" in mentions
     decide = result.stdout.split("Needs a decision")[1].split("## Mentions")[0]
-    assert "ON_MAINTAIN.md" in decide
+    assert (cdb / "configuration" / "ON_MAINTAIN.md").exists()
     assert "`./missing.md` does not resolve" in decide
     assert "rename api-instructions.md to api.md" in decide
 
@@ -937,7 +1043,7 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
     assert "wip" not in again.stdout.split("Needs a decision")[1].split("## Mentions")[0]
 
     (bundle / "api" / "api-instructions.md").rename(bundle / "api" / "api.md")
-    init = run(tmp_path, "init", "--project", "acme")
+    init = run(tmp_path, "configure", "--project", "acme")
     assert init.returncode == 0, init.stdout
     assert "Be careful." in run(tmp_path, "prompt", "x").stdout
-    assert (bundle / "index.md").exists()
+    assert not list(bundle.rglob("index.md"))

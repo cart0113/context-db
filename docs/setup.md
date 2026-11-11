@@ -32,7 +32,7 @@ If you use a different agent, put the folder wherever that agent keeps its
 skills. You can also run any command yourself from a terminal:
 
 ```bash
-python3 .claude/skills/context-db/context-db.py help
+python3 .claude/skills/context-db/context-db.py --help
 ```
 
 ## 2. Set it up
@@ -43,18 +43,17 @@ In Claude Code, type:
 /context-db configure
 ```
 
-The agent asks a few questions as a menu, then creates the folders. The main
-question is who updates the knowledge base:
+This is the first thing to run. The agent asks for the project name and creates
+the folders. Then it asks a few questions as a menu about how it should treat
+the knowledge base: whether breaking changes are fine in this project, whether
+to read the knowledge base only when you run a command, whether to update it as
+it works, and when to split files that grow too long. [Commands](commands.md)
+lists them all.
 
-- **Only when you run `/context-db update`.** Nothing is written unless you ask.
-  This is the default.
-- **Also when the agent thinks it should.** The agent writes down what it learns
-  as it goes, and tells you each time. It never commits on its own.
-
-To do the same by hand:
+To set it up with no questions:
 
 ```bash
-python3 .claude/skills/context-db/context-db.py init --project acme-payments
+python3 .claude/skills/context-db/context-db.py configure --project acme-payments
 ```
 
 Either way you end up with this:
@@ -66,10 +65,10 @@ context-db/
 │   ├── ON_PROMPT.md
 │   ├── ON_UPDATE.md
 │   ├── ON_WIP.md
-│   └── ON_CONFIGURE.md
+│   ├── ON_CONFIGURE.md
+│   └── ON_MAINTAIN.md
 └── acme-payments-project/
     ├── acme-payments-project.md
-    ├── index.md
     └── wip/
         └── wip.md
 ```
@@ -78,8 +77,9 @@ Running it again is safe. It never overwrites a file that already exists.
 
 ## 3. Make it behave the way you want
 
-Four files in `context-db/configuration/` control how the agent behaves:
-`ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, and `ON_CONFIGURE.md`. Whatever a
+Five files in `context-db/configuration/` control how the agent behaves:
+`ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, `ON_CONFIGURE.md`, and
+`ON_MAINTAIN.md`. Whatever a
 file says is added to the agent's instructions every time that command runs.
 
 Open them and edit them by hand. They are plain Markdown, and the agent reads
@@ -118,7 +118,8 @@ After it:
 
 That is the whole loop: `prompt`, work for as many turns as it takes, `update
 --push`. For work that runs over several sessions, you can also keep a
-record with `/context-db wip`; it is optional. [Commands](commands.md) explains all four.
+record with `/context-db wip`; it is optional. Run `/context-db maintain` now and
+then to keep the knowledge base tidy. [Commands](commands.md) explains all five.
 
 ## Settings
 
@@ -146,16 +147,16 @@ and anything in it overrides the shared file. Use it when your machine needs
 something different, such as a Python that lives in an unusual place:
 
 ```bash
-python3 .claude/skills/context-db/context-db.py init --local python=/opt/python3.12/bin/python3
+python3 .claude/skills/context-db/context-db.py configure --local python=/opt/python3.12/bin/python3
 ```
 
 ## Check it in CI
 
-This command changes nothing. It exits with an error if an `index.md` is out of
-date or a file breaks the [format](layout.md):
+This command changes nothing. It exits with an error if a file breaks the
+[format](layout.md):
 
 ```bash
-python3 .claude/skills/context-db/context-db.py index --check
+python3 .claude/skills/context-db/context-db.py toc --check
 ```
 
 Add it to a pre-commit hook or a CI job.

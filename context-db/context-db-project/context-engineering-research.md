@@ -128,7 +128,7 @@ pre-loading.
 ## Implications for context-db
 
 "TOC" below means any description-per-entry listing; in context-db that is the
-generated `index.md`.
+listing `toc` builds on demand.
 
 1. **Agent-navigable TOCs are the right pattern.** Let the agent decide what to
    load based on descriptions — don't dump everything.

@@ -13,7 +13,7 @@ session has been working on.
    today, {today}, on `{branch}`.
 4. Run:
 
-       {index_cmd}
+       {check_cmd}
 
    and fix anything it reports.
 5. Tell the user in a few lines what the plan now says.

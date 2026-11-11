@@ -17,4 +17,6 @@ nothing else.
 A plan has `type: Plan`, `status: draft`, and `branch: <branch>` in its
 frontmatter. A good plan lets a fresh agent pick the work up cold: the goal, the
 approach, what is done, what is next, and what is undecided. Keep the whole plan
-current, and do not append a history.
+current, and do not append a history. A plan follows the same rule as every
+note: link to the code it is about, and do not describe what the code already
+shows.

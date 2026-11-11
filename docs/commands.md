@@ -1,7 +1,8 @@
 # Commands
 
-There are four commands. Each one prints a set of instructions, and the agent
-follows them. Nothing is hidden: the exact text is under each command below.
+There are five commands: `prompt`, `update`, `wip`, `configure`, and
+`maintain`. `/context-db --help` lists them. Each one prints a set of
+instructions, and the agent follows them. Nothing is hidden: the exact text is under each command below.
 
 In Claude Code you type a command as `/context-db <command>`. To tell the agent
 something, start a new line and write it there. It needs no quotes, and it can
@@ -12,6 +13,21 @@ Anywhere else, run the script:
 ```bash
 python3 .claude/skills/context-db/context-db.py <command>
 ```
+
+## The rule every command repeats
+
+The knowledge base is not a mirror of the code. Anything an agent can learn by
+reading the code and its comments stays in the code, because a copy drifts out
+of date and the next agent trusts it. `prompt`, `update`, `wip`, and `maintain`
+all give the agent this text, so it hears the rule every time it reads or
+writes the knowledge base:
+
+```{literalinclude} ../skill/context-db/prompts/not-a-mirror.md
+:language: markdown
+```
+
+`update` follows it when it writes. `maintain` enforces it: it compares notes
+with the code they describe and removes what the code already says.
 
 ## /context-db prompt
 
@@ -33,7 +49,8 @@ What the agent does:
 
 1. Reads the plans listed in `wip/wip.md` that bear on the task, if there are
    any.
-2. Opens the `index.md` of each knowledge folder that looks relevant.
+2. Lists each knowledge folder that looks relevant, with `toc`, and lists a
+   subfolder only when its description matches.
 3. Opens only the files whose descriptions match the task.
 4. Gets on with the task, and checks what it read against the code.
 
@@ -44,8 +61,9 @@ code and to tell you.
 :color: secondary
 
 Words in braces are filled in when the command runs. After this text the agent
-sees the list from `wip/wip.md` (when it lists anything), the folder list, your `ON_PROMPT.md` rules, and your
-instruction.
+sees [the rule every command repeats](#the-rule-every-command-repeats), the list
+from `wip/wip.md` when it lists anything, the folder list, your `ON_PROMPT.md`
+rules, and your instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/prompt.md
 :language: markdown
@@ -66,7 +84,7 @@ What the agent does:
    and it stops there.
 2. If there is something, finds the right file in the project folder, or
    creates one.
-3. Regenerates the `index.md` files and fixes any format problems.
+3. Checks the format with `toc --check` and fixes what its change caused.
 4. With `--commit`, commits everything that changed in the session. With
    `--push`, pushes as well.
 
@@ -94,7 +112,9 @@ A fourth retry caused the duplicate refunds in March.
 :language: markdown
 ```
 
-The agent also receives the format rules:
+The agent also receives [the rule every command
+repeats](#the-rule-every-command-repeats), the folder list, and the format
+rules:
 
 ```{literalinclude} ../skill/context-db/prompts/format.md
 :language: markdown
@@ -180,6 +200,10 @@ How `wip.md` and the plans are kept, for every form except `--list`:
 /context-db configure
 ```
 
+Run it first, to set context-db up in a repository, and again whenever you want
+it to behave differently. `prompt`, `update`, `wip`, and `maintain` tell you to
+run it if context-db is not set up yet.
+
 `configure` is a helper. It gets context-db working and starts a short
 conversation about how the agent should treat the knowledge base. Everything it
 writes is plain Markdown, and you are expected to open those files afterwards
@@ -202,6 +226,8 @@ What the agent does:
    - Should it add a short note to `AGENTS.md` or `CLAUDE.md`?
    - May the agent update the knowledge base as it works, after `prompt`, or
      only when you run `update`?
+   - When a note gets too long, should the agent split it while it is working
+     in it, or only when you run `maintain`?
    - Which other repositories does this project rely on?
    - Is there anything else the agent should always do?
 4. Ends with a short summary: the files it changed, and a reminder that this
@@ -224,10 +250,73 @@ These are the files it writes:
 ```
 :::
 
+## /context-db maintain
+
+```text
+/context-db maintain
+
+Look at data-model/. It has grown.
+```
+
+```text
+/context-db maintain --use-git-diff
+```
+
+Run it now and then, or when a part of the knowledge base feels cluttered. With
+nothing after it, the agent looks at the whole project folder; you can name a
+folder or a topic instead.
+
+Its main job is to enforce [the rule every command
+repeats](#the-rule-every-command-repeats). `update` keeps to the rule when it
+writes one note; `maintain` goes through the notes looking for where it has been
+broken.
+
+What the agent does:
+
+1. Checks first. If nothing needs changing, it says so and stops.
+2. Opens the code each note talks about, comments included. It deletes what the
+   code or its comments already say, and links to the code instead.
+3. Lists facts about one piece of code that would be better as a comment next
+   to it, as suggestions. It does not edit your code.
+4. Fixes what has drifted from the code.
+5. Splits files that have grown too long, groups a crowded folder into
+   subfolders, merges files on the same topic, and rewrites vague descriptions.
+6. Asks you before deleting anything that is not plainly wrong or a plain copy
+   of the code.
+7. Fixes the links to anything it moved, and tells you what it changed and why.
+
+With `--use-git-diff`, the agent also gets the git history: every note, with
+the date it last changed, how many commits have changed the project since, and
+which files it links to have changed since. It starts with the notes the code
+has moved furthest past, reads what changed, and fixes or deletes what is now
+out of date. An old note is not wrong for being old; it changes only what the
+history and the code show.
+
+`update` does none of this. It only touches the files that the session's lesson
+belongs in, so that recording one fact never turns into a reorganization.
+
+:::{dropdown} The text the agent receives
+:color: secondary
+
+After this text the agent sees the rule every command repeats, the git history
+when you ask for it, the folder list, the format rules, your `ON_MAINTAIN.md`,
+and your instruction.
+
+```{literalinclude} ../skill/context-db/prompts/maintain.md
+:language: markdown
+```
+
+With `--use-git-diff`, the history comes with this text:
+
+```{literalinclude} ../skill/context-db/prompts/maintain-git.md
+:language: markdown
+```
+:::
+
 ## The rule files control how the agent behaves
 
 The commands come with built-in instructions, shown in the dropdowns above. You
-do not edit those. To change what the agent does, you add your own rules to four
+do not edit those. To change what the agent does, you add your own rules to five
 files in `context-db/configuration/`. Whatever a file says is added to the
 agent's instructions every time that command runs.
 
@@ -251,6 +340,7 @@ The files:
 | `ON_UPDATE.md` | `update` |
 | `ON_WIP.md` | `wip` |
 | `ON_CONFIGURE.md` | `configure` |
+| `ON_MAINTAIN.md` | `maintain` |
 
 The text is placed immediately before your instruction, which always comes
 last. It appears under the heading `Project Rules`, unless your file starts with
@@ -260,20 +350,45 @@ Keep these files short, because every line is read on every run. Text inside
 HTML comments is left out, so you can keep notes to yourself in them. An empty
 file adds nothing.
 
-## Two helper commands
+## Setting up without questions
 
-The agent runs these when the instructions tell it to. You can run them too.
+`configure` asks nothing when you pass it a setting. It writes the settings,
+creates whatever is missing, and never overwrites a file:
 
 ```bash
-python3 .claude/skills/context-db/context-db.py init --project acme-payments
-python3 .claude/skills/context-db/context-db.py index
-python3 .claude/skills/context-db/context-db.py index --check
+python3 .claude/skills/context-db/context-db.py configure --project acme-payments
 ```
 
-`init` writes the settings and creates whatever is missing. Its options are
-`--project`, `--main-branch`, `--python`, and `--local KEY=VALUE` for a
-setting that applies only to you.
+Its options are `--project`, `--main-branch`, `--python`, and
+`--local KEY=VALUE` for a setting that applies only to you.
 
-`index` regenerates every `index.md` in the project folder and checks the
-format. Give it a folder to work on a different one. With `--check` it changes
-nothing and exits with an error if anything is wrong.
+## Listing and checking: toc
+
+context-db has no `index.md` files. Whenever the agent looks into the knowledge
+base, it runs a small helper that lists a folder on the spot, one line for each
+file and subfolder with its description:
+
+```bash
+python3 .claude/skills/context-db/context-db.py toc context-db/acme-payments-project
+```
+
+Every command that reads the knowledge base gives the agent this text, so it
+always navigates the same way:
+
+```{literalinclude} ../skill/context-db/prompts/navigate.md
+:language: markdown
+```
+
+With `--check`, `toc` checks the [format](layout.md) instead: frontmatter,
+links, file and folder sizes, and plans that `wip/wip.md` does not list. The
+agent runs it at the end of `update`, `wip`, `configure`, and `maintain`.
+
+You do not need to type either, which is why `toc` is not in `--help`. The one
+place to type it is CI:
+
+```bash
+python3 .claude/skills/context-db/context-db.py toc --check
+```
+
+[Dynamic indexing](layout.md#dynamic-indexing) describes the listing, and the
+[OKF page](okf.md#dynamic-indexing) why context-db builds it on demand.

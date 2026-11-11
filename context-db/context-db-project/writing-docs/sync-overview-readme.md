@@ -14,7 +14,9 @@ description:
 | `context-db/<project>-project/overview.md` | Agents           | no    | 20–40 lines   |
 
 The README and the docs home page share their opening, "Example", "Install",
-"What it is", the four commands, and "Motivation" almost word for word. When one changes, change the other. The home page uses cards and tabs
+"What it is", the commands, and "Motivation" almost word for word. The
+command table and cards are the `--help` summaries verbatim, which a test
+enforces. When one changes, change the other. The home page uses cards and tabs
 where the README uses a table and a tree. The README's Install section also
 carries the steps themselves, because the install prompt sends agents there.
 

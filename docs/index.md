@@ -32,7 +32,7 @@ It looks like it is in the new receipts database code.
 Can you investigate and propose a fix?
 ```
 
-The agent reads the index, opens the notes on the database schema and the plan
+The agent lists the knowledge base, opens the notes on the database schema and the plan
 for the receipts work, and skips everything else. Then it finds the cause and
 proposes a fix.
 
@@ -60,23 +60,26 @@ creates the knowledge base. [Setup](setup.md) has the same steps to run by hand.
 ## What it is
 
 context-db is a set of skills that you install in a coding agent such as Claude
-Code. They come as one folder and show up as four commands under `/context-db`.
+Code. They come as one folder and show up as five commands under `/context-db`.
 
 The commands work on a folder in your repository called `context-db/`. That
 folder is the knowledge base. It holds what an agent cannot work out by reading
-your code: your conventions, the decisions you made and why, the mistakes to
-avoid, and the plan for the work in progress.
+your code and its comments: your conventions, the decisions you made and why,
+the mistakes to avoid, and the plan for the work in progress. It is never a copy
+of the code. What the code already says stays in the code.
 
-Everything in it is a Markdown file with a short description at the top. Every
-folder has an `index.md` that lists what is inside, one line each. The agent
-reads the index, opens the one or two files it needs, and leaves the rest alone.
+Everything in it is a Markdown file with a short description at the top. When
+the agent looks into a folder, the script lists what is inside, one line each
+with its description, built from the files on the spot. The agent reads that
+list, opens the one or two files it needs, and leaves the rest alone. Nothing is
+generated ahead of time, so the list is never out of date.
 
 There is no database and no server, in spite of the name. It is a folder of text
 files and one Python script.
 
-## The four commands
+## The commands
 
-::::{grid} 1 2 2 2
+::::{grid} 1 1 1 1
 :gutter: 3
 
 :::{grid-item-card} /context-db prompt
@@ -84,8 +87,7 @@ files and one Python script.
 :link: commands
 :link-type: doc
 
-Run it before you start a task. The agent looks up what the knowledge base says
-about that task.
+Before a task. Looks up what the knowledge base says about it.
 :::
 
 :::{grid-item-card} /context-db update
@@ -93,8 +95,8 @@ about that task.
 :link: commands
 :link-type: doc
 
-Run it when you finish. The agent writes down anything the next agent would
-need. Add `--push` to commit and push as well.
+After a task. Writes down what the next agent would need, if anything. `--push`
+also commits and pushes.
 :::
 
 :::{grid-item-card} /context-db wip
@@ -102,9 +104,8 @@ need. Add `--push` to commit and push as well.
 :link: commands
 :link-type: doc
 
-Optional. Keeps a short list of the work in progress, with a plan for each.
-`--list` shows it, `--cleanup` deletes what has landed, `--clear` deletes it
-all.
+Optional, for long work. Keeps a short list of the work in progress. `--list`,
+`--cleanup`, `--clear`.
 :::
 
 :::{grid-item-card} /context-db configure
@@ -112,10 +113,22 @@ all.
 :link: commands
 :link-type: doc
 
-A helper that sets things up by asking a few questions. Edit the files it
-writes by hand afterwards.
+First, and whenever you like. Sets context-db up by asking a few questions; edit
+the files by hand afterwards.
+:::
+
+:::{grid-item-card} /context-db maintain
+:class-card: command-card command-maintain
+:link: commands
+:link-type: doc
+
+Now and then. Removes what the code and its comments already say, fixes what
+has drifted, and splits and reorganizes. `--use-git-diff` also reads the git
+history for what has gone out of date.
 :::
 ::::
+
+`/context-db --help` prints the same list.
 
 Nothing is loaded when a session starts. The agent reads the knowledge base when
 you run one of these commands. After `/context-db prompt` it may also add to it
@@ -135,7 +148,6 @@ version of them by asking you a few questions.
 context-db/
 ├── configuration/               settings and rules, all plain Markdown
 ├── acme-payments-project/       the project folder: your project's knowledge
-│   ├── index.md                 generated list of everything in this folder
 │   ├── architecture.md
 │   ├── pci-handling.md
 │   ├── data-model/
@@ -163,18 +175,23 @@ Every refund request carries an idempotency key. See
 ```
 :::
 
-:::{tab-item} An index
+:::{tab-item} A folder listing
+The agent runs `context-db.py toc <folder>` and gets this, built from the files
+as they are now:
+
 ```markdown
+# Contents of `context-db/acme-payments-project/`
+
 # Subfolders
 
-* [data-model](data-model/index.md) - Database schema — the payment, refund, and merchant entities
-* [wip](wip/index.md) - Work in progress, if the project records it
+* [data-model](context-db/acme-payments-project/data-model/) - Database schema — the payment, refund, and merchant entities
+* [wip](context-db/acme-payments-project/wip/) - Work in progress, if the project records it
 
 # Files
 
-* [API Reference](api-reference.md) - The REST API — authentication and the payments and refunds endpoints
-* [Architecture](architecture.md) - The three services, what each one owns, and how they talk
-* [PCI handling](pci-handling.md) - What may never be stored or logged, and what needs a security review
+* [API Reference](context-db/acme-payments-project/api-reference.md) - The REST API — authentication and the payments and refunds endpoints
+* [Architecture](context-db/acme-payments-project/architecture.md) - The three services, what each one owns, and how they talk
+* [PCI handling](context-db/acme-payments-project/pci-handling.md) - What may never be stored or logged, and what needs a security review
 ```
 :::
 ::::
@@ -188,7 +205,7 @@ context-db is an explicit memory for that: a folder of short notes in your
 repository that you and the agent keep up as the project goes, and that the
 agent reads when you ask it to.
 
-The idea comes from Andrej Karpathy's
+The idea builds on Andrej Karpathy's
 [LLM wiki](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f):
 have the LLM keep a wiki of what it has learned, instead of working everything
 out again each time.
@@ -203,14 +220,26 @@ Nobody notices when it goes out of date, so the agent repeats what it gets
 wrong. Rules read at the start of a long session have faded by the time the
 work they apply to comes up.
 
-context-db hands the agent small pieces of text at set points in the work
-instead:
+context-db keeps one rule above all, and repeats it to the agent on every
+command: the knowledge base is not a mirror of the code. Anything an agent can
+learn by reading the code and its comments stays there. A note that copies it is
+a second version, and it drifts out of date every time the code changes, while
+the next agent goes on trusting it. So the knowledge base keeps only what the
+code cannot say: why a decision was made, the conventions and pitfalls the code
+does not show, rules that come from outside, and the plan for the work in
+progress. `update` follows that rule when it writes. `maintain` goes looking for
+notes that break it.
 
-- `prompt`, right before a task: the index of the knowledge base, the plans for
+context-db hands the agent small pieces of text at set points in the work
+instead of one big file:
+
+- `prompt`, right before a task: how to list the knowledge base, the plans for
   the work in progress, and your rules. The agent opens only the notes that
   match the task.
 - `update`, after a task: what belongs in the knowledge base and what does not,
   so that it stays small.
+- `maintain`, now and then: how to find notes that repeat the code or have
+  drifted from it, and remove them.
 - `wip`, during long work: how to keep a short record of where things stand.
 
 The rest stays out of the agent's context. Where a note and the code disagree,

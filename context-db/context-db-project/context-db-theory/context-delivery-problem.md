@@ -92,7 +92,7 @@ separating project knowledge (survives across sessions) from working memory
 
 context-db's design already addresses several of these:
 
-- **On-demand loading via `index.md`** mitigates attention dilution — the agent reads
+- **On-demand loading via `toc` listings** mitigates attention dilution — the agent reads
   10 descriptions and skips 9 folders instead of ingesting everything
 - **"Only include what the agent can't infer"** is the right principle for
   obedience poisoning, though enforcement is hard

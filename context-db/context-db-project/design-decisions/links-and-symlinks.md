@@ -24,8 +24,8 @@ starting with `/`.
 ## Symlinks only at the top level
 
 A symlink is how a background folder gets mounted. Anywhere deeper, a symlink is
-a lint error. This is what makes committed `index.md` files safe; see
-[static-index.md](./static-index.md).
+a lint error, which keeps every folder inside a bundle real and the same for
+everyone.
 
 ## A shared folder never links outside itself
 
@@ -41,5 +41,5 @@ is never the symlinked one.
 ## Commands never edit a background folder
 
 It belongs to another repository. Edits made through the symlink would land in
-that repository's working tree unreviewed. The `index` helper enforces this: it
-refuses any path that passes through a symlink.
+that repository's working tree unreviewed. Nothing enforces this in code; the
+prompts tell the agent never to edit one. `toc` reads through the symlink.

@@ -21,7 +21,7 @@ replicated findings in cognitive science — applies to LLM attention the same
 way.
 
 **Progressive disclosure** (Rosenfeld & Morville, _Information Architecture_):
-Show only what's needed at each level. Each `index.md` surfaces descriptions
+Show only what's needed at each level. Each folder listing surfaces descriptions
 first; the agent never loads content it didn't ask for.
 
 **Information foraging theory** (Pirolli & Card, PARC): Agents follow

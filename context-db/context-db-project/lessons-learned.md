@@ -70,7 +70,8 @@ adding a step, ask what a reader with no context would have to guess.
 The owner wants `/context-db configure` to feel like a guided helper: one
 question at a time, as a menu with a recommended option, using the agent's
 question tool where it has one. Add a new setting as a question in
-`configure.md` and a flag on `init`, never as something to edit by hand.
+`configure.md` and a setting flag on `configure`, never as something to edit by
+hand.
 
 The owner's model of the product, stated on 2026-11-11: context-db supplies the
 instructions that keep an agent grounded, the `ON_*.md` files are how a user
@@ -111,5 +112,8 @@ agent away from standards that apply.
 
 `ON_*.md` files replaced several single-purpose flags and config tiers in v0.0.
 Two ways to do one thing means two things to document, test, and choose between.
-The same reasoning removed `maintain` and `read` in v0.1: lint moved into the
-`index` helper, and an audit is `update "audit <folder> and cut"`.
+The same reasoning removed `read` in v0.1. It also removed `maintain`, which was
+a mistake, restored on 2026-11-11: an audit and a session's lesson are different
+jobs, and folding one into the other made `update` do work when there was
+nothing to do. See
+[command-set.md](./design-decisions/command-set.md).

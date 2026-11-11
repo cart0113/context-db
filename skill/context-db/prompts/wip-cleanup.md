@@ -25,7 +25,7 @@ merged has not landed.
      finished.
 3. Run:
 
-       {index_cmd}
+       {check_cmd}
 
    and fix anything it reports.
 4. Tell the user in a few lines what you deleted, what you moved into the main

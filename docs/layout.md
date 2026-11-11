@@ -15,11 +15,9 @@ context-db/
 │   └── ON_PROMPT.md ...         rules the agent sees on each command
 ├── acme-payments-project/       the project folder
 │   ├── acme-payments-project.md describes the folder
-│   ├── index.md                 generated
 │   ├── architecture.md
 │   ├── data-model/
 │   │   ├── data-model.md
-│   │   ├── index.md
 │   │   └── entities.md
 │   └── wip/                     optional
 │       ├── wip.md               the list of work in progress
@@ -39,9 +37,13 @@ What belongs in it:
 - Mistakes that are easy to make here.
 - Knowledge about the domain.
 
-What does not belong in it is anything the agent can read from the code: file
-layouts, function signatures, summaries of modules. Notes like that go out of
-date, and the agent trusts them over the code.
+What does not belong in it is anything the agent can read from the code or its
+comments: file layouts, function signatures, flags, summaries of modules, what a
+function does. The knowledge base is not a mirror of the code. A note that
+copies the code goes out of date as the code changes, and the agent trusts it
+over the code. A fact about one piece of code belongs in a comment next to it.
+Every command repeats this rule to the agent;
+[Commands](commands.md#the-rule-every-command-repeats) shows the text.
 
 ## Background folders
 
@@ -89,8 +91,8 @@ turn it into a folder.
 ## A folder
 
 Every folder has a file named after it, such as `data-model/data-model.md`. Its
-description says what the folder holds, and that description is what appears in
-the index one level up. The file needs nothing but frontmatter:
+description says what the folder holds, and that description is what appears
+when the folder one level up is listed. The file needs nothing but frontmatter:
 
 ```markdown
 ---
@@ -99,28 +101,75 @@ description: Database schema — the payment, refund, and merchant entities
 ---
 ```
 
-Aim for 5 to 10 items in a folder. Beyond that the index stops being a quick
+Aim for 5 to 10 items in a folder. Beyond that its listing stops being a quick
 read.
 
-## index.md
+## Dynamic indexing
 
-Every folder has an `index.md` that lists what is in it:
+There are no `index.md` files. When the agent looks into a folder, it runs:
+
+```bash
+python3 .claude/skills/context-db/context-db.py toc context-db/acme-payments-project
+```
+
+The script reads the frontmatter of every file and subfolder in that folder and
+prints one line for each, with its description:
 
 ```markdown
+# Contents of `context-db/acme-payments-project/`
+
 # Subfolders
 
-* [data-model](data-model/index.md) - Database schema — the payment, refund, and merchant entities
-* [wip](wip/index.md) - Work in progress, if the project records it
+* [data-model](context-db/acme-payments-project/data-model/) - Database schema — the payment, refund, and merchant entities
+* [wip](context-db/acme-payments-project/wip/) - Work in progress, if the project records it
 
 # Files
 
-* [API Reference](api-reference.md) - The REST API — authentication and the payments and refunds endpoints
-* [Architecture](architecture.md) - The three services, what each one owns, and how they talk
-* [PCI handling](pci-handling.md) - What may never be stored or logged, and what needs a security review
+* [API Reference](context-db/acme-payments-project/api-reference.md) - The REST API — authentication and the payments and refunds endpoints
+* [Architecture](context-db/acme-payments-project/architecture.md) - The three services, what each one owns, and how they talk
+* [PCI handling](context-db/acme-payments-project/pci-handling.md) - What may never be stored or logged, and what needs a security review
 ```
 
-You never write these. `update` and `wip` regenerate them from the frontmatter.
-A status of `draft` or `deprecated` is shown in brackets after the description.
+The agent opens the files that match its task, and runs `toc` again on any
+subfolder whose description does. Every command that reads the knowledge base
+tells it to work this way.
+
+A status of `draft` or `deprecated` is shown in brackets after the
+description. A folder's own file appears only when it has more than frontmatter
+in it; otherwise its description is shown one level up.
+
+### Why there is no index.md
+
+This is a design decision: it is how context-db implements OKF's `index.md`.
+
+A generated file that is committed starts drifting from the files it describes
+the moment someone edits a note and forgets to regenerate it. An agent that
+reads a stale index misses notes that exist and looks for notes that are gone.
+Keeping it in step needs a regenerate step after every write, a check in CI,
+and a rule for merge conflicts, which is maintenance that adds nothing to the
+knowledge itself.
+
+A listing built on demand cannot drift. It is made from the files each time it
+is asked for, so there is nothing to regenerate, commit, review, or merge, and
+nothing for `update` or `maintain` to keep up to date.
+
+It still does everything OKF's `index.md` is for:
+
+- **Progressive disclosure.** The agent sees what a folder holds, one line per
+  item, before it opens anything, and goes one level deeper only where a
+  description matches.
+- **Descriptions route the reader.** Each line carries the `description` from
+  the file's frontmatter, so the description is still what makes a note
+  findable.
+- **The same layout.** The listing uses OKF's index layout: a `Subfolders` and a
+  `Files` heading, then one `* [Title](path) - description` line per item.
+- **Every folder, every bundle.** It works for the project folder, its
+  subfolders, and every shared background folder, with nothing generated in the
+  repository that owns it.
+
+The one thing it gives up is browsing: on GitHub or in Obsidian you see the
+files without their descriptions. [The OKF page](okf.md#dynamic-indexing) has
+more on the choice.
 
 ## Links
 
@@ -157,7 +206,7 @@ branch: feature/refunds
 ---
 ```
 
-The [`wip` command](commands.md) keeps this folder up to date, and `index`
+The [`wip` command](commands.md) keeps this folder up to date, and the checker
 warns about a plan that `wip.md` does not list.
 
 ## Sharing
@@ -182,8 +231,8 @@ context-db/
    deeper.
 2. Links inside a shared folder must stay inside it. A link that leaves the
    folder points at something that may not exist in the next project.
-3. The `index.md` files of a shared folder are made in the repository that owns
-   it.
+3. Notes in a shared folder are changed in the repository that owns it. The
+   commands only read it here.
 
 ### Ways to mount a folder
 
@@ -217,23 +266,19 @@ ln -s ../external/standards/context-db/coding-standards coding-standards
 
 Commit the submodule and the symlink.
 
-### Making the index for a shared folder
+### Shared folders need no preparation
 
-Go to the repository that owns the folder and run:
+A mounted folder is listed the same way as the project folder, on the spot, so
+the repository that owns it does not have to generate anything first. To check
+its format, run `toc --check` on it in either repository:
 
 ```bash
-python3 <path-to>/context-db.py index context-db/coding-standards
+python3 <path-to>/context-db.py toc context-db/coding-standards --check
 ```
-
-Naming the folder means that repository needs no settings file of its own.
-Commit the `index.md` files it writes.
-
-A shared folder with no `index.md` still works. `prompt` tells the agent to list
-the folder and read the descriptions at the top of each file.
 
 ## What the checker looks for
 
-`index --check` reports these as errors:
+`toc --check` reports these as errors:
 
 - a file with no frontmatter, no `type`, or no `description`
 - a `type` or `description` that is not valid YAML as written
@@ -241,11 +286,12 @@ the folder and read the descriptions at the top of each file.
 - a link to a file that does not exist, or a link that starts with `/`
 - a folder with no file named after it
 - a symlink inside the project folder or a background folder
+- an `index.md` file, which context-db does not use
 
 It reports these as warnings: a file over 200 lines outside `wip/`, and a
 folder with more than 12 items.
 
-Two things are skipped. Folders that contain no Markdown, such as a folder of
-images, are not part of the knowledge base. Anything that git ignores is left
-out of the index and the checks, so you can keep private notes beside the
-shared ones.
+Folders that contain no Markdown, such as a folder of images, are not part of
+the knowledge base, and are neither listed nor checked. Because nothing is
+committed, private notes that git ignores are listed for you and for no one
+else.

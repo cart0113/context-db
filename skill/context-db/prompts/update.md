@@ -8,14 +8,17 @@ something, without it? If not, {nothing_to_add}.
 Most sessions produce nothing worth storing. That is the normal outcome, not a
 failure. Every addition dilutes what is already there.
 
+When there is something, change only what it needs: the one or two files the
+lesson belongs in. Do not tidy, reword, or reorganize anything else on the way;
+that is what `/context-db maintain` is for.
+
 ## What belongs
 
-Things the next agent would get wrong or miss: conventions, corrections from the
-user, pitfalls, design rationale, domain knowledge, rules the project must obey.
-
-What does not belong: anything derivable from the project's assets (code,
-configs, docs). No file layouts, function signatures, CLI flags, or step-by-step
-restatements of code. Link to code and docs; never restate them.
+What the next agent would get wrong or miss, and that the project itself does
+not say: corrections from the user, conventions, pitfalls, design rationale,
+domain knowledge, rules the project must obey. The rule under Context-db Is Not
+a Mirror of the Code, below, decides: anything an agent could learn by reading
+the code and its comments stays out.
 
 A rule that the code does not follow yet still belongs. Say in the entry that
 the code does not enforce it yet, so that the next agent does not take the code
@@ -26,7 +29,7 @@ as proof that the entry is wrong.
 Write inside the project folder, `{project_dir}/`. The folders listed under
 Folders below as background folders are owned elsewhere: never edit one.
 
-Read `{project_dir}/index.md` to see what is already documented, and open only
+Run `{toc_cmd} {project_dir}` to see what is already documented, and open only
 the files whose descriptions suggest they cover the topic. Update an existing
 file when it covers the topic. Create a file only for a genuinely new topic.
 Delete content that has become false or has drifted into a summary of the code.
@@ -48,7 +51,9 @@ any vendor-specific memory file.
 
 Run:
 
-    {index_cmd}
+    {check_cmd}
 
-It regenerates every `index.md` and reports format problems. Fix what it reports
-and run it again until it is clean. Never edit an `index.md` by hand.
+It checks the format of the whole project folder. Fix what your change caused,
+and run it again until that is clean. If it reports problems in files you did
+not touch, leave them, and mention them in one line with a suggestion to run
+`/context-db maintain`.
