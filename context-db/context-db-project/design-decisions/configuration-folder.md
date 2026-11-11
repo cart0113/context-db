@@ -2,8 +2,9 @@
 type: Decision
 description:
   Why every setting and rule is plain Markdown in context-db/configuration/
-  (settings.md plus gitignored settings.local.md, the ON files), why there is
-  no update_mode key, why configure is only a helper, why the interpreter is
+  (settings.md plus gitignored settings.local.md, the ON files and their
+  per-user ON_<COMMAND>.local.md twins, one *.local.md gitignore glob), why
+  there is no update_mode key, why configure is only a helper, why the interpreter is
   read by the agent, and why the settings key set is closed. Owner decisions of
   2026-11-11; also called config layering.
 ---
@@ -40,6 +41,22 @@ The owner wants that note as short as possible: one sentence, since the
 command output carries everything else. `configure` only asks which file the
 agent reads and adds the note there. How the two files relate (a symlink, both,
 one) is the user's personal choice; configure does not offer layouts for it.
+
+## Project rules and user rules
+
+The owner (2026-11-11): "Let's allow project ON files and user on files, just
+like the other files", "user files of course being ignored. Give them a clear
+pattern and show a simple git glob". So every per-user file in `configuration/`
+ends in `.local.md`, next to the shared file of the same name, and one
+`.gitignore` line covers them all. A new per-user file must fit that glob.
+
+Rules are text, so a user's file cannot override a key the way
+`settings.local.md` does. It is added after the project's rules, and the agent
+is told the user's win where the two differ. That precedence was the
+implementing agent's choice, modelled on settings; the owner has not ruled on
+it.
+
+`configure` creates no user files. They exist only when a user makes one.
 
 ## configure is a helper
 

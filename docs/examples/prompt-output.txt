@@ -1,0 +1,102 @@
+# Context-db Prompt
+
+`context-db/` is this project's knowledge base: conventions, decisions, gotchas, and
+current plans that cannot be learned from reading any single project file.
+Consult it now, for the user instruction at the end of this output.
+
+If a Work In Progress section appears below, start with the plans it lists
+that bear on the instruction. Then look into the folders listed under Folders,
+the way How to Navigate Context-db says.
+
+The project folder holds knowledge specific to this repository. Background
+folders hold general reference material shared from elsewhere, such as standards
+and domain knowledge. The same test applies to them: open what bears directly
+on the instruction.
+
+## How to use what you find
+
+Context-db is a map, not the territory. Use it to orient, then verify against
+the project's assets (code, code comments, configs, docs). Where they conflict,
+trust the project's assets, especially code, and tell the user what is out of
+date. The rule below says why, and what may be written here.
+
+Do not run `/context-db prompt` yourself; the user invokes it. To consult
+context-db again later in the session, navigate it the same way. Whether you may
+write to it on your own is stated in the rules near the end of this output.
+
+# How to Navigate Context-db
+
+Context-db has no index files to read. To see what a folder holds, run:
+
+    python3 .claude/skills/context-db/context-db.py toc <folder>
+
+It reads the folder's files as they are now and prints one line for each file
+and subfolder, with its description. This is context-db's dynamic index: the
+listing is built every time it is asked for, from the files themselves, so it
+is never out of date. Use it every time you look into a folder, now or later in
+the session, instead of listing the folder or opening files to see what they
+are.
+
+- Start with the project folder and the other folders listed under Folders.
+- Open a file only when its description says it bears directly on the task.
+- Run `python3 .claude/skills/context-db/context-db.py toc` on a subfolder only when its description does.
+- Skip everything else. Reading widely dilutes what matters.
+- Links inside a file are relative to that file.
+
+# Context-db Is Not a Mirror of the Code
+
+Context-db holds what an agent cannot learn by reading the project: why
+decisions were made, conventions the code does not show, pitfalls, rules
+imposed from outside, domain knowledge, and plans. Everything else already has
+a home in the project's assets (code, code comments, configs, docs), and lives
+there only.
+
+A note that restates the project is a second copy. The copy drifts as the code
+changes, nobody notices, and the next agent trusts it over the code. So:
+
+- Never write down what can be read from the project: file layouts, function
+  signatures, CLI flags, what a function does, step-by-step walks through code,
+  or anything a code comment already says. Link to the code instead.
+- A fact about one piece of code belongs in a comment next to that code, not in
+  a note. Suggest the comment to the user instead of writing the note.
+- Where a note and the project disagree, trust the project's assets,
+  especially code, and fix or delete the note. The exception is a note that
+  says the code does not follow it yet: that is a requirement still to be
+  built, not a stale note.
+
+The test for every line: could an agent learn this by reading the code and its
+comments? If so, it does not belong in context-db.
+
+# Work In Progress
+
+The work happening right now, from `context-db/acme-payments-project/wip/wip.md`. Its links are relative to
+`context-db/acme-payments-project/wip/`. Open the plans that bear on the instruction before
+anything else.
+
+- [Refund endpoint](refund-endpoint.md). Started 2026-11-03 on `feature/refunds`. Validation done; partial refunds undecided.
+
+# Folders
+
+- **Project folder** `context-db/acme-payments-project/`: Acme Payments — the payment service's architecture, API, data model, PCI handling rules, and the plans for work in progress
+- **Background folder** `context-db/coding-standards/`: Shared coding standards — naming rules and error handling
+- **Background folder** `context-db/git-standards/`: Git workflow — branch naming, squash merges, and the commit message format
+
+# Project Rules
+
+This is a payments service and it is PCI-scoped. Before touching anything that
+handles card data, storage, or logging, read
+`context-db/acme-payments-project/pci-handling.md`. Do not infer the rules from
+the code alone.
+
+Write to the knowledge base only when the user runs `/context-db update`. At
+any other time, leave `context-db/` alone. If you learn something worth keeping, say
+so in one line and suggest that command.
+
+# User Instruction
+
+Users report a bug here:
+
+https://issues.example.com/PAY-482
+
+It looks like it is in the new receipts database code.
+Can you investigate and propose a fix?

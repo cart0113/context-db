@@ -22,4 +22,4 @@ date. The rule below says why, and what may be written here.
 
 Do not run `/context-db prompt` yourself; the user invokes it. To consult
 context-db again later in the session, navigate it the same way. Whether you may
-write to it on your own is stated under Project Rules below.
+write to it on your own is stated in the rules near the end of this output.

@@ -98,7 +98,8 @@ your-project/
 └── context-db/
     ├── configuration/              settings and rules, all plain Markdown
     │   ├── settings.md             project name, Python command, main branch
-    │   └── ON_PROMPT.md ...        rules the agent sees on each command
+    │   ├── ON_PROMPT.md ...        the project's rules for each command
+    │   └── ON_PROMPT.local.md ...  your own rules, gitignored (optional)
     ├── acme-payments-project/      the project folder: your project's knowledge
     │   ├── architecture.md
     │   ├── data-model/
@@ -124,8 +125,11 @@ as it works; `/context-db configure` asks whether you want that.
 
 Each command gives the agent a set of instructions, so that you do not have to
 type them every time. You add your own rules in a few plain Markdown files in
-`context-db/configuration/` and edit them by hand. `/context-db configure` is a
-helper that writes a first version of them by asking you a few questions.
+`context-db/configuration/` and edit them by hand. `ON_PROMPT.md` holds the
+project's rules for `prompt`, shared with everyone. `ON_PROMPT.local.md` holds
+rules that are only yours, and is gitignored. The other commands have the same
+pair. `/context-db configure` is a helper that writes a first version of them
+by asking you a few questions.
 
 To tell the agent something, type the command, start a new line, and write it
 there. It needs no quotes.

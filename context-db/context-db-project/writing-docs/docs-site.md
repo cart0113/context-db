@@ -57,6 +57,15 @@ Added by the owner on 2026-11-11:
   buttons "really tired, very much what agents look like". The intro's own link
   to the OKF page and the Install section do that job.
 - The footer keeps the theme's standard Sphinx and PyData credits.
+- The Commands page ends with "How it all fits together": what the script
+  sends for each command, section by section, next to the ON files. The owner
+  wants it "crystal clear how the whole system works", and wants this stressed:
+  context-db "is nothing more than some canned context alongside user
+  controlled context in the ON files", sent on demand when the user invokes a
+  command.
+- The home page and the README get a Benefits section after Example, which
+  links to that section. Not written yet: a bullet list was proposed to the
+  owner on 2026-11-11 and awaits their edits.
 - Colorful, but restrained. The owner had every gradient halved, the home page
   title cut down, and all type set 10% smaller, because the defaults read "a
   little big". The name in the header was already the right size. Lean smaller

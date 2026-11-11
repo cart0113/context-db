@@ -411,6 +411,73 @@ def test_help_readme_and_docs_home_describe_the_commands_alike():
     assert sections == USER_COMMANDS
 
 
+def sections_sent(output):
+    """The top-level headings of a command's output, outside code blocks."""
+    headings, fenced = [], False
+    for line in output.split("\n"):
+        if line.startswith("```"):
+            fenced = not fenced
+        elif line.startswith("# ") and not fenced:
+            headings.append(line)
+    return headings
+
+
+EVERY_SECTION = {  # the flags that make each command send every section it can
+    "prompt": (),
+    "update": ("--push",),
+    "wip": (),
+    "configure": (),
+    "maintain": ("--use-git-diff",),
+}
+
+
+def test_the_docs_list_the_sections_each_command_sends(example):
+    """docs/commands.md, How it all fits together: one table per command, in order."""
+    page = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
+    page = page.split("## How it all fits together")[1]
+    tables = re.findall(r"(?m)^`/context-db (\w+)` sends:\n\n((?:\|.*\n)+)", page)
+    assert tuple(name for name, _ in tables) == USER_COMMANDS
+    prompts = SCRIPT.parent / "prompts"
+    for name, table in tables:
+        rows = re.findall(r"(?m)^\| `(# [^`]+)` \| (.+) \|$", table)
+        for on_file in (f"ON_{name.upper()}.md", f"ON_{name.upper()}.local.md"):
+            write(example / "context-db" / "configuration" / on_file, "A rule.\n")
+        out = run(example, name, "the task", *EVERY_SECTION[name]).stdout
+        assert sections_sent(out) == [heading for heading, _ in rows], name
+        for heading, source in rows:
+            for prompt_file in re.findall(r"`prompts/([\w-]+\.md)`", source):
+                first_line = (prompts / prompt_file).read_text(encoding="utf-8").split("\n")[0]
+                assert first_line == heading, (name, prompt_file)
+            for on_file in re.findall(r"`configuration/(ON_[\w.]+\.md)`", source):
+                local = ".local" if heading == "# User Rules" else ""
+                assert on_file == f"ON_{name.upper()}{local}.md"
+
+
+def test_the_docs_show_a_real_prompt_message(example):
+    """docs/examples/prompt-output.txt is what `prompt` prints in the example project.
+
+    To refresh it, copy example/ somewhere outside a git repository, and there run
+    `python3 .claude/skills/context-db/context-db.py prompt - > prompt-output.txt`
+    with the instruction below on standard input.
+    """
+    snapshot = (REPO / "docs" / "examples" / "prompt-output.txt").read_text(encoding="utf-8")
+    instruction = snapshot.split("# User Instruction\n\n")[1]
+    result = subprocess.run(
+        [sys.executable, ".claude/skills/context-db/context-db.py", "prompt", "-"],
+        check=True,
+        cwd=str(example),
+        input=instruction,
+        env=dict(os.environ, GIT_CEILING_DIRECTORIES=str(example.parent.parent)),
+        stdout=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
+    assert result.stdout == snapshot
+    page = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
+    shown = page.split("## /context-db prompt")[1].split("```text\n/context-db prompt\n\n")[1]
+    assert shown.split("```")[0] == instruction
+
+
 def test_commands_without_config_ask_for_configure(tmp_path):
     (tmp_path / "context-db").mkdir()
     for command in ("prompt", "update", "wip"):
@@ -584,6 +651,78 @@ def test_on_rules_keep_a_heading_the_author_wrote(project):
     assert "# House Rules\n\nBe careful." in out and "# Project Rules" not in out
     write(on_file, "<!-- only a comment -->\n")
     assert "# Project Rules" not in run(project, "prompt", "x").stdout
+
+
+def test_a_users_own_rules_follow_the_projects_rules(project):
+    conf = project / "context-db" / "configuration"
+    write(conf / "ON_PROMPT.md", "Keep changes compatible.\n")
+    write(conf / "ON_PROMPT.local.md", "<!-- mine -->\nAnswer in one paragraph.\n")
+    out = run(project, "prompt", "the task").stdout
+    marks = (
+        "# Project Rules\n\nKeep changes compatible.",
+        "# User Rules\n\nThese are this user's own rules, from",
+        "`context-db/configuration/ON_PROMPT.local.md`.",
+        "follow these.\n\nAnswer in one paragraph.",
+        "# User Instruction\n\nthe task",
+    )
+    order = [out.index(mark) for mark in marks]
+    assert order == sorted(order)
+    assert "mine" not in out
+    for command in ("update", "wip", "maintain"):
+        assert "Answer in one paragraph." not in run(project, command, "x").stdout
+
+
+def test_a_users_own_rules_work_without_project_rules_and_keep_their_heading(project):
+    conf = project / "context-db" / "configuration"
+    (conf / "ON_UPDATE.md").unlink()
+    write(conf / "ON_UPDATE.local.md", "# My Way\n\nNo emoji in commit messages.\n")
+    out = run(project, "update", "--commit").stdout
+    assert "# My Way\n\nNo emoji in commit messages." in out
+    assert "# Project Rules" not in out and "# User Rules" not in out
+    write(conf / "ON_UPDATE.local.md", "<!-- nothing yet -->\n")
+    assert "My Way" not in run(project, "update").stdout
+
+
+@pytest.mark.parametrize("command", context_db.ON_COMMANDS)
+def test_every_command_has_a_project_and_a_user_rule_file(project, command):
+    conf = project / "context-db" / "configuration"
+    write(conf / f"ON_{command.upper()}.md", "From the project.\n")
+    write(conf / f"ON_{command.upper()}.local.md", "From the user.\n")
+    out = run(project, command, "x").stdout
+    assert out.index("# Project Rules\n\nFrom the project.") < out.index("# User Rules\n\n")
+    assert out.index("From the user.") < out.index("# User Instruction")
+
+
+def test_one_gitignore_line_covers_every_per_user_file(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=str(tmp_path), check=True)
+    write(tmp_path / ".gitignore", "context-db/configuration/settings.local.md\n")
+    result = run(tmp_path, "configure", "--project", "demo", "--local", "python=python3")
+    assert "Added context-db/configuration/*.local.md to .gitignore" in result.stdout
+    conf = tmp_path / "context-db" / "configuration"
+    for command in context_db.ON_COMMANDS:
+        write(conf / f"ON_{command.upper()}.local.md", "Mine.\n")
+    git(tmp_path, "add", "-A")
+    staged = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        cwd=str(tmp_path),
+        check=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    ).stdout
+    assert "ON_PROMPT.md" in staged and "settings.md" in staged
+    assert ".local.md" not in staged.replace(".gitignore", "")
+    assert "Added" not in run(tmp_path, "configure", "--project", "demo").stdout
+
+
+def test_configure_shows_a_users_own_rules_too(project):
+    conf = project / "context-db" / "configuration"
+    write(conf / "ON_WIP.local.md", "Every plan lists the ticket number.\n")
+    out = run(project, "configure").stdout
+    rules = out.split("# Current Rules")[1]
+    assert "ON_WIP.local.md`, this user's own, added after it" in rules
+    assert "Every plan lists the ticket number." in rules
+    assert "ON_PROMPT.local.md`, this user's own" not in rules
+    assert "`ON_PROMPT.local.md` and the like" in out
 
 
 def test_an_instruction_can_come_from_standard_input(project):
@@ -877,7 +1016,7 @@ def test_configure_with_settings_scaffolds_and_never_overwrites(tmp_path):
     assert (cdb / "demo-project" / "demo-project.md").exists()
     assert (cdb / "demo-project" / "wip" / "wip.md").read_text().startswith("---\ntype: Folder\n")
     gitignore = (tmp_path / ".gitignore").read_text()
-    assert "context-db/configuration/settings.local.md" in gitignore
+    assert "context-db/configuration/*.local.md\n" in gitignore
 
     write(cdb / "configuration" / "ON_PROMPT.md", "mine\n")
     settings.write_text(settings.read_text() + "\nA note of my own.\n")
@@ -887,7 +1026,7 @@ def test_configure_with_settings_scaffolds_and_never_overwrites(tmp_path):
     content = settings.read_text()
     assert "main_branch: main\n" in content and "python: python3.11\n" in content
     assert content.endswith("A note of my own.\n")
-    assert (tmp_path / ".gitignore").read_text().count("settings.local.md") == 1
+    assert (tmp_path / ".gitignore").read_text().count("*.local.md") == 1
 
 
 def test_the_starter_rules_let_the_agent_update_as_it_goes(tmp_path):

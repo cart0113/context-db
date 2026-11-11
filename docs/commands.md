@@ -2,7 +2,9 @@
 
 There are five commands: `prompt`, `update`, `wip`, `configure`, and
 `maintain`. `/context-db --help` lists them. Each one prints a set of
-instructions, and the agent follows them. Nothing is hidden: the exact text is under each command below.
+instructions, and the agent follows them. Nothing is hidden: the exact text is
+under each command below, and [How it all fits together](#how-it-all-fits-together)
+shows the whole message each command sends.
 
 In Claude Code you type a command as `/context-db <command>`. To tell the agent
 something, start a new line and write it there. It needs no quotes, and it can
@@ -240,7 +242,8 @@ These are the files it writes:
 | --- | --- |
 | `context-db/configuration/settings.md` | Shared settings |
 | `context-db/configuration/settings.local.md` | Your own settings, if you have any |
-| `context-db/configuration/ON_*.md` | The rules added to each command |
+| `context-db/configuration/ON_*.md` | The project's rules, added to each command |
+| `context-db/configuration/ON_*.local.md` | Your own rules, if you have any |
 | `AGENTS.md` or `CLAUDE.md` | The note that tells the agent about the knowledge base |
 
 :::{dropdown} The text the agent receives
@@ -333,23 +336,50 @@ Some examples of what goes in them:
   record anything about customer names."
 - In `ON_WIP.md`: "Every plan lists the ticket number."
 
-The files:
+Each file is named after its command, so the name says when the agent sees it:
+`ON_PROMPT.md` is added to every `prompt`, `ON_UPDATE.md` to every `update`, and
+so on.
 
-| File | Added to every |
-| --- | --- |
-| `ON_PROMPT.md` | `prompt` |
-| `ON_UPDATE.md` | `update` |
-| `ON_WIP.md` | `wip` |
-| `ON_CONFIGURE.md` | `configure` |
-| `ON_MAINTAIN.md` | `maintain` |
-
-The text is placed immediately before your instruction, which always comes
-last. It appears under the heading `Project Rules`, unless your file starts with
-a heading of its own.
+The text is placed near the end, just before your instruction, which always
+comes last. It appears under the heading `Project Rules`, unless your file
+starts with a heading of its own.
 
 Keep these files short, because every line is read on every run. Text inside
 HTML comments is left out, so you can keep notes to yourself in them. An empty
 file adds nothing.
+
+### Project rules and your own rules
+
+Those five files are committed, so everyone who works on the project gets the
+same rules. For a rule that is only yours, make a file with the same name ending
+in `.local.md`, next to the project's file:
+
+| The project's rules, committed | Your own rules, gitignored | Added to every |
+| --- | --- | --- |
+| `ON_PROMPT.md` | `ON_PROMPT.local.md` | `prompt` |
+| `ON_UPDATE.md` | `ON_UPDATE.local.md` | `update` |
+| `ON_WIP.md` | `ON_WIP.local.md` | `wip` |
+| `ON_CONFIGURE.md` | `ON_CONFIGURE.local.md` | `configure` |
+| `ON_MAINTAIN.md` | `ON_MAINTAIN.local.md` | `maintain` |
+
+Your file is added after the project's, under the heading `User Rules`. The
+agent is told that where the two differ, yours wins. Use it for how you like to
+work: "Answer in one paragraph." Or: "Ask before running the test suite, it is
+slow on this machine." None of these files exist until you make them.
+
+Settings work the same way: `settings.md` is the project's, and
+`settings.local.md` is yours. So one pattern covers every file that is yours
+alone, and one line in `.gitignore` keeps them all out of git:
+
+```text
+context-db/configuration/*.local.md
+```
+
+`configure` adds that line for you. To check that a file is ignored:
+
+```bash
+git check-ignore -v context-db/configuration/ON_PROMPT.local.md
+```
 
 ## Setting up without questions
 
@@ -393,3 +423,152 @@ python3 .claude/skills/context-db/context-db.py toc --check
 
 [Dynamic indexing](layout.md#dynamic-indexing) describes the listing, and the
 [OKF page](okf.md#dynamic-indexing) why context-db builds it on demand.
+
+## How it all fits together
+
+context-db is nothing more than context: text that is put in front of the agent
+when you ask for it. Some of that text is canned. It comes with context-db and
+is the same in every project. The rest is yours: the rules you write in the ON
+files. A command puts the two together, adds your instruction, and prints the
+result for the agent.
+
+That is all the script does. It does not call a model and does not run in the
+background. It reads files in your repository and prints text. The agent reads
+that text and does the work.
+
+You decide when that happens. Until you type a command, the agent has one line
+from context-db: the note in `AGENTS.md` or `CLAUDE.md`, which tells it to leave
+`context-db/` alone unless you chose otherwise in `configure`. Claude Code also
+shows it the skill's name and one-line description, as it does for every skill.
+Each command then sends its own text and no other command's.
+
+There is one exception, and it is yours to choose. The `ON_PROMPT.md` that
+`configure` creates lets the agent run `update` on its own after a `prompt`,
+when it learns something worth keeping. `configure` asks whether you want that.
+If you do not, that file says so and the agent writes only when you type
+`/context-db update`.
+
+When you type a command, this happens:
+
+1. Claude Code gives the agent `SKILL.md` from the skill folder. It is short and
+   says one thing: run the script with what the user typed.
+2. The agent runs `context-db.py` with the command and your instruction.
+3. The script prints one message, made of the sections listed below.
+4. The agent follows that message. From then on it reads only what it asks for:
+   folder listings from `toc`, and the notes it chooses to open.
+
+Every section of that message comes from one of five places:
+
+| Comes from | What it is | Who changes it |
+| --- | --- | --- |
+| `.claude/skills/context-db/prompts/` | The canned text: built-in instructions, one file for each section. They are the same in every project, and the dropdowns above show each one. | Nobody. They come with context-db. |
+| `context-db/configuration/ON_<COMMAND>.md` | [The project's rules](#the-rule-files-control-how-the-agent-behaves) for that one command, shared with everyone. | You and your team, by hand. |
+| `context-db/configuration/ON_<COMMAND>.local.md` | Your own rules for that command. Gitignored. | You, by hand. |
+| Your repository, read when the command runs | The list of work in progress, the list of folders with their descriptions, and the state of git. | Nobody directly. It is whatever the files say at that moment. |
+| What you typed | Your instruction. It always comes last. | You. |
+
+These are the sections each command sends, in order. Each one starts with the
+heading shown.
+
+`/context-db prompt` sends:
+
+| The agent sees | It comes from |
+| --- | --- |
+| `# Context-db Prompt` | `prompts/prompt.md` |
+| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
+| `# Work In Progress` | The list in `wip/wip.md`. Left out when it lists nothing. |
+| `# Folders` | The project folder and each background folder, one line each with its description. |
+| `# Project Rules` | `configuration/ON_PROMPT.md` |
+| `# User Rules` | `configuration/ON_PROMPT.local.md`, if you have one. |
+| `# User Instruction` | What you typed. |
+
+`/context-db update` sends:
+
+| The agent sees | It comes from |
+| --- | --- |
+| `# Context-db Update` | `prompts/update.md` |
+| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
+| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# Folders` | The project folder and each background folder, one line each with its description. |
+| `# File Format` | `prompts/format.md` |
+| `# Commit` | `prompts/commit.md`. Only with `--commit` or `--push`. |
+| `# Project Rules` | `configuration/ON_UPDATE.md` |
+| `# User Rules` | `configuration/ON_UPDATE.local.md`, if you have one. |
+| `# User Instruction` | What you typed, if anything. |
+
+`/context-db wip` sends:
+
+| The agent sees | It comes from |
+| --- | --- |
+| `# Context-db Wip` | `prompts/wip.md` |
+| `# Work In Progress` | The list in `wip/wip.md`, or one line saying that nothing is recorded. |
+| `# How Work In Progress Is Kept` | `prompts/wip-format.md` |
+| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
+| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# File Format` | `prompts/format.md` |
+| `# Project Rules` | `configuration/ON_WIP.md` |
+| `# User Rules` | `configuration/ON_WIP.local.md`, if you have one. |
+| `# User Instruction` | What you typed, if anything. |
+
+With a flag, the first section is that flag's own instructions instead:
+`prompts/wip-list.md`, `prompts/wip-cleanup.md`, or `prompts/wip-clear.md`.
+`--list` sends only that, the list, and your rules. `--cleanup` sends every
+section in the table, and adds `# Git State` after the first: the current
+branch, the uncommitted changes, and the commits that are not on the main
+branch. `--clear` sends its instructions, the list,
+`# How Work In Progress Is Kept`, and your rules.
+
+`/context-db configure` sends:
+
+| The agent sees | It comes from |
+| --- | --- |
+| `# Context-db Configure` | `prompts/configure.md` |
+| `# Detected State` | What the script found: the Python on your machine, the repository name, the main branch, the settings, and whether `AGENTS.md` or `CLAUDE.md` mention context-db. |
+| `# Current Rules` | The text of every ON file as it is now, so that the agent can show you what each one does. |
+| `# Project Rules` | `configuration/ON_CONFIGURE.md` |
+| `# User Rules` | `configuration/ON_CONFIGURE.local.md`, if you have one. |
+| `# User Instruction` | What you typed, if anything. |
+
+`/context-db maintain` sends:
+
+| The agent sees | It comes from |
+| --- | --- |
+| `# Context-db Maintain` | `prompts/maintain.md` |
+| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
+| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# Git History` | `prompts/maintain-git.md`, then one line for each note, read from git. Only with `--use-git-diff`. |
+| `# Folders` | The project folder and each background folder, one line each with its description. |
+| `# File Format` | `prompts/format.md` |
+| `# Project Rules` | `configuration/ON_MAINTAIN.md` |
+| `# User Rules` | `configuration/ON_MAINTAIN.local.md`, if you have one. |
+| `# User Instruction` | What you typed, if anything. |
+
+An empty ON file adds no section, and neither does a missing one. With no
+instruction there is no `User Instruction` section.
+
+This is the whole message for the `prompt` example at the top of this page, run
+in the [example project](https://github.com/cart0113/context-db/tree/v0.1/example)
+that comes with the repository. Its `ON_PROMPT.md` holds two rules, which are
+the `Project Rules` section near the end:
+
+:::{dropdown} Everything the agent receives for one prompt
+:color: secondary
+
+```{literalinclude} examples/prompt-output.txt
+:language: markdown
+```
+:::
+
+To see the message for your own project, run the same command in a terminal. It
+prints exactly what the agent would get:
+
+```bash
+python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
+```
+
+To change what the agent is told, edit the ON file for that command: the
+project's file to change it for everyone, your `.local.md` file to change it for
+yourself.
+`settings.md` adds no text of its own. It tells the script the name of the
+project folder, the Python command, and the main branch.

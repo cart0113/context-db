@@ -86,7 +86,13 @@ Open them and edit them by hand. They are plain Markdown, and the agent reads
 exactly what they say. `/context-db configure` is a helper that wrote the first
 version; run it again if you would rather answer questions than edit.
 
-[Commands](commands.md) has examples of rules.
+Those five hold the project's rules, and everyone on the project gets them.
+Rules that are only yours go in a file of the same name ending in `.local.md`,
+such as `ON_PROMPT.local.md`. It is added after the project's file, and it is
+gitignored.
+
+[Commands](commands.md#the-rule-files-control-how-the-agent-behaves) has
+examples of rules.
 
 ## 4. Tell the agent to leave it alone
 
@@ -143,7 +149,8 @@ main_branch: main
 Edit them by hand. Anything below the `---` lines is yours for notes.
 
 `context-db/configuration/settings.local.md` is yours alone. It is gitignored,
-and anything in it overrides the shared file. Use it when your machine needs
+like every `*.local.md` file in that folder, and anything in it overrides the
+shared file. Use it when your machine needs
 something different, such as a Python that lives in an unusual place:
 
 ```bash

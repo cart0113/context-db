@@ -13,9 +13,12 @@ Everything it writes lives in `{conf_dir}/`:
   `key: value` lines between the `---` lines at the top. `{local_settings}`, if
   it exists, overrides any of them for one user and is gitignored.
 - `ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, `ON_CONFIGURE.md`,
-  `ON_MAINTAIN.md`: rules.
+  `ON_MAINTAIN.md`: the project's rules, shared with everyone.
   Whatever a file says outside HTML comments is added to the instructions the
   agent receives each time that command runs.
+- `ON_PROMPT.local.md` and the like, one per command, only if the user wants
+  one: this user's own rules, added after the project's for that command. Like
+  every `*.local.md` file in this folder, they are gitignored.
 
 What the script found is listed under Detected State and Current Rules below.
 
@@ -122,6 +125,11 @@ Make each change as soon as the user answers, and show them the new text.
     progress is kept), or `maintain` (how the knowledge base is tidied). Ask
     them to say it in their own words.
 
+The questions above write the project's rules, which everyone on the project
+gets. When an answer is this user's own preference and not the project's, put
+it in that command's `.local.md` file instead, creating the file if needed. Ask
+when you cannot tell which the user means.
+
 When you write a rule, make it one or two short, direct sentences addressed to
 the agent, outside the HTML comments. Keep each file short, because every line
 is read on every run. A rule that matters only for some tasks belongs in the
@@ -140,7 +148,8 @@ It must report no errors. Then give the user a short summary, and nothing more:
 - **This was a helper.** Say plainly that configure only wrote a first draft,
   and that the user should open these files and edit them by hand until they
   say what the user wants: `{conf_dir}/` (the settings and the ON files) and the
-  note in `AGENTS.md` or `CLAUDE.md`. They are plain Markdown, and there is
+  note in `AGENTS.md` or `CLAUDE.md`. Rules of their own go in
+  `ON_<COMMAND>.local.md` files there, which are gitignored. They are plain Markdown, and there is
   nothing else to keep in step.
 - **What to type**: `/context-db prompt` before work, with the task on a new
   line after it; `/context-db update` after the work. `/context-db wip` is

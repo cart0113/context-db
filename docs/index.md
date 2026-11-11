@@ -135,9 +135,12 @@ you run one of these commands. After `/context-db prompt` it may also add to it
 as it works; `/context-db configure` asks whether you want that.
 
 Each command gives the agent a set of instructions, so that you do not have to
-type them every time. You add your own rules in a few plain Markdown files and
-edit them by hand. `/context-db configure` is a helper that writes a first
-version of them by asking you a few questions.
+type them every time. You add your own rules in a few plain Markdown files in
+`context-db/configuration/` and edit them by hand. `ON_PROMPT.md` holds the
+project's rules for `prompt`, shared with everyone. `ON_PROMPT.local.md` holds
+rules that are only yours, and is gitignored. The other commands have the same
+pair. `/context-db configure` is a helper that writes a first version of them
+by asking you a few questions.
 
 ## What the knowledge base looks like
 

@@ -29,7 +29,8 @@ Layout (the file format is described in prompts/format.md):
     configuration/              plain Markdown the agent or the script reads
       settings.md               project, python, main_branch; committed
       settings.local.md         per-user overrides; gitignored
-      ON_PROMPT.md ...          rules added to each command (ON_UPDATE, ON_WIP, ON_CONFIGURE)
+      ON_PROMPT.md ...          project rules added to a command, one file per command
+      ON_PROMPT.local.md ...    one user's rules for that command; gitignored
     <project>-project/          the project folder: the only place commands write
       wip/wip.md                optional list of the work in progress
     <anything-else>/            background folders: read-only
@@ -55,6 +56,7 @@ CONTEXT_DB = "context-db"
 CONF_DIR_NAME = "configuration"
 SETTINGS_NAME = "settings.md"
 LOCAL_SETTINGS_NAME = "settings.local.md"
+LOCAL_GLOB = "*.local.md"  # every per-user file in configuration/; gitignored
 SETTINGS_KEYS = ("project", "python", "main_branch")
 WIP_LIST_NAME = "wip.md"
 RESERVED_FILES = ("index.md", "log.md")
@@ -151,6 +153,13 @@ WIP_EMPTY = """
 `{wip_list}` lists nothing: no work in progress is recorded.
 """
 
+USER_RULES = """
+# User Rules
+
+These are this user's own rules, from `{path}`. Where they differ from the
+project's rules, follow these.
+"""
+
 NOTHING_TO_ADD = """
 tell the user there is nothing to add and stop
 """
@@ -232,7 +241,7 @@ Settings for the context-db skills. Edit them by hand whenever you like.
 - main_branch: the branch that `/context-db wip --cleanup` compares against.
 
 settings.local.md in this folder, if it exists, overrides any of these for one
-user. It is gitignored.
+user. Every *.local.md file in this folder is gitignored.
 -->
 """
 
@@ -730,16 +739,32 @@ def without_comments(content):
     return re.sub(r"(?s)<!--.*?-->", "", content).strip()
 
 
-def on_file_text(cdb, command):
-    """The body of ON_<COMMAND>.md with frontmatter and HTML comments removed."""
-    path = os.path.join(conf_dir(cdb), f"ON_{command.upper()}.md")
+def on_file_path(cdb, command, local=False):
+    """ON_<COMMAND>.md holds the project's rules; ON_<COMMAND>.local.md one user's."""
+    suffix = ".local.md" if local else ".md"
+    return os.path.join(conf_dir(cdb), f"ON_{command.upper()}{suffix}")
+
+
+def on_file_rules(path):
+    """The body of an ON file with frontmatter and HTML comments removed."""
     if not os.path.isfile(path):
         return ""
-    _, body = read_doc(path)
-    rules = without_comments(body)
-    if rules and not rules.startswith("#"):
-        rules = f"# Project Rules\n\n{rules}"
-    return rules
+    return without_comments(read_doc(path)[1])
+
+
+def on_file_text(cdb, command):
+    """The project's rules for a command, then this user's own, each under a heading.
+
+    A file that starts with a heading of its own keeps it.
+    """
+    project = on_file_rules(on_file_path(cdb, command))
+    if project and not project.startswith("#"):
+        project = f"# Project Rules\n\n{project}"
+    local_path = on_file_path(cdb, command, local=True)
+    user = on_file_rules(local_path)
+    if user and not user.startswith("#"):
+        user = f"{text(USER_RULES, path=local_path)}\n\n{user}"
+    return "\n\n".join(part for part in (project, user) if part)
 
 
 def emit(sections):
@@ -1126,14 +1151,16 @@ def current_rules_section(cdb):
     """What each ON file tells the agent today, for configure to show the user."""
     lines = ["# Current Rules", ""]
     for command in ON_COMMANDS:
-        path = os.path.join(conf_dir(cdb), f"ON_{command.upper()}.md")
+        path = on_file_path(cdb, command)
         if not os.path.isfile(path):
-            lines.append(f"## `{path}` (does not exist yet; setting up creates it)")
-            continue
-        _, body = read_doc(path)
-        rules = without_comments(body)
-        lines.extend([f"## `{path}`, added to every `/context-db {command}`", ""])
-        lines.extend([rules or "(empty: it adds nothing)", ""])
+            lines.extend([f"## `{path}` (does not exist yet; setting up creates it)", ""])
+        else:
+            lines.extend([f"## `{path}`, added to every `/context-db {command}`", ""])
+            lines.extend([on_file_rules(path) or "(empty: it adds nothing)", ""])
+        local_path = on_file_path(cdb, command, local=True)
+        if os.path.isfile(local_path):
+            lines.extend([f"## `{local_path}`, this user's own, added after it", ""])
+            lines.extend([on_file_rules(local_path) or "(empty: it adds nothing)", ""])
     return "\n".join(lines).rstrip()
 
 
@@ -1214,11 +1241,17 @@ def write_if_missing(path, content, created):
     created.append(path)
 
 
-def ignore_local_settings(root, cdb):
-    """Make sure the per-user settings file can never be committed. Returns the line added."""
-    if not git("rev-parse", "--show-toplevel") or git("check-ignore", settings_path(cdb, True)):
+def ignore_local_files(root, cdb):
+    """Make sure no per-user file can ever be committed. Returns the line added.
+
+    One glob covers them all: settings.local.md and every ON_<COMMAND>.local.md.
+    """
+    if not git("rev-parse", "--show-toplevel"):
         return ""
-    line = f"{CONTEXT_DB}/{CONF_DIR_NAME}/{LOCAL_SETTINGS_NAME}"
+    per_user = [settings_path(cdb, True)] + [on_file_path(cdb, c, True) for c in ON_COMMANDS]
+    if len(git("check-ignore", *per_user).splitlines()) == len(per_user):
+        return ""
+    line = f"{CONTEXT_DB}/{CONF_DIR_NAME}/{LOCAL_GLOB}"
     path = os.path.join(root, ".gitignore")
     existing = read_text(path) if os.path.isfile(path) else ""
     separator = "" if not existing or existing.endswith("\n") else "\n"
@@ -1287,7 +1320,7 @@ def cmd_setup(args):
     if local is not None:
         write_settings(local_path, local, LOCAL_SETTINGS_BODY)
         print(f"Wrote {local_path}")
-    ignored = ignore_local_settings(root, cdb)
+    ignored = ignore_local_files(root, cdb)
     if ignored:
         print(f"Added {ignored} to .gitignore")
 

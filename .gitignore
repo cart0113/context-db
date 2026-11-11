@@ -38,4 +38,4 @@ docs/_build/
 .venv/
 .pytest_cache/
 .ruff_cache/
-context-db/configuration/settings.local.md
+context-db/configuration/*.local.md

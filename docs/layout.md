@@ -12,7 +12,8 @@ context-db/
 ├── configuration/               settings and rules, all plain Markdown
 │   ├── settings.md              shared settings
 │   ├── settings.local.md        your own settings, gitignored (optional)
-│   └── ON_PROMPT.md ...         rules the agent sees on each command
+│   ├── ON_PROMPT.md ...         the project's rules for each command
+│   └── ON_PROMPT.local.md ...   your own rules, gitignored (optional)
 ├── acme-payments-project/       the project folder
 │   ├── acme-payments-project.md describes the folder
 │   ├── architecture.md
