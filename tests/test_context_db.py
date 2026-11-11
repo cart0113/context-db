@@ -411,7 +411,7 @@ def test_broken_config_is_reported_cleanly(project):
     config.write_text('{"project": "demo"}')
     result = run(project, "prompt", "x")
     assert result.returncode != 0
-    assert "has no python, main_branch" in result.stdout
+    assert "has no python, main_branch, update_mode" in result.stdout
 
 
 def test_no_placeholder_is_left_unfilled(example):
@@ -668,7 +668,8 @@ def test_init_scaffolds_and_never_overwrites(tmp_path):
     assert result.returncode == 0, result.stdout
     cdb = tmp_path / "context-db"
     assert (cdb / "context-db.json").read_text() == (
-        '{\n  "project": "demo",\n  "python": "python3.11",\n  "main_branch": "trunk"\n}\n'
+        '{\n  "project": "demo",\n  "python": "python3.11",\n  "main_branch": "trunk",\n'
+        '  "update_mode": "on-command"\n}\n'
     )
     for name in ("ON_PROMPT.md", "ON_UPDATE.md", "ON_WIP.md", "ON_CONFIGURE.md"):
         assert (cdb / "context-db-on-markdown" / name).exists()
@@ -679,10 +680,42 @@ def test_init_scaffolds_and_never_overwrites(tmp_path):
     write(cdb / "context-db-on-markdown" / "ON_PROMPT.md", "mine\n")
     again = run(tmp_path, "init", "--main-branch", "main")
     assert again.returncode == 0
-    assert (cdb / "context-db-on-markdown" / "ON_PROMPT.md").read_text() == "mine\n"
+    kept = (cdb / "context-db-on-markdown" / "ON_PROMPT.md").read_text()
+    assert kept.startswith("mine\n") and "context-db update mode" in kept
     config = json.loads((cdb / "context-db.json").read_text())
     assert config["main_branch"] == "main" and config["python"] == "python3.11"
     assert (tmp_path / ".gitignore").read_text().count("context-db.local.json") == 1
+
+
+def test_update_mode_is_written_into_on_prompt_and_reaches_the_agent(tmp_path):
+    assert run(tmp_path, "init", "--project", "demo").returncode == 0
+    on_prompt = tmp_path / "context-db" / "context-db-on-markdown" / "ON_PROMPT.md"
+    out = run(tmp_path, "prompt", "x").stdout
+    assert "only when the user runs `/context-db update`" in out
+    assert "<!--" not in out
+
+    result = run(tmp_path, "init", "--update-mode", "agent-decides")
+    assert result.returncode == 0, result.stdout
+    out = run(tmp_path, "prompt", "x").stdout
+    assert "You may update the knowledge base without being asked" in out
+    assert "context-db.py update '<what you learned>'" in out
+    assert "only when the user runs" not in out
+    config = json.loads((tmp_path / "context-db" / "context-db.json").read_text())
+    assert config["update_mode"] == "agent-decides"
+
+    # The user may reword the paragraph; a later init without the flag keeps it.
+    on_prompt.write_text(on_prompt.read_text().replace("Keep the bar high", "Be picky"))
+    assert run(tmp_path, "init").returncode == 0
+    assert "Be picky" in on_prompt.read_text()
+    assert on_prompt.read_text().count("context-db update mode: written") == 1
+    assert run(tmp_path, "init", "--update-mode", "sometimes").returncode != 0
+
+
+def test_configure_asks_its_questions_as_a_menu(tmp_path):
+    out = run(tmp_path, "configure").stdout
+    assert "AskUserQuestion" in out
+    assert "`on-command`" in out and "`agent-decides`" in out
+    assert "--update-mode <mode>" in out
 
 
 def test_init_rejects_bad_input_without_writing_anything(tmp_path):

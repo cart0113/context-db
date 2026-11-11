@@ -65,6 +65,13 @@ only committed?), "descriptor" in `configure`, and "settle with the user" (wait,
 or proceed?). Each now has a definition or an explicit rule in the prompt. When
 adding a step, ask what a reader with no context would have to guess.
 
+## Configure is a menu, not a form
+
+The owner wants `/context-db configure` to feel like a guided helper: one
+question at a time, as a menu with a recommended option, using the agent's
+question tool where it has one. Add a new setting as a question in
+`configure.md` and a flag on `init`, never as something to edit by hand.
+
 ## Lead with what to do, then the constraints
 
 A prompt that opens with a list of prohibitions makes weaker models conclude

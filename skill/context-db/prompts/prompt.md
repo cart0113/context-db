@@ -30,4 +30,5 @@ exception is an entry that says the code does not follow it yet: that is a
 requirement still to be built, not a stale note.
 
 Do not run `/context-db prompt` yourself; the user invokes it. To consult
-context-db again later in the session, navigate it the same way.
+context-db again later in the session, navigate it the same way. Whether you may
+write to it on your own is stated under Project Rules below.

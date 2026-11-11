@@ -1,48 +1,72 @@
 # Context-db Configure
 
-Set up or repair context-db in this repository. What the script detected is
-listed under Detected State below.
+Set up or repair context-db in this repository by asking the user a short
+series of questions, then running one command with the answers. What the script
+detected is listed under Detected State below.
 
-1. Tell the user the three values you intend to use. A value that a settings
-   file already has stays as it is unless the user asks for a change. For a
-   value that is missing, take the suggested one. If that suggestion is marked
-   as a guess, or the user has said something that conflicts with it, ask before
-   going on. Otherwise go on without waiting.
-   - `project`: a short name such as `acme-payments`. The project folder is
-     `{cdb}/<project>-project/`.
-   - `python`: the command that runs this script. It needs Python 3.8 or newer.
-   - `main_branch`: the branch that work in progress is compared against.
-2. Run:
+## How to ask
 
-       {init_cmd} --project <name> --python <command> --main-branch <branch>
+Ask one question at a time, as a menu. Use your question tool if you have one
+(in Claude Code, `AskUserQuestion`); otherwise print the options as a numbered
+list and wait for the answer. Put the recommended option first and mark it. When
+a settings file already has a value, that value is the recommended option. Every
+question also accepts an answer the user types.
 
-   It writes `{cdb}/{config_name}`, creates whatever is missing without
-   overwriting anything, and regenerates the index.
+## The questions
 
-   `{config_name}` is shared by everyone who works on the repository. When a
-   value is right only for this user, typically an interpreter path on their
-   machine, give the shared file the value that suits the team (usually
-   `--python python3`) and add `--local python=<command>`. That writes
-   `{cdb}/{local_config_name}`, which is gitignored and overrides the shared
-   value. Ask the user which file a value belongs in when it is not obvious.
-3. Fix every error that `init` printed.
-4. Open the project folder's descriptor, `{cdb}/<project>-project/<project>-project.md`.
-   Replace its `description` with one or two specific lines that say what this
-   project is. Take them from the README or from what the user has told you.
-   Change nothing else in the file.
-5. Look for `AGENTS.md` and `CLAUDE.md` at the repository root. If one exists
-   and does not mention context-db, offer to append the text of
-   `{agents_snippet}` to it. If neither exists, offer to create one from that
-   text: `CLAUDE.md` for Claude Code, `AGENTS.md` for most other agents.
-6. Ask whether any background folders should be mounted: shared standards or
-   reference knowledge from another repository. Mount each one as a symlink or a
-   copy at the top level of `{cdb}/`, under the name of the folder it comes
-   from. A mount that only this user should have also goes in `.gitignore`.
-   Background folders are read-only here.
-7. Run:
+1. **Project name.** "What should this project be called?" Offer the suggested
+   name. The project folder will be `{cdb}/<name>-project/`.
+2. **Who updates the knowledge base.** "When should the agent write to the
+   knowledge base?"
+   - `on-command`: only when you run `/context-db update`. Recommended. Nothing
+     is written unless you ask.
+   - `agent-decides`: also whenever the agent thinks it has learned something
+     worth keeping. It tells you each time, and never commits on its own.
+3. **Main branch.** "Which branch is your main branch?" Offer the suggested
+   branch. Skip this question when the suggestion is not marked as a guess.
+4. **Python.** Ask only when Detected State says `python3` is missing or too
+   old: "Which command runs Python 3.8 or newer?" Offer the suggested value, and
+   ask whether it is right for the whole team or only for this machine.
+5. **Note for the agent.** Look for `AGENTS.md` and `CLAUDE.md` at the
+   repository root. If neither mentions context-db: "Add a short note that tells
+   the agent not to read the knowledge base unless you ask?" Options: add it to
+   the file that exists, create `CLAUDE.md` (Claude Code), create `AGENTS.md`
+   (most other agents), or skip.
+6. **Shared folders.** "Do you want to mount shared knowledge from another
+   repository, such as coding standards?" Options: no (recommended), or yes,
+   followed by the path.
+
+## Then do it
+
+1. Run:
+
+       {init_cmd} --project <name> --update-mode <mode> --main-branch <branch> --python <command>
+
+   Use `--python python3` unless question 4 was asked. For a Python that is
+   right only on this machine, keep `--python python3` and add
+   `--local python=<command>`; that goes in `{cdb}/{local_config_name}`, which
+   is gitignored and overrides the shared `{cdb}/{config_name}`.
+
+   The command writes the settings, creates whatever is missing without
+   overwriting anything, writes the answer to question 2 into
+   `{cdb}/context-db-on-markdown/ON_PROMPT.md`, and regenerates the index.
+2. Fix every error it printed.
+3. Open the project folder's descriptor,
+   `{cdb}/<name>-project/<name>-project.md`. Replace its `description` with one
+   or two specific lines that say what this project is, taken from the README or
+   from what the user has told you. Change nothing else in the file.
+4. Carry out the answer to question 5. The note is the text of
+   `{agents_snippet}`.
+5. Carry out the answer to question 6. Mount each folder as a symlink at the top
+   level of `{cdb}/`, under the name of the folder it comes from. Ask whether the
+   mount is for the whole team or only for this user; one that is only for this
+   user also goes in `.gitignore`. Shared folders are read-only here.
+6. Run:
 
        {index_cmd} --check
 
    It must report no errors.
-8. Tell the user what was created and what the settings now say. Do not commit;
-   leave the new files for the user to review.
+7. Show the user a short summary: the settings, what was created, and the two
+   commands they will use, `/context-db prompt "<task>"` before work and
+   `/context-db update --push` after it. Do not commit; leave the new files for
+   the user to review.

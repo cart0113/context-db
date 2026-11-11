@@ -30,8 +30,13 @@ In Claude Code, type:
 /context-db configure
 ```
 
-The agent suggests a project name, checks which Python to use, and creates the
-folders. It asks you about anything it is unsure of.
+The agent asks a few questions as a menu, then creates the folders. The main
+question is who updates the knowledge base:
+
+- **Only when you run `/context-db update`.** Nothing is written unless you ask.
+  This is the default.
+- **Also when the agent thinks it should.** The agent writes down what it learns
+  as it goes, and tells you each time. It never commits on its own.
 
 To do the same by hand:
 
@@ -81,7 +86,8 @@ After it:
 /context-db update --push
 ```
 
-That is the whole loop. For work that runs over several sessions, start with
+That is the whole loop: `prompt`, work for as many turns as it takes, `update
+--push`. For work that runs over several sessions, start with
 `/context-db wip`. [Commands](commands.md) explains all four.
 
 ## Settings
@@ -94,7 +100,8 @@ Settings live in two files.
 {
   "project": "acme-payments",
   "python": "python3",
-  "main_branch": "main"
+  "main_branch": "main",
+  "update_mode": "on-command"
 }
 ```
 
@@ -103,6 +110,7 @@ Settings live in two files.
 | `project` | The project's name. The project folder is `context-db/<project>-project/`. |
 | `python` | The command the agent uses to run the script. |
 | `main_branch` | The branch that `wip` compares your current branch against. |
+| `update_mode` | `on-command` or `agent-decides`. Who decides when the knowledge base is updated. |
 
 `context-db/context-db.local.json` is yours alone. It is gitignored, and
 anything in it overrides the shared file. Use it when your machine needs

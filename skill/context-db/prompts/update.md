@@ -51,5 +51,3 @@ Run:
 
 It regenerates every `index.md` and reports format problems. Fix what it reports
 and run it again until it is clean. Never edit an `index.md` by hand.
-
-Do not run `/context-db update` yourself; the user invokes it.

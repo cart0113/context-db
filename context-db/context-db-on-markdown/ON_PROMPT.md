@@ -12,3 +12,9 @@ under `skill/`.
 
 No unsolicited explanations. Don't explain code unless asked. Skip summary
 recaps after edits.
+
+<!-- context-db update mode: written by configure. Reword it freely. -->
+Write to the knowledge base only when the user runs `/context-db update`. At
+any other time, leave `context-db/` alone. If you learn something worth keeping, say
+so in one line and suggest that command.
+<!-- end of context-db update mode -->

@@ -136,11 +136,17 @@ What the agent does:
 
 1. Looks at what is already there: the Python on your machine, the repository
    name, the main branch, and any existing settings.
-2. Agrees the project name, the Python command, and the main branch with you.
+2. Asks you a few questions, one at a time, as a menu: the project name, who
+   updates the knowledge base, whether to add a note for the agent to
+   `AGENTS.md` or `CLAUDE.md`, and whether to mount shared folders.
 3. Writes the settings and creates whatever is missing. It never overwrites
    anything.
-4. Offers to add a note about context-db to your `AGENTS.md` or `CLAUDE.md`, and
-   asks whether you want to mount any shared folders.
+
+The question about updates has two answers. With `on-command`, the agent writes
+to the knowledge base only when you run `/context-db update`. With
+`agent-decides`, it also writes when it thinks it has learned something worth
+keeping, and tells you each time. Your answer is written as a short paragraph
+into `ON_PROMPT.md`, where you can reword it.
 
 :::{dropdown} The text the agent receives
 :color: secondary
@@ -182,8 +188,8 @@ python3 .claude/skills/context-db/context-db.py index --check
 ```
 
 `init` writes the settings and creates whatever is missing. Its options are
-`--project`, `--python`, `--main-branch`, and `--local KEY=VALUE` for a setting
-that applies only to you.
+`--project`, `--update-mode`, `--main-branch`, `--python`, and `--local
+KEY=VALUE` for a setting that applies only to you.
 
 `index` regenerates every `index.md` in the project folder and checks the
 format. Give it a folder to work on a different one. With `--check` it changes

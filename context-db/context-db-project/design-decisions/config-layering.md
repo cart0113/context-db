@@ -8,12 +8,19 @@ description:
 
 # Config layering
 
-v0.0 had no config. v0.1 has three keys, because each answers a question the
+v0.0 had no config. v0.1 has four keys, because each answers a question the
 script cannot reliably answer itself:
 
 - `project` names the project folder, so nothing has to glob for `*-project/`.
 - `python` is the interpreter. On some machines `python3` is too old or absent.
 - `main_branch` is the diff base for `/context-db wip`.
+- `update_mode` records the owner's answer to "who updates the knowledge base":
+  `on-command` (only on `/context-db update`) or `agent-decides`. The owner
+  asked on 2026-11-11 for `configure` to ask this and to deliver the answer
+  through `ON_PROMPT.md`. So `init` writes a marked paragraph there, where the
+  user can reword it, and replaces it only when `--update-mode` is passed. The
+  fixed "do not run update yourself" line was removed from `update.md`, because
+  it would contradict `agent-decides`.
 
 ## Two files
 

@@ -44,7 +44,8 @@ CONTEXT_DB = "context-db"
 CONFIG_NAME = "context-db.json"
 LOCAL_CONFIG_NAME = "context-db.local.json"
 ON_DIR_NAME = "context-db-on-markdown"
-CONFIG_KEYS = ("project", "python", "main_branch")
+CONFIG_KEYS = ("project", "python", "main_branch", "update_mode")
+UPDATE_MODES = ("on-command", "agent-decides")
 RESERVED_FILES = ("index.md", "log.md")
 STATUSES = ("draft", "stable", "deprecated")
 ON_COMMANDS = ("prompt", "update", "wip", "configure")
@@ -133,6 +134,31 @@ V0_LAYOUT_FOUND = """
 This repository still has the v0.0 layout ({leftovers}). Follow the migration
 guide before step 2: {guide}
 """
+
+# What `configure` writes into ON_PROMPT.md for each update mode. The user may
+# reword it afterwards; init replaces the block only when the mode is given.
+
+UPDATE_MODE_START = "<!-- context-db update mode: written by configure. Reword it freely. -->"
+UPDATE_MODE_END = "<!-- end of context-db update mode -->"
+
+UPDATE_MODE_TEXT = {
+    "on-command": """
+Write to the knowledge base only when the user runs `/context-db update`. At
+any other time, leave `{cdb}/` alone. If you learn something worth keeping, say
+so in one line and suggest that command.
+""",
+    "agent-decides": """
+You may update the knowledge base without being asked. When this session
+produces something the next agent would get wrong without it, such as a
+correction from the user, a decision and its reason, or a pitfall, run:
+
+    {update_cmd} '<what you learned>'
+
+and follow what it prints. Keep the bar high: most turns produce nothing worth
+storing. Tell the user in one line whenever you do this. Never commit or push
+on your own.
+""",
+}
 
 EMPTY_INDEX = """
 <!-- Nothing is in this folder yet. -->
@@ -1036,6 +1062,31 @@ def check_project_name(cdb, name):
         )
 
 
+def write_update_mode(cdb, config, replace):
+    """Put the update-mode paragraph into ON_PROMPT.md. Returns True when it wrote.
+
+    An existing block is the user's to reword, so it is replaced only when the
+    mode was passed on this run.
+    """
+    path = os.path.join(on_dir(cdb), "ON_PROMPT.md")
+    content = read_text(path)
+    paragraph = text(
+        UPDATE_MODE_TEXT[config["update_mode"]],
+        cdb=cdb,
+        update_cmd=f"{script_command(config['python'])} update",
+    )
+    block = f"{UPDATE_MODE_START}\n{paragraph}\n{UPDATE_MODE_END}"
+    start, end = content.find(UPDATE_MODE_START), content.find(UPDATE_MODE_END)
+    if start != -1 and end != -1:
+        if not replace:
+            return False
+        content = content[:start] + block + content[end + len(UPDATE_MODE_END) :]
+    else:
+        content = content.rstrip("\n") + "\n\n" + block + "\n"
+    write_text(path, content)
+    return True
+
+
 def cmd_init(args):
     root = find_repo_root()
     cdb = context_db_dir()
@@ -1048,6 +1099,7 @@ def cmd_init(args):
         ("project", args.project),
         ("python", args.python),
         ("main_branch", args.main_branch),
+        ("update_mode", args.update_mode),
     ):
         if value:
             config[key] = value
@@ -1058,6 +1110,10 @@ def cmd_init(args):
         config["python"] = "python3"
     if "main_branch" not in config:
         config["main_branch"] = detect_main_branch()[0]
+    if "update_mode" not in config:
+        config["update_mode"] = UPDATE_MODES[0]
+    if config["update_mode"] not in UPDATE_MODES:
+        sys.exit(f"Error: update_mode must be one of {', '.join(UPDATE_MODES)}.")
 
     local = None
     if args.local:
@@ -1092,6 +1148,8 @@ def cmd_init(args):
         filename = f"ON_{command.upper()}.md"
         starter = read_text(os.path.join(starters, filename))
         write_if_missing(os.path.join(on_dir(cdb), filename), starter, created)
+    if write_update_mode(cdb, config, replace=bool(args.update_mode)):
+        print(f"Wrote the update mode ({config['update_mode']}) into {on_dir(cdb)}/ON_PROMPT.md")
     write_if_missing(
         os.path.join(project, f"{name}-project.md"),
         text(PROJECT_DESCRIPTOR, name=name) + "\n",
@@ -1232,6 +1290,11 @@ def build_parser():
     p.add_argument("--project", help="Project name; its folder is context-db/<name>-project/")
     p.add_argument("--python", help="Interpreter command used to run this script")
     p.add_argument("--main-branch", help="Branch that work in progress is compared against")
+    p.add_argument(
+        "--update-mode",
+        choices=UPDATE_MODES,
+        help="Who decides when the knowledge base is updated; written into ON_PROMPT.md",
+    )
     p.add_argument(
         "--local",
         action="append",
