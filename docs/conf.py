@@ -4,6 +4,8 @@ Pages are Markdown (MyST). The look is the PyData theme plus _static/custom.css.
 Build with:  sphinx-build -W docs docs/_build/html
 """
 
+import os
+
 project = "context-db"
 author = "context-db contributors"
 copyright = "2026, context-db contributors"
@@ -40,6 +42,14 @@ html_css_files = [
     "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700;800&display=swap",
     "custom.css",
 ]
+
+# The look picker: a small panel for trying out style ideas on the real pages.
+# It lives in docs/looks/ and is off. Build with CONTEXT_DB_LOOKS=1 to turn it on:
+#   CONTEXT_DB_LOOKS=1 sphinx-build -W docs docs/_build/html
+if os.environ.get("CONTEXT_DB_LOOKS"):
+    html_static_path.append("looks")
+    html_css_files.append("looks.css")
+    html_js_files = ["looks.js"]
 # Pages open in light mode. The switch in the header still offers dark.
 html_context = {"default_mode": "light"}
 html_show_sourcelink = False
