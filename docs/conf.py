@@ -64,8 +64,8 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc"],
     "pygments_light_style": "github-light",
     "pygments_dark_style": "github-dark",
-    "footer_start": ["copyright"],
-    "footer_end": [],
+    "footer_start": ["copyright", "sphinx-version"],
+    "footer_end": ["theme-version"],
 }
 
 # Every page is top level, so the left sidebar would always be empty.
