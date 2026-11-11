@@ -21,8 +21,8 @@ question also accepts an answer the user types.
 
 If the settings file already exists, begin by asking what the user wants to do:
 change how the agent behaves (go to Rules), change a setting (go to Settings),
-mount a shared folder (question 5), or only check that everything is in order
-(go to Finish). Do only what they pick.
+add or change the other repositories this project relies on (question 5), or
+only check that everything is in order (go to Finish). Do only what they pick.
 
 ## Settings
 
@@ -38,12 +38,20 @@ mount a shared folder (question 5), or only check that everything is in order
    the agent not to read the knowledge base unless you ask?" Options: add it to
    the file that exists, create `CLAUDE.md` (Claude Code), create `AGENTS.md`
    (most other agents), or skip. The note is the text of `{agents_snippet}`.
-5. **Shared folders.** "Do you want to mount shared knowledge from another
-   repository, such as coding standards?" Options: no (recommended), or yes,
-   followed by the path. Mount each folder as a symlink at the top level of
-   `{cdb}/`, under the name of the folder it comes from. Ask whether the mount is
-   for the whole team or only for this user; one that is only for this user also
-   goes in `.gitignore`. Shared folders are read-only here.
+5. **Other repositories.** "Does this project rely on other repositories?"
+   Options: no, or yes. For each one, get where it is (a path on disk or a URL)
+   and one line on what this project uses it for. An agent that does not know
+   about them will guess at code it could have read.
+
+   Record them in `{on_dir}/ON_PROMPT.md`, under the line "Related
+   repositories:", one per line: name, location, what it is for. Replace that
+   list if it is already there. Do not clone anything.
+
+   If a repository is on disk and has its own `context-db/` folder, also offer
+   to mount its knowledge here: a symlink at the top level of `{cdb}/`, named
+   after the folder it points to. Ask whether the mount is for the whole team or
+   only for this user; one that is only for this user also goes in `.gitignore`.
+   Mounted folders are read-only here.
 
 ## Rules
 
@@ -97,7 +105,19 @@ Run:
 
     {index_cmd} --check
 
-It must report no errors. Then show the user a short summary: the settings, the
-rules as they now stand, and the two commands they will use,
-`/context-db prompt "<task>"` before work and `/context-db update --push` after
-it. Do not commit; leave the changes for the user to review.
+It must report no errors. Then give the user a short summary, and nothing more:
+
+- **What changed**: each file you created or edited in this run, with a few
+  words on what changed. If nothing changed, say so.
+- **What controls context-db**, so that they know where to look later:
+  - `{cdb}/{config_name}`: the shared settings.
+  - `{cdb}/{local_config_name}`: settings for this user only, if it exists.
+  - `{on_dir}/ON_PROMPT.md`, `ON_UPDATE.md`, `ON_WIP.md`, `ON_CONFIGURE.md`: the
+    rules added to each command.
+  - `AGENTS.md` or `CLAUDE.md`: the note that keeps the agent out of the
+    knowledge base until asked.
+- **What to type**: `/context-db prompt "<task>"` before work,
+  `/context-db update --push` after it, and `/context-db configure` to change
+  any of the above.
+
+Do not commit; leave the changes for the user to review.

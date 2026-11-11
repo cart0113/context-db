@@ -728,6 +728,8 @@ def test_configure_shows_the_current_rules_so_they_can_be_changed(project):
     assert "only when the user runs `/context-db update`" in rules
     assert "ON_WIP.md`, added to every `/context-db wip`\n\n(empty: it adds nothing)" in rules
     assert "begin by asking what the user wants to do" in out
+    assert "Does this project rely on other repositories?" in out
+    assert "**What controls context-db**" in out
 
 
 def test_init_rejects_bad_input_without_writing_anything(tmp_path):

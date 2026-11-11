@@ -77,6 +77,12 @@ instructions that keep an agent grounded, the `ON_*.md` files are how a user
 controls that behavior, and `configure` is the helper that reads those files,
 asks what the user wants changed, and edits them. Docs must say this plainly.
 
+Two more requirements from the owner, the same day. `configure` asks which
+other repositories the project relies on, by path or URL, and lists them in
+`ON_PROMPT.md`; nothing is cloned and no setting is added. And its closing
+summary stays short: the files changed in this run, then the files that control
+context-db. Easy matters more than complete; do not let `configure` grow.
+
 ## Lead with what to do, then the constraints
 
 A prompt that opens with a list of prohibitions makes weaker models conclude

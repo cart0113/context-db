@@ -138,12 +138,25 @@ What the agent does:
    name, the main branch, and any existing settings.
 2. Asks you a few questions, one at a time, as a menu: the project name, who
    updates the knowledge base, whether to add a note for the agent to
-   `AGENTS.md` or `CLAUDE.md`, and whether to mount shared folders.
+   `AGENTS.md` or `CLAUDE.md`, and which other repositories this project relies
+   on. Those repositories, by path or URL, are listed in `ON_PROMPT.md` so that
+   the agent knows where to look.
 3. Reads the rule files, tells you what they make the agent do today, and asks
    whether you want to change anything. You say what you want in your own
    words, and the agent edits the files and shows you the result.
 4. Writes the settings and creates whatever is missing. It never overwrites
    anything.
+5. Ends with a short summary: the files it changed, and the files that control
+   context-db.
+
+These are the files that control context-db:
+
+| File | What it controls |
+| --- | --- |
+| `context-db/context-db.json` | Shared settings |
+| `context-db/context-db.local.json` | Your own settings, if you have any |
+| `context-db/context-db-on-markdown/ON_*.md` | The rules added to each command |
+| `AGENTS.md` or `CLAUDE.md` | The note that keeps the agent out of the knowledge base until asked |
 
 The question about updates has two answers. With `on-command`, the agent writes
 to the knowledge base only when you run `/context-db update`. With
