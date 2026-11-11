@@ -59,6 +59,10 @@ pushes. Most of the time there is nothing to write down, and it says so.
   `context-db/configuration/`, named after the commands: `ON_PROMPT.md` is added
   to every `prompt` and `ON_UPDATE.md` to every `update`.
   [How it all fits together](commands.md#how-it-all-fits-together) shows every word the agent receives.
+- A small Python script builds each folder's OKF index
+  [on the fly](layout.md#dynamic-indexing), from the notes as they are at that moment. No `index.md`
+  files are kept in your repo, so there is nothing to keep in sync and the
+  index cannot drift from the notes.
 - The knowledge base holds only what the code cannot say. Agents are told to
   watch for notes that repeat the code, because a copy drifts. `update` stores
   only what future agents need to know to be effective, and `maintain` clears
