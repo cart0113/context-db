@@ -10,13 +10,13 @@
   --cdb-sky: #0ea5e9;
   --cdb-blue: #3b82f6;
   --cdb-indigo: #6366f1;
-  /* Gradients use the palette at half strength, so they stay in the background. */
+  /* Gradients use the palette at a bit over half strength, so they stay in the background. */
   --cdb-gradient: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--cdb-teal) 50%, transparent),
-    color-mix(in srgb, var(--cdb-sky) 50%, transparent) 35%,
-    color-mix(in srgb, var(--cdb-blue) 50%, transparent) 68%,
-    color-mix(in srgb, var(--cdb-indigo) 50%, transparent)
+    color-mix(in srgb, var(--cdb-teal) 57.5%, transparent),
+    color-mix(in srgb, var(--cdb-sky) 57.5%, transparent) 35%,
+    color-mix(in srgb, var(--cdb-blue) 57.5%, transparent) 68%,
+    color-mix(in srgb, var(--cdb-indigo) 57.5%, transparent)
   );
   /* The theme's default type reads large; the whole site is set 10% smaller.
      Everything the theme sizes in rem scales with it. */
@@ -79,9 +79,9 @@ body::before {
   inset: 0 0 auto 0;
   height: 46rem;
   background:
-    radial-gradient(38rem 22rem at 12% 10%, color-mix(in srgb, var(--cdb-teal) 13%, transparent), transparent 70%),
-    radial-gradient(36rem 24rem at 52% 0%, color-mix(in srgb, var(--cdb-blue) 12%, transparent), transparent 70%),
-    radial-gradient(32rem 20rem at 92% 12%, color-mix(in srgb, var(--cdb-indigo) 11%, transparent), transparent 70%);
+    radial-gradient(38rem 22rem at 12% 10%, color-mix(in srgb, var(--cdb-teal) 15%, transparent), transparent 70%),
+    radial-gradient(36rem 24rem at 52% 0%, color-mix(in srgb, var(--cdb-blue) 14%, transparent), transparent 70%),
+    radial-gradient(32rem 20rem at 92% 12%, color-mix(in srgb, var(--cdb-indigo) 12.5%, transparent), transparent 70%);
   pointer-events: none;
 }
 
@@ -147,25 +147,25 @@ body::before {
   border-bottom: 3px solid transparent;
   border-image: linear-gradient(
       90deg,
-      color-mix(in srgb, var(--cdb-teal) 50%, transparent),
-      color-mix(in srgb, var(--cdb-blue) 50%, transparent) 30%,
+      color-mix(in srgb, var(--cdb-teal) 57.5%, transparent),
+      color-mix(in srgb, var(--cdb-blue) 57.5%, transparent) 30%,
       transparent 62%
     )
     1;
 }
 
-/* The home page. Its title is the gradient, toned halfway toward the text
+/* The home page. Its title is the gradient, toned partway toward the text
    color and drifting sideways: the stops are written out twice so that the
    loop has no seam. */
 section#context-db > h1 {
   display: inline-block;
   margin: 2rem 0 0.75rem;
-  font-size: clamp(2.2rem, 5vw, 3.25rem);
+  font-size: clamp(2rem, 4.5vw, 2.9rem);
   line-height: 1.1;
-  --cdb-title-teal: color-mix(in srgb, var(--cdb-teal) 50%, var(--pst-color-text-base));
-  --cdb-title-sky: color-mix(in srgb, var(--cdb-sky) 50%, var(--pst-color-text-base));
-  --cdb-title-blue: color-mix(in srgb, var(--cdb-blue) 50%, var(--pst-color-text-base));
-  --cdb-title-indigo: color-mix(in srgb, var(--cdb-indigo) 50%, var(--pst-color-text-base));
+  --cdb-title-teal: color-mix(in srgb, var(--cdb-teal) 57.5%, var(--pst-color-text-base));
+  --cdb-title-sky: color-mix(in srgb, var(--cdb-sky) 57.5%, var(--pst-color-text-base));
+  --cdb-title-blue: color-mix(in srgb, var(--cdb-blue) 57.5%, var(--pst-color-text-base));
+  --cdb-title-indigo: color-mix(in srgb, var(--cdb-indigo) 57.5%, var(--pst-color-text-base));
   background: linear-gradient(
     90deg,
     var(--cdb-title-teal),
