@@ -64,7 +64,8 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc"],
     "pygments_light_style": "github-light",
     "pygments_dark_style": "github-dark",
-    "footer_start": ["copyright", "sphinx-version"],
+    # No copyright line: nothing needs one, and it only made the footer taller.
+    "footer_start": ["sphinx-version"],
     "footer_end": ["theme-version"],
 }
 

@@ -332,3 +332,28 @@ section#context-db > h1 {
   padding-left: 1rem;
   border-left: 3px solid var(--cdb-tint-border);
 }
+
+/* The footer: the two credits on one short line, and half the height the theme
+   gives it. On a phone they wrap onto two lines instead of stacking in blocks. */
+.bd-footer {
+  font-size: 0.7rem;
+}
+.bd-footer .bd-footer__inner {
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: center;
+  gap: 0 1rem;
+  padding: 0.6rem 1rem;
+}
+.bd-footer .footer-items__start,
+.bd-footer .footer-items__end {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: row;
+  width: auto;
+  gap: 0;
+  margin: 0;
+}
+.bd-footer .footer-item p {
+  margin: 0;
+}

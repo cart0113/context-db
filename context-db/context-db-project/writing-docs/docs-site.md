@@ -56,7 +56,10 @@ Added by the owner on 2026-11-11:
 - No call-to-action buttons under the intro. The owner found the two pill
   buttons "really tired, very much what agents look like". The intro's own link
   to the OKF page and the Install section do that job.
-- The footer keeps the theme's standard Sphinx and PyData credits.
+- The footer keeps the theme's Sphinx and PyData credits and nothing else, on
+  one small line. The owner had the copyright line removed and the footer
+  halved because it "looks really bad on a phone". Check a footer change at
+  phone width.
 - The Commands page ends with "How it all fits together": what the script
   sends for each command, section by section, next to the ON files. The owner
   wants it "crystal clear how the whole system works", and wants this stressed:
