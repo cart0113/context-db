@@ -45,6 +45,33 @@ When the work is done:
 The agent writes down anything the next agent would need, then commits and
 pushes. Most of the time there is nothing to write down, and it says so.
 
+## Benefits
+
+- Your project's knowledge is kept as a hierarchical wiki of short Markdown
+  notes in your repo, in the [Open Knowledge Format](okf.md). Every note has a
+  one-line description, so the agent finds the few that match the task without
+  reading a large instructions file on every turn.
+- Two commands bracket the work: `/context-db prompt` before a task and
+  `/context-db update` after it. The agent reads and writes the knowledge base
+  when you say so, which refreshes its context during long work sessions.
+- context-db is nothing more than context: canned instructions plus your own
+  rules, sent when you run a command. Your rules are plain Markdown files in
+  `context-db/configuration/`, named after the commands: `ON_PROMPT.md` is added
+  to every `prompt` and `ON_UPDATE.md` to every `update`.
+  [How it all fits together](commands.md#how-it-all-fits-together) shows every word the agent receives.
+- The knowledge base holds only what the code cannot say. Agents are told to
+  watch for notes that repeat the code, because a copy drifts. `update` stores
+  only what future agents need to know to be effective, and `maintain` clears
+  out what has gone stale, so it stays small and efficient.
+- `wip` keeps a short list of the work in progress with a plan for each, so a
+  new session can pick up long work where the last one stopped. It is useful on
+  a new project, where one feature often takes many agent sessions.
+- Shared standards and reference material are mounted as background folders.
+  The agent is told which folders are background and which is the project's
+  own, and it writes only to the project's. It knows which knowledge is
+  critical to the project, and can still find background knowledge when it
+  needs it.
+
 ## Install
 
 Paste this into your coding agent, in the project where you want it:

@@ -63,9 +63,10 @@ Added by the owner on 2026-11-11:
   context-db "is nothing more than some canned context alongside user
   controlled context in the ON files", sent on demand when the user invokes a
   command.
-- The home page and the README get a Benefits section after Example, which
-  links to that section. Not written yet: a bullet list was proposed to the
-  owner on 2026-11-11 and awaits their edits.
+- The home page and the README have a Benefits section after Example, which
+  links to that section. The owner wrote its wording by hand on 2026-11-11,
+  after rejecting a long list and then a list of one-liners: two or three plain
+  sentences a bullet. Fix typos there, but do not rewrite it.
 - Colorful, but restrained. The owner had every gradient halved, the home page
   title cut down, and all type set 10% smaller, because the defaults read "a
   little big". The name in the header was already the right size. Lean smaller
