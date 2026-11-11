@@ -13,6 +13,39 @@ idea.
 
 Documentation: <https://cart0113.github.io/context-db/>
 
+## Install
+
+Paste this into your coding agent, in the project where you want it:
+
+```text
+Set up context-db in this repository. Follow the Install steps in the README at
+https://github.com/cart0113/context-db
+```
+
+The agent copies the skills into your project, asks you a few questions, and
+creates the knowledge base. These are the steps it follows. You can also run
+them yourself. You need Python 3.8 or newer.
+
+1. Copy the skills into the project:
+
+   ```bash
+   git clone -b v0.1 https://github.com/cart0113/context-db /tmp/context-db
+   mkdir -p .claude/skills
+   cp -r /tmp/context-db/skill/context-db .claude/skills/
+   ```
+
+2. Set it up. An agent runs this command and follows the instructions it
+   prints:
+
+   ```bash
+   python3 .claude/skills/context-db/context-db.py configure
+   ```
+
+   In Claude Code you can type `/context-db configure` instead. To set it up
+   with no agent at all, run the same script with `init --project <name>`.
+
+[Setup](https://cart0113.github.io/context-db/setup.html) has the full steps.
+
 ## What it is
 
 context-db is a set of skills that you install in a coding agent such as Claude
@@ -48,9 +81,9 @@ your-project/
 
 | Command | When to run it | What the agent does |
 | --- | --- | --- |
-| `/context-db prompt "<task>"` | Before a task | Looks up what the knowledge base says about the task. |
+| `/context-db prompt` | Before a task | Looks up what the knowledge base says about the task. |
 | `/context-db update` | After a task | Writes down anything the next agent would need. `--push` also commits and pushes. |
-| `/context-db wip "<what you are doing>"` | During long work | Keeps a short plan of the work in progress, and deletes plans for work that has landed. |
+| `/context-db wip` | During long work | Keeps a short plan of the work in progress, and deletes plans for work that has landed. |
 | `/context-db configure` | Once per repository | Sets everything up. |
 
 Nothing runs by itself. The agent reads or writes the knowledge base only when
@@ -61,6 +94,9 @@ type them every time. You control those instructions with a few rule files in
 `context-db/context-db-on-markdown/`, and `/context-db configure` edits them for
 you: it asks what you want and writes it down.
 
+To tell the agent something, type the command, start a new line, and write it
+there. It needs no quotes.
+
 Outside Claude Code, run the same commands from a terminal:
 
 ```bash
@@ -69,60 +105,67 @@ python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"
 
 ## A typical session
 
-1. You type `/context-db prompt "add a refund endpoint"`.
-2. The agent reads the index, opens the notes on the payments API and the plan
-   for refunds, and skips everything else.
-3. It writes the code.
+1. You type the command, then the task on a new line. It needs no quotes:
+
+   ```text
+   /context-db prompt
+
+   Users report a bug here:
+
+   https://issues.example.com/PAY-482
+
+   It looks like it is in the new receipts database code.
+   Can you investigate and propose a fix?
+   ```
+
+2. The agent reads the index, opens the notes on the database schema and the
+   plan for the receipts work, and skips everything else.
+3. It finds the cause and proposes a fix.
 4. You type `/context-db update --push`. The agent asks itself whether it
    learned anything that the next agent would get wrong without being told.
    Usually the answer is no, and it says so. If there is something, it writes a
    short note in the right place. Then it commits and pushes.
 
-## Install
+## Why it works this way
 
-You need Python 3.8 or newer.
+Notes about a project can make an agent worse.
+[Researchers at ETH Zurich](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
+found that context files written by an LLM lowered the success rate by about 3%
+and raised cost by more than 20%. Files written by people helped only a little.
+[Chroma](https://www.trychroma.com/research/context-rot) found that every model
+it tested did worse as its input grew. An agent that is handed a file about the
+project trusts it, reads less of the code, and repeats whatever the file gets
+wrong.
 
-```bash
-git clone -b v0.1 https://github.com/cart0113/context-db /tmp/context-db
-mkdir -p .claude/skills
-cp -r /tmp/context-db/skill/context-db .claude/skills/
-```
+context-db is built around that:
 
-Then type `/context-db configure` in Claude Code, or run:
+- Nothing is loaded when a session starts. The agent reads the knowledge base
+  only when you run a command, and then only the files that match the task.
+- `prompt` fetches the rules immediately before the work they apply to, so a
+  long session does not lose them.
+- The agent is told that the code wins. Where a note and the code disagree, it
+  trusts the code and tells you.
+- `update` asks first whether anything is worth writing down. Most sessions add
+  nothing.
 
-```bash
-python3 .claude/skills/context-db/context-db.py init --project <name>
-```
+In a test on a real project, a knowledge base of 671 lines made the agent do
+worse than no notes at all. Cut to 143 lines, it halved the time (95 seconds
+against 202), lowered the cost ($0.49 against $0.56), and the agent changed the
+right files.
 
-[Get started](https://cart0113.github.io/context-db/getting-started.html) has
-the full steps. If you are on v0.0, see
-[Migrating](https://cart0113.github.io/context-db/migrating.html).
-
-## Why use it
-
-Agents lose track of a project's rules partway through a long session, and they
-never knew the reasons behind your code in the first place. One large
-instructions file does not fix this.
-[Research from ETH Zurich](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
-found that context files often make agents perform worse: the agent follows the
-file and reads less of the code.
-
-A small knowledge base that the agent reads a little at a time, and only when
-asked, does better.
-[Why it works this way](https://cart0113.github.io/context-db/why.html) has the
-details.
+So keep it small. Ask of every note: if it were deleted, would the agent make a
+mistake that it does not make now? If the answer is no, delete it.
 
 ## Documentation
 
-- [Get started](https://cart0113.github.io/context-db/getting-started.html)
+- [Setup](https://cart0113.github.io/context-db/setup.html)
 - [Commands](https://cart0113.github.io/context-db/commands.html), with the
   exact text each one gives the agent
-- [The knowledge base](https://cart0113.github.io/context-db/knowledge-base.html):
-  what goes where, and what a file looks like
+- [Layout](https://cart0113.github.io/context-db/layout.html): what goes where
+  in the knowledge base, and what a file looks like
 - [The Open Knowledge Format](https://cart0113.github.io/context-db/okf.html):
   what it is and which parts context-db uses
 - [Sharing knowledge between projects](https://cart0113.github.io/context-db/background-folders.html)
-- [Why it works this way](https://cart0113.github.io/context-db/why.html)
 
 ## Working on context-db itself
 

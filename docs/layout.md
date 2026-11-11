@@ -1,11 +1,11 @@
-# The knowledge base
+# Layout
 
 The knowledge base is the `context-db/` folder at the top of your repository.
 This page describes what goes where and what a file looks like.
 
 The file format is the [Open Knowledge Format](okf.md).
 
-## Layout
+## The whole folder
 
 ```text
 context-db/

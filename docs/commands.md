@@ -3,17 +3,27 @@
 There are four commands. Each one prints a set of instructions, and the agent
 follows them. Nothing is hidden: the exact text is under each command below.
 
-In Claude Code you type a command as `/context-db <command>`. Anywhere else, run
-the script:
+In Claude Code you type a command as `/context-db <command>`. To tell the agent
+something, start a new line and write it there. It needs no quotes, and it can
+run to as many lines as you like.
+
+Anywhere else, run the script:
 
 ```bash
 python3 .claude/skills/context-db/context-db.py <command>
 ```
 
-## prompt
+## /context-db prompt
 
 ```text
-/context-db prompt "add a refund endpoint"
+/context-db prompt
+
+Users report a bug here:
+
+https://issues.example.com/PAY-482
+
+It looks like it is in the new receipts database code.
+Can you investigate and propose a fix?
 ```
 
 Use it before a task. Use it again whenever a long session has drifted away from
@@ -41,13 +51,10 @@ instruction.
 ```
 :::
 
-## update
+## /context-db update
 
 ```text
 /context-db update
-/context-db update "the retry cap is deliberate, see the incident"
-/context-db update --commit
-/context-db update --push
 ```
 
 Use it at the end of a session.
@@ -62,8 +69,22 @@ What the agent does:
 4. With `--commit`, commits everything that changed in the session. With
    `--push`, pushes as well.
 
-Give it an instruction to say what should be recorded. Without one, the agent
-looks back over the session and decides for itself.
+Typed with nothing after it, the agent looks back over the session and decides
+for itself what to record. To say what should be recorded, write it on a new
+line:
+
+```text
+/context-db update
+
+The retry cap of three is deliberate.
+A fourth retry caused the duplicate refunds in March.
+```
+
+`--commit` and `--push` go on the same line as the command:
+
+```text
+/context-db update --push
+```
 
 :::{dropdown} The text the agent receives
 :color: secondary
@@ -85,11 +106,12 @@ With `--commit` or `--push` it receives this as well:
 ```
 :::
 
-## wip
+## /context-db wip
 
 ```text
-/context-db wip "we are adding refunds; partial refunds are out of scope"
 /context-db wip
+
+We are adding receipts. Emailing them is out of scope for now.
 ```
 
 Use it for work that takes more than one session. Plans live in the `wip/`
@@ -109,8 +131,8 @@ What the agent does:
 starts by knowing what is in progress.
 
 A plan can name the branch it belongs to. The agent asks you before it touches a
-plan for a different branch. Without an instruction, `wip` only cleans up and
-tells you what is in progress.
+plan for a different branch. Typed with nothing after it, `wip` only cleans up
+and tells you what is in progress.
 
 :::{dropdown} The text the agent receives
 :color: secondary
@@ -123,7 +145,7 @@ rules, your `ON_WIP.md`, and your instruction.
 ```
 :::
 
-## configure
+## /context-db configure
 
 ```text
 /context-db configure

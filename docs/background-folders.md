@@ -1,4 +1,4 @@
-# Sharing knowledge between projects
+# Sharing Knowledge Between Projects
 
 Some knowledge is not about one project. Coding standards, how your team uses
 git, and notes on a library are examples. Keep knowledge like that in one place

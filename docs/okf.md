@@ -178,7 +178,8 @@ because the LLM cannot cheaply read those sources again.
 A code repository is different. The source is the code, and the agent can read
 it whenever it wants. A page that repeats the code is a second copy that goes
 out of date. So context-db takes the format and not the habit of writing
-everything down. Most sessions add nothing. [](why.md) explains the reasoning.
+everything down. Most sessions add nothing.
+[Why it works this way](index.md#why-it-works-this-way) explains the reasoning.
 
 ## Using other tools
 

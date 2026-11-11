@@ -116,8 +116,8 @@ It must report no errors. Then give the user a short summary, and nothing more:
     rules added to each command.
   - `AGENTS.md` or `CLAUDE.md`: the note that keeps the agent out of the
     knowledge base until asked.
-- **What to type**: `/context-db prompt "<task>"` before work,
-  `/context-db update --push` after it, and `/context-db configure` to change
-  any of the above.
+- **What to type**: `/context-db prompt` before work, with the task on a new
+  line after it; `/context-db update --push` after the work; and
+  `/context-db configure` to change any of the above.
 
 Do not commit; leave the changes for the user to review.

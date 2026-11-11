@@ -1,7 +1,20 @@
-# Get started
+# Setup
 
 You need Python 3.8 or newer, and a coding agent that can run shell commands.
 These steps use Claude Code.
+
+## Ask your agent to do it
+
+Open your project in your agent and paste this:
+
+```text
+Set up context-db in this repository. Follow the Install steps in the README at
+https://github.com/cart0113/context-db
+```
+
+The agent copies the skills into your project, asks you a few questions as a
+menu, and creates the knowledge base. That covers steps 1, 2, and 4 below. Read
+on to do them by hand, or to see what the agent did.
 
 ## 1. Copy the skills into your project
 
@@ -83,14 +96,18 @@ Add the text in `.claude/skills/context-db/starters/AGENTS.md` to your
 It tells the agent that the knowledge base exists, and that it should not read
 it unless you run a command. This matters. An agent that loads the whole
 knowledge base at the start of every session has less attention left for your
-task. [Why it works this way](why.md) covers the research.
+task. [Why it works this way](index.md#why-it-works-this-way) covers the
+research.
 
 ## 5. Use it
 
-Before a task:
+Before a task, type the command, then the task on a new line. It needs no
+quotes:
 
 ```text
-/context-db prompt "add a refund endpoint"
+/context-db prompt
+
+Add an endpoint for refunds. Partial refunds can wait.
 ```
 
 After it:
@@ -136,7 +153,7 @@ python3 .claude/skills/context-db/context-db.py init --local python=/opt/python3
 ## Check it in CI
 
 This command changes nothing. It exits with an error if an `index.md` is out of
-date or a file breaks the [format](knowledge-base.md):
+date or a file breaks the [format](layout.md):
 
 ```bash
 python3 .claude/skills/context-db/context-db.py index --check

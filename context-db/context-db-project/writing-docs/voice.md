@@ -2,8 +2,9 @@
 type: Convention
 description:
   How the docs and README must read — plain, clear, simple, not AI-sounding; no
-  first person; the words to use (project folder, background folder, skills).
-  Owner feedback from 2026-11-10 and what it means in practice.
+  first person; the words to use (project folder, background folder, skills);
+  how to show a command in an example (instruction on a new line, never in
+  quotes). Owner feedback from 2026-11-10 and what it means in practice.
 ---
 
 # Voice
@@ -29,6 +30,20 @@ the v0.1 rewrite of the docs.
 - No "not X but Y" constructions and no lists of three for rhythm.
 - No filler words: simply, just, seamlessly, powerful, robust, deliberately.
 - Prefer a paragraph or a small table to a page of tiny headed sections.
+
+## Showing a command
+
+The owner types the command on its own line, then a blank line, then the
+instruction, and never puts the instruction in quotes: "I always new line, never
+quote" (2026-11-11). Every example of a `/context-db` command is written that
+way, in the docs, the README, and the prompt files:
+
+    /context-db prompt
+
+    Users report a bug here: ...
+
+Flags stay on the command's line. Only the terminal form keeps quotes
+(`context-db.py prompt "..."`), because the shell needs them.
 
 ## Person
 

@@ -17,11 +17,11 @@ that agents can read. It grew out of Andrej Karpathy's LLM wiki idea.
 :::
 
 ::::{div} hero-buttons
-```{button-ref} getting-started
+```{button-ref} setup
 :color: primary
 :class: hero-button
 
-Get started
+Setup
 ```
 ```{button-ref} okf
 :color: secondary
@@ -31,6 +31,18 @@ Get started
 About the Open Knowledge Format
 ```
 ::::
+
+## Install
+
+Paste this into your coding agent, in the project where you want it:
+
+```text
+Set up context-db in this repository. Follow the Install steps in the README at
+https://github.com/cart0113/context-db
+```
+
+The agent copies the skills into your project, asks you a few questions, and
+creates the knowledge base. [Setup](setup.md) has the same steps to run by hand.
 
 ## What it is
 
@@ -154,35 +166,63 @@ Every refund request carries an idempotency key. See
 
 ## A typical session
 
-1. You type `/context-db prompt "add a refund endpoint"`.
-2. The agent reads the index, opens the notes on the payments API and the plan
-   for refunds, and skips everything else.
-3. It writes the code.
+1. You type the command, then the task on a new line. It needs no quotes:
+
+   ```text
+   /context-db prompt
+
+   Users report a bug here:
+
+   https://issues.example.com/PAY-482
+
+   It looks like it is in the new receipts database code.
+   Can you investigate and propose a fix?
+   ```
+
+2. The agent reads the index, opens the notes on the database schema and the
+   plan for the receipts work, and skips everything else.
+3. It finds the cause and proposes a fix.
 4. You type `/context-db update --push`. The agent asks itself whether it
    learned anything that the next agent would get wrong without being told.
    Usually the answer is no, and it says so. If there is something, it writes a
    short note in the right place. Then it commits and pushes.
 
-## Why use it
+## Why it works this way
 
-Agents lose track of a project's rules partway through a long session, and they
-never knew the reasons behind your code in the first place. One large
-instructions file does not fix this. Research has found that context files often
-make agents perform worse: the agent follows the file and reads less of the
-code.
+Notes about a project can make an agent worse.
+[Researchers at ETH Zurich](https://www.infoq.com/news/2026/03/agents-context-file-value-review/)
+found that context files written by an LLM lowered the success rate by about 3%
+and raised cost by more than 20%. Files written by people helped only a little.
+[Chroma](https://www.trychroma.com/research/context-rot) found that every model
+it tested did worse as its input grew. An agent that is handed a file about the
+project trusts it, reads less of the code, and repeats whatever the file gets
+wrong.
 
-A small knowledge base that the agent reads a little at a time, and only when
-asked, does better. [Why it works this way](why.md) has the details and the
-numbers.
+context-db is built around that:
+
+- Nothing is loaded when a session starts. The agent reads the knowledge base
+  only when you run a command, and then only the files that match the task.
+- `prompt` fetches the rules immediately before the work they apply to, so a
+  long session does not lose them.
+- The agent is told that the code wins. Where a note and the code disagree, it
+  trusts the code and tells you.
+- `update` asks first whether anything is worth writing down. Most sessions add
+  nothing.
+
+In a test on a real project, a knowledge base of 671 lines made the agent do
+worse than no notes at all. Cut to 143 lines, it halved the time (95 seconds
+against 202), lowered the cost ($0.49 against $0.56), and the agent changed the
+right files.
+
+So keep it small. Ask of every note: if it were deleted, would the agent make a
+mistake that it does not make now? If the answer is no, delete it.
 
 ```{toctree}
 :hidden:
 
-Get started <getting-started>
+Setup <setup>
 Commands <commands>
-Knowledge base <knowledge-base>
+Layout <layout>
 OKF <okf>
 Sharing <background-folders>
-Why <why>
-Migrating <migrating>
 ```

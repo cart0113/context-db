@@ -36,13 +36,17 @@ html_logo = "_static/context-db-icon.svg"
 html_favicon = "_static/favicon.svg"
 html_static_path = ["_static"]
 templates_path = ["_templates"]
-html_css_files = ["custom.css"]
+html_css_files = ["custom.css", "looks.css"]
+# The look picker, for trying out styles. Delete with looks.css once a look is chosen.
+html_js_files = ["looks.js"]
+# Pages open in light mode. The switch in the header still offers dark.
+html_context = {"default_mode": "light"}
 html_show_sourcelink = False
 
 html_theme_options = {
     "logo": {"text": "context-db"},
     "github_url": "https://github.com/cart0113/context-db",
-    "header_links_before_dropdown": 7,
+    "header_links_before_dropdown": 5,
     "navbar_align": "left",
     "show_toc_level": 2,
     "navigation_with_keys": False,
