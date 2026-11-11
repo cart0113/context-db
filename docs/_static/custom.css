@@ -160,7 +160,7 @@ body::before {
 section#context-db > h1 {
   display: inline-block;
   margin: 2rem 0 0.75rem;
-  font-size: clamp(2rem, 4.5vw, 2.9rem);
+  font-size: clamp(2.1rem, 4.75vw, 3.1rem);
   line-height: 1.1;
   --cdb-title-teal: color-mix(in srgb, var(--cdb-teal) 57.5%, var(--pst-color-text-base));
   --cdb-title-sky: color-mix(in srgb, var(--cdb-sky) 57.5%, var(--pst-color-text-base));
