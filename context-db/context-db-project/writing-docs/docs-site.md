@@ -57,6 +57,10 @@ Added by the owner on 2026-11-11:
   buttons "really tired, very much what agents look like". The intro's own link
   to the OKF page and the Install section do that job.
 - The footer keeps the theme's standard Sphinx and PyData credits.
+- Colorful, but restrained. The owner had every gradient halved, the home page
+  title cut down, and all type set 10% smaller, because the defaults read "a
+  little big". The name in the header was already the right size. Lean smaller
+  and quieter when adding to the look.
 
 Follow [voice.md](./voice.md) for every page.
 
