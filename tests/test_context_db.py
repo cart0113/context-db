@@ -358,7 +358,7 @@ def test_a_folder_that_comes_with_an_index_is_listed_from_it(project):
     assert listing.startswith(
         "# Contents of `context-db/catalog/`\n\nRead from `context-db/catalog/index.md`, the index"
     )
-    assert "context-db.py toc <subfolder>" in listing
+    assert "context-db.py toc <path>" in listing
     assert "* [Orders](context-db/catalog/orders.md) - All about orders" in listing
     assert "* [Billing](context-db/catalog/billing/) - Invoices and rates" in listing
     assert "(https://example.com/spec#tables)" in listing and "[the top](#tables)" in listing
@@ -2269,3 +2269,36 @@ def test_migrating_a_v0_tree_ends_lint_clean(tmp_path):
     assert init.returncode == 0, init.stdout
     assert "Be careful." in run(tmp_path, "prompt", "x").stdout
     assert not list(bundle.rglob("index.md"))
+
+
+def test_the_packaged_entry_point_runs_the_script_beside_it(tmp_path):
+    """pyproject.toml installs skill/context-db/cli.py's main() as the `context-db` command."""
+    entry = SCRIPT.parent / "cli.py"
+    expected = run(tmp_path, "--help")
+    result = run(tmp_path, "--help", script=entry)
+    assert result.returncode == 0, result.stdout
+    assert result.stdout.replace("cli.py", "context-db.py") == expected.stdout
+    configured = run(tmp_path, "configure", "--project", "demo", script=entry)
+    assert configured.returncode == 0, configured.stdout
+    assert (tmp_path / "context-db" / "configuration" / "settings.md").is_file()
+
+
+def test_installed_command_prints_itself_as_the_next_command(tmp_path):
+    """Started as `context-db`, the commands it prints name it, not python and the script."""
+    entry = SCRIPT.parent / "cli.py"
+    command = tmp_path / "bin" / "context-db"
+    write(
+        command,
+        "import importlib.util\n"
+        f"spec = importlib.util.spec_from_file_location('cli', {str(entry)!r})\n"
+        "cli = importlib.util.module_from_spec(spec)\n"
+        "spec.loader.exec_module(cli)\n"
+        "cli.main()\n",
+    )
+    project = tmp_path / "project"
+    project.mkdir()
+    assert run(project, "configure", "--project", "demo", script=command).returncode == 0
+    out = run(project, "prompt", "x", script=command).stdout
+    assert "../bin/context-db toc" in out
+    assert "context-db.py" not in out
+    assert "context-db.py toc" in run(project, "prompt", "x").stdout  # run as the script

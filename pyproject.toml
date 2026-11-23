@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "context-db"
+version = "0.1.0"
+description = "Project knowledge for coding agents, kept as short Markdown notes in your repo"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+dependencies = []
+
+# Installs the same script that the skill runs, as a command.
+[project.scripts]
+context-db = "context_db.cli:main"
+
+# The skill folder is the package, so nothing moves: copying skill/context-db/ into
+# .claude/skills/ keeps working as it always has.
+[tool.setuptools]
+packages = ["context_db"]
+
+[tool.setuptools.package-dir]
+context_db = "skill/context-db"
+
+[tool.setuptools.package-data]
+context_db = ["SKILL.md", "context-db.py", "prompts/*.md", "starters/*"]

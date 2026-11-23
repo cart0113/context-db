@@ -353,7 +353,7 @@ guide before step 2: {guide}
 TOC_HEADING = """
 # Contents of `{folder}/`
 
-Read from its files just now. To look inside a subfolder, run `{toc_cmd} <subfolder>`.
+Read from its files just now. To look inside a subfolder, run `{toc_cmd} <path>`, with the path exactly as it appears in the subfolder's link below.
 """
 
 TOC_KEEPS_INDEX = """
@@ -363,7 +363,7 @@ This folder also keeps an index file, `{index}`, for people and for other tools.
 TOC_FROM_INDEX = """
 # Contents of `{folder}/`
 
-Read from `{index}`, the index file this folder came with from its owner, with its links rewritten to start from the current directory. To look inside a subfolder, run `{toc_cmd} <subfolder>`.
+Read from `{index}`, the index file this folder came with from its owner, with its links rewritten to start from the current directory. To look inside a subfolder, run `{toc_cmd} <path>`, with the path exactly as it appears in the subfolder's link below.
 """
 
 TOC_EMPTY = """
@@ -513,6 +513,15 @@ def context_db_dir():
 
 
 def script_command(python):
+    """The command printed for the agent to run next.
+
+    Started as an installed `context-db` command, that command, as it was invoked: a path
+    such as ``../bin/context-db`` keeps the agent on the same installation, instead of
+    whichever ``context-db`` comes first on PATH. Otherwise, the script, run with `python`.
+    """
+    invoked = sys.argv[0]
+    if os.path.basename(invoked) == "context-db":
+        return shlex.quote(rel(invoked) if os.path.isabs(invoked) else invoked)
     script = rel(os.path.join(SKILL_DIR, "context-db.py"))
     return f"{python} {shlex.quote(script)}"
 
@@ -2097,7 +2106,11 @@ def cmd_toc(args):
     if args.folder:
         folder = os.path.normpath(args.folder)
         if not os.path.isdir(folder):
-            sys.exit(f"Error: {folder}/ is not a folder.")
+            sys.exit(
+                f"Error: {folder}/ is not a folder. Pass the path exactly as listed in a "
+                "table of contents; it is relative to the current directory, not to the "
+                "folder that was listed."
+            )
         bundles = [bundle_root(folder)]
     else:
         config = require_config(cdb, args)
