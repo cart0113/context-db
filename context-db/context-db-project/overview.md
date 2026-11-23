@@ -32,11 +32,17 @@ and uses it on its own `context-db/`.
   against a copy of it, so keep it lint-clean.
 - CI tests on Python 3.8 and 3.13 in the official Docker images, because hosted
   runners no longer provide 3.8. Do not use syntax newer than 3.8 in the script.
-  There is no 3.8 here to run the tests on, and its argparse lays `--help` out
+  No 3.8 is installed here, but Docker is, so the tests can be run in the
+  `python:3.8` image as CI runs them. Its argparse lays `--help` out
   differently: a subcommand as long as `configure` gets a line to itself. A
   test that reads `--help` must not depend on the layout.
   CI also runs `ruff format --check .` and `ruff check .` on the whole
   repository, and the pre-commit hook skips ruff when it is not installed.
+- A pull request from someone else: the owner's test (2026-11-23) is that it
+  is "safe and does not change the mission of the project". The runs GitHub
+  started for PR #1, which came from a fork, failed without starting a job, so
+  run the CI steps on the head commit yourself, and merge with
+  `--match-head-commit` so that what is merged is what was checked.
 - The owner sometimes runs a second agent in this same working tree. Stage your
   own files by name, never everything, and check a shared file's diff in the
   same command that stages it. On 2026-11-11 a commit made moments after a clean

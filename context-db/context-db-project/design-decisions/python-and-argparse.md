@@ -2,7 +2,8 @@
 type: Decision
 description:
   Why all scripts are Python 3 with argparse — minimal dependency choice, why
-  not bash, why not click
+  not bash, why not click, and why the pip package (pyproject.toml) is only an
+  extra
 ---
 
 # Python and Argparse
@@ -21,10 +22,21 @@ targets Python 3.8 so it runs on old system interpreters.
   avoidance of bash 4+ features for macOS 3.2 compatibility.
 - **Testable.** The script is covered by `tests/`. The bash version had none.
 - **No PyYAML.** Frontmatter is read by a small hand-rolled parser that handles
-  only top-level scalar keys. Do not replace it with a YAML dependency.
+  only what the files use. Do not replace it with a YAML dependency.
 
 ## Why argparse over click
 
 Click is a better CLI library, but it's a third-party dependency. Argparse ships
 with Python 3. The goal is zero external dependencies — the skill should work on
 any machine with Python 3, no setup required.
+
+## pip install is an extra
+
+`pyproject.toml` came as a coworker's pull request on 2026-11-23. The owner
+asked for it to be merged only if it was "safe and does not change the mission
+of the project", and left that to the implementing agent, who accepted it
+because everything above still holds: the script needs no install, and copying
+the skill folder is still how a project gets it.
+
+Keep it so. `dependencies` stays empty, nothing may work only when installed,
+and `SKILL.md` and the README's Install steps keep running the script by path.
