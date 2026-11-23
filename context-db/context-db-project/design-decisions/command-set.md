@@ -3,8 +3,9 @@ type: Decision
 description:
   The five user commands and their order, and why — no flag narrows prompt,
   update, or maintain, because a command is only a starting point; maintain
-  apart from update; configure, not init; --show-context, not --dry-run; one
-  source for the summaries and the API block. Owner decisions, November 2026.
+  apart from update; configure, not init; --show-context, not --dry-run;
+  prompt --audit; one source for the summaries and the API block. Owner
+  decisions.
 ---
 
 # The command set
@@ -25,7 +26,8 @@ to say so: under the API block on the front page, and on the commands page.
 - Do not add a flag that narrows what a command looks at or changes how it
   works. `--wip`, `--usage`, `--use-git-diff`, and `--use-global-context` were
   all built and then removed. A flag stays only when it does something a
-  sentence should not: `--commit` and `--push`, and the three modes of `wip`.
+  sentence should not: `--commit` and `--push`, the three modes of `wip`, and
+  `--audit` on `prompt` (below).
 - `update` goes by what the agent remembers of the session and reads no git.
   It also keeps the plan that the session worked from current, and must be
   very brief about it.
@@ -83,6 +85,25 @@ the owner kept it.
 The message between the markers must stay byte for byte what the command sends
 without the flag. The flag is refused together with `configure`'s setting
 flags, because showing must never write.
+
+## prompt --audit
+
+The owner asked for it on 2026-11-23, for whoever designs a knowledge base:
+"see what information the agent grabbed" and "what breadcrumbs", output "to
+the window and then do the actual prompt". A separate `audit` command was set
+aside for now; whether to list one, for an audit after the fact, is open.
+
+The owner's condition: no "Schrodinger's cat problem", "we want to see what
+is going to really happen and what would have been used". A first build
+described the report in the `prompt` message, and a trial agent skipped a
+link "to avoid reading more for the sake of the report". So the message only
+says to run the hidden `audit` helper once the reading is done, and the
+helper says what to report. Keep every word about the report out of the
+`prompt` message. A sentence typed with the task would have the same fault.
+
+The helper, the second report after the work, and what the reports hold are
+the implementing agent's choices. The `API` line and the workflow on the
+Commands page (the audit, then `maintain`) the owner asked for.
 
 ## One source for the summaries and the API block
 

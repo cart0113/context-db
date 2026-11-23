@@ -46,6 +46,10 @@ or the migration guide. Tell the agent what a sensible user would answer, so
 that it does not stop at every question, and do not tell it what you expect to
 see.
 
+A subagent hands back only its last message. Ask it to repeat there all it
+would have shown the user, then check its account against the commands in its
+transcript: one trial agent (2026-11-23) described a search it never ran.
+
 One trap when testing by hand: within a session the harness shows the copy of
 `SKILL.md` it loaded first. After editing that file, a second `/context-db` call
 in the same session still shows the old text. The script and the prompt files
@@ -63,7 +67,9 @@ pass it through untouched.
 Fresh agents stalled on three undefined words: "landed" in `wip` (merged, or
 only committed?), "descriptor" in `configure`, and "settle with the user" (wait,
 or proceed?). Each now has a definition or an explicit rule in the prompt. When
-adding a step, ask what a reader with no context would have to guess.
+adding a step, ask what a reader with no context would have to guess. A fourth
+was "instruction" in `SKILL.md`: with a flag on the command's line and the task
+below it, two of three agents first ran the command with no instruction.
 
 ## What the script prints must agree with the core texts
 

@@ -22,7 +22,8 @@ typed on the command's line, such as `--push`, `--list`, and
 `--show-context`, go outside the quotes. With no instruction, pass only the
 flags.
 
-Pass the user's instruction exactly as they typed it, line breaks included, as
+The user's instruction is everything else they typed, most often on the lines
+below the command. Pass it exactly as they typed it, line breaks included, as
 one single-quoted argument. Single quotes stop the shell from changing `$`,
 backticks, and `!`:
 

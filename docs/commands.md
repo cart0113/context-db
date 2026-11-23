@@ -144,6 +144,96 @@ work before anything else:
 Carry on with the refund endpoint.
 ```
 
+### See what the agent read
+
+Add `--audit` to see what the agent took from the knowledge base for a task,
+and how it got there. It is for whoever designs the knowledge base:
+
+```text
+/context-db prompt --audit
+
+How should a refund be posted to the ledger?
+```
+
+What the agent does:
+
+1. Reads the knowledge base as it does on any `prompt`. It has not yet been
+   told what the report holds, so the report cannot change what it reads.
+2. Runs a helper, `audit`, which tells it what to report.
+3. Shows you the report, and gets on with the task.
+4. Ends its reply with a second report, on what the task itself showed.
+
+The first report is the trail. It names every folder the agent listed and
+every file it opened, in order, each with what led the agent there and what
+the agent took from it. A file that turned out not to matter is in it too.
+The report then says what came from outside your project, such as a
+background folder or global context, what the agent looked for and did not
+find, and which descriptions misled it or left it unsure. This one is from the
+[example project](https://github.com/cart0113/context-db/tree/v0.1/example),
+shortened:
+
+```text
+Context-db audit
+
+Trail:
+1. context-db/acme-payments-project/, listed. Led by the Folders section, as
+   the project folder.
+2. context-db/acme-payments-project/acme-payments-usage/, listed. Led by the
+   Folders section. Its one file, calling.md, is about callers of this API,
+   not about posting to the ledger. Not opened.
+3. ../acme-ledger-repo/okf/acme-ledger-usage/, listed. Led by the Global
+   Context section: the instruction involves the ledger.
+4. ../acme-ledger-repo/okf/acme-ledger-usage/posting.md, opened. Led by its
+   description in the listing. Took the three posting rules, and a pointer to
+   the ledger API page, which was not fetched.
+5. context-db/acme-payments-project/wip/refund-endpoint.md, opened. Led by
+   the Work In Progress section. Took: refunds are queued, not inline, and
+   "Queue consumer and ledger entry" is still to do.
+
+From outside this project: steps 3 and 4, a Global Context folder in another
+repository. No background folder was opened, and no web page.
+
+Looked for and not found: which accounts a refund debits and credits. No
+description misled me. The description of acme-payments-usage ("asynchronous
+refunds") left me unsure for a moment whether it bore on this.
+```
+
+The second report says what else the agent read while it worked, which files
+the work rested on in the end and which it did not need, what the agent had
+to guess because nothing said it, and any note that the code contradicted.
+For the same question:
+
+```text
+Context-db audit, after the work
+
+Further steps in those folders: none.
+
+The work rested on posting.md and refund-endpoint.md. Not needed: calling.md.
+
+Guessed: which accounts to debit and credit for a refund, and whether a
+refund counts as a reversal of the capture entry or as a new entry. No note
+says, and the repository has no ledger code.
+```
+
+Read both as a list of things to fix. A file that was opened and not needed
+has a description that promises too much. A long trail to one fact means that
+the fact is hard to find. Something the agent had to guess may be a note worth
+writing.
+
+To act on it, run `update` or `maintain` in the same session and say what you
+saw:
+
+```text
+/context-db maintain
+
+Look at the audit result above. It is not good that the agent had to guess
+which accounts a refund debits and credits, and that the description of the
+usage folder made it wonder whether the folder was about posting.
+```
+
+The report is the agent's own account. The commands it ran and the files it
+opened are in the session, if you want to check one against the other.
+
 :::{dropdown} The text the agent receives
 :color: secondary
 
@@ -153,6 +243,13 @@ from `wip/wip.md` when it lists anything, the folder list, the global context
 when there is any, your `ON_PROMPT.md` rules, and your instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/prompt.md
+:language: markdown
+```
+
+With `--audit`, the message also tells the agent to run the `audit` helper
+once it has done its reading. The helper then prints this:
+
+```{literalinclude} ../skill/context-db/prompts/audit.md
 :language: markdown
 ```
 :::
@@ -730,9 +827,13 @@ heading shown.
 | `# Work In Progress` | The list in `wip/wip.md`. Left out when it lists nothing. |
 | `# Folders` | The project folder, your usage folders if there are any, and each background folder, one line each with its description. |
 | `# Global Context` | Each folder outside `context-db/` that the `global_context` setting matches, one line each with its description. Left out when nothing matches. |
+| `# Audit` | One step: run the `audit` helper once the reading is done. Only with `--audit`. |
 | `# Project Rules` | `configuration/ON_PROMPT.md` |
 | `# User Rules` | `configuration/ON_PROMPT.local.md`, if you have one. |
 | `# User Instruction` | What you typed. |
+
+With `--audit`, the helper that the agent runs after its reading prints one
+more section, `# Context-db Audit`, from `prompts/audit.md`.
 
 `/context-db update` sends:
 

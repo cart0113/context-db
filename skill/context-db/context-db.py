@@ -167,6 +167,7 @@ edit the files by hand afterwards.
 API = """
 Before a task
   /context-db prompt <prompt: question or task>  navigate the OKF notes by what you ask
+  /context-db prompt --audit <prompt>            the same, and show what it read and why
 
 After a task, from what this session learned
   /context-db update                             write down what the next agent needs
@@ -245,6 +246,19 @@ Tell the user, and offer to run `/context-db configure`. Do nothing else.
 
 NO_INSTRUCTION = """
 No instruction was given. Ask the user what they want to work on.
+"""
+
+# What the report holds is in prompts/audit.md, and the agent sees it only when
+# it runs this. Say nothing of it here: knowing what is asked changes what is read.
+AUDIT_STEP = """
+# Audit
+
+Once you have consulted context-db, and before you start on the instruction,
+run:
+
+    {audit_cmd}
+
+Do not run it sooner. Then follow what it prints.
 """
 
 PROJECT_FOLDER_MISSING = """
@@ -1600,10 +1614,18 @@ def cmd_prompt(args):
             wip_section(cdb, config, WIP_FOR_PROMPT, show_empty=False, on_branch=on_branch),
             folders_section(cdb, config),
             global_context_section(cdb, config),
+            text(AUDIT_STEP, audit_cmd=f"{script_command(config['python'])} audit")
+            if args.audit
+            else "",
             on_file_text(cdb, "prompt"),
             instruction_section(instruction),
         ],
     )
+
+
+def cmd_audit(args):
+    """The second half of `prompt --audit`: what to report, once the reading is done."""
+    emit(args, [load_prompt("audit")])
 
 
 def usage_list(cdb, config):
@@ -2172,7 +2194,13 @@ def build_parser():
         )
         return sub
 
-    command("prompt")
+    p = command("prompt")
+    p.add_argument(
+        "--audit",
+        action="store_true",
+        help="Have the agent report what it read from the knowledge base and what led it "
+        "there: once before it starts on the task, and again when it has finished",
+    )
 
     p = command("update")
     p.add_argument(
@@ -2233,6 +2261,12 @@ def build_parser():
     p.add_argument("folder", nargs="?", default="", help="Default: the project folder")
     p.add_argument("--check", action="store_true", help="Check the format; exit 1 on any error")
     p.set_defaults(show_context=False)  # toc prints for the agent to use, never to show
+
+    # Left out of --help as well: `prompt --audit` tells the agent when to run it.
+    p = subs.add_parser(
+        "audit", description="Print what `prompt --audit` has the agent report, after it has read."
+    )
+    p.set_defaults(show_context=False)
     return parser
 
 
@@ -2249,6 +2283,7 @@ def main():
         "maintain": cmd_maintain,
         "configure": cmd_configure,
         "toc": cmd_toc,
+        "audit": cmd_audit,
     }
     if args.command not in handlers:
         parser.print_help()

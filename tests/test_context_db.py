@@ -525,6 +525,7 @@ SHOWN = re.compile(
     "args",
     [
         ("prompt", "the task"),
+        ("prompt", "the task", "--audit"),
         ("prompt",),
         ("update", "note this", "--push"),
         ("wip",),
@@ -616,7 +617,7 @@ def sections_sent(output):
 
 
 EVERY_SECTION = {  # the flags that make each command send every section it can
-    "prompt": (),
+    "prompt": ("--audit",),
     "update": ("--push",),
     "wip": (),
     "configure": (),
@@ -671,7 +672,8 @@ def test_help_readme_and_docs_home_show_the_whole_api():
 
 def test_prompt_update_and_maintain_take_no_flag_that_narrows_them(project):
     """Each covers the whole knowledge base. The user narrows it in words, in the instruction."""
-    allowed = {"prompt": set(), "update": {"--commit", "--push"}, "maintain": set()}
+    # --audit narrows nothing: prompt reads the same, and then reports what it read.
+    allowed = {"prompt": {"--audit"}, "update": {"--commit", "--push"}, "maintain": set()}
     for command, flags in allowed.items():
         usage = run(REPO, command, "--help").stdout.split("\n\n")[0]
         assert set(re.findall(r"--[\w-]+", usage)) - {"--show-context"} == flags, command
@@ -772,6 +774,8 @@ def test_broken_settings_are_reported_cleanly(project):
 def test_no_placeholder_is_left_unfilled(example, project):
     for args in (
         ("prompt", "x"),
+        ("prompt", "x", "--audit"),
+        ("audit",),
         ("prompt", "x", "--show-context"),
         ("update",),
         ("update", "x", "--push"),
@@ -857,6 +861,55 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
     assert order == sorted(order)
     assert out.rstrip().endswith("add a refund endpoint")
     assert "<!--" not in out
+
+
+def test_audit_says_what_to_report_only_after_the_reading_is_done(example):
+    """The owner wants no "Schrodinger's cat problem": the report must not change what is read.
+
+    So `prompt --audit` sends the usual message and one more step, to run the `audit` helper
+    once the reading is done. Only that helper says what the report holds.
+    """
+    plain = run(example, "prompt", "add a refund endpoint").stdout
+    audited = run(example, "prompt", "add a refund endpoint", "--audit").stdout
+    before, rest = audited.split("# Audit\n", 1)
+    step, after = rest.split("\n# Project Rules", 1)
+    assert before + "# Project Rules" + after == plain  # the same reading, with or without it
+    assert "# Global Context" in before
+    step = " ".join(step.split())
+    assert step.startswith("Once you have consulted context-db, and before you start on the")
+    assert "context-db.py audit Do not run it sooner. Then follow what it prints." in step
+    assert len(step.split()) < 40
+    for word in ("report", "trail", "led you", "did not find"):
+        assert word not in step, word  # nothing here says what will be asked
+    assert audited.rstrip().endswith("add a refund endpoint")
+
+    helper = run(example, "audit")
+    assert helper.returncode == 0 and helper.stdout.startswith("# Context-db Audit\n")
+    told = " ".join(helper.stdout.split())
+    assert "You were not told what the report holds before you read, so that it could not" in told
+    assert "Read nothing more for it." in told
+    assert "a file that turned out not to matter is what they most need to see" in told
+    assert "what led you to it" in told and "What came from outside this project" in told
+    assert "What you looked for and did not find, and any description that misled you" in told
+    assert "Then carry out the instruction, without waiting for a reply." in told
+    assert "`Context-db audit, after the work`" in told
+    assert "Which files the work rested on in the end, and which it did not need." in told
+
+    # The agent runs the helper, so --help leaves it out. No other command takes the flag,
+    # and with no task there is nothing to audit.
+    assert "audit" not in help_commands(run(REPO, "--help").stdout)
+    assert "# Audit" not in run(example, "prompt", "--audit").stdout
+    for command in ("update", "wip", "maintain", "configure"):
+        result = run(example, command, "--audit")
+        assert result.returncode != 0 and "unrecognized arguments" in result.stdout, command
+
+    # The front pages mention it, and the Commands page shows how the result is used.
+    for path in (REPO / "README.md", REPO / "docs" / "index.md"):
+        assert "#see-what-the-agent-read" in path.read_text(encoding="utf-8"), path
+    commands = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
+    shown = commands.split("### See what the agent read")[1].split("\n## ")[0]
+    assert "```text\n/context-db prompt --audit\n\n" in shown
+    assert "```text\n/context-db maintain\n\nLook at the audit result above." in shown
 
 
 def test_prompt_starts_from_the_plans_that_bear_on_the_task(example):

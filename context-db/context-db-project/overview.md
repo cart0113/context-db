@@ -12,9 +12,10 @@ This repo ships one skill folder, [skill/context-db/](../../skill/context-db/),
 and uses it on its own `context-db/`.
 
 - The script, [context-db.py](../../skill/context-db/context-db.py), is the API
-  surface. The five user commands print instructions the calling agent follows;
-  `toc` is the hidden helper that lists a folder and, with `--check`, checks
-  the format. See [command-set.md](./design-decisions/command-set.md).
+  surface. The five user commands print instructions the calling agent follows.
+  Two helpers are hidden from `--help`: `toc` lists a folder and, with
+  `--check`, checks the format, and `audit` is the second step of
+  `prompt --audit`. See [command-set.md](./design-decisions/command-set.md).
 - Agent-facing wording lives in `prompts/*.md` and in the triple-quoted
   constants at the top of the script, never inside functions.
 - `.claude/skills/context-db` is a symlink to `skill/context-db`. Edit the files

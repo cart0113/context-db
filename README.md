@@ -174,6 +174,7 @@ The commands, as you type them:
 ```text
 Before a task
   /context-db prompt <prompt: question or task>  navigate the OKF notes by what you ask
+  /context-db prompt --audit <prompt>            the same, and show what it read and why
 
 After a task, from what this session learned
   /context-db update                             write down what the next agent needs
@@ -215,6 +216,11 @@ Only the usage folder. The refund endpoint now needs an idempotency key.
 the knowledge base with the code and the git history. Either can be told
 otherwise: ask `update` to read a `git diff` as well, or `maintain` to leave
 git out. [A command is a starting point](https://cart0113.github.io/context-db/commands.html#a-command-is-a-starting-point) has more examples.
+
+To see what the agent took from the knowledge base for a task, add `--audit`
+to `prompt`. The agent reads as it always does, and then shows you what it
+read and what led it there. Use that to design a better knowledge base.
+[See what the agent read](https://cart0113.github.io/context-db/commands.html#see-what-the-agent-read) has an example.
 
 - [`/context-db prompt`](https://cart0113.github.io/context-db/commands.html#context-db-prompt):
   Before a question or task. Navigates the Open Knowledge Format files of the
