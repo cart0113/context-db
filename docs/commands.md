@@ -8,11 +8,12 @@ shows the whole message each command sends. Add `--show-context` to any command
 and the agent [shows you that message](#see-the-message-for-your-own-project)
 for your own project.
 
-In Claude Code you type a command as `/context-db <command>`. To tell the agent
-something, start a new line and write it there. It needs no quotes, and it can
-run to as many lines as you like.
+In Claude Code you type a command as `/context-db <command>`, and these pages
+write every command that way. Other agents invoke a skill their own way. To
+tell the agent something, start a new line and write it there. It needs no
+quotes, and it can run to as many lines as you like.
 
-Anywhere else, run the script:
+From a terminal, run the script in the skill folder:
 
 ```bash
 python3 .claude/skills/context-db/context-db.py <command>
@@ -785,8 +786,9 @@ that text and does the work.
 
 You decide when that happens. Until you type a command, the agent has one line
 from context-db: the note in `AGENTS.md` or `CLAUDE.md`, which tells it to leave
-`context-db/` alone unless you chose otherwise in `configure`. Claude Code also
-shows it the skill's name and one-line description, as it does for every skill.
+`context-db/` alone unless you chose otherwise in `configure`. An agent that
+supports skills also shows it the skill's name and one-line description, as it
+does for every skill.
 Each command then sends its own text and no other command's.
 
 There is one exception, and it is yours to choose. The `ON_PROMPT.md` that
@@ -797,7 +799,7 @@ If you do not, that file says so and the agent writes only when you type
 
 When you type a command, this happens:
 
-1. Claude Code gives the agent `SKILL.md` from the skill folder. It is short and
+1. The agent loads `SKILL.md` from the skill folder. It is short and
    says one thing: run the script with what the user typed.
 2. The agent runs `context-db.py` with the command and your instruction.
 3. The script prints one message, made of the sections listed below.
@@ -808,7 +810,7 @@ Every section of that message comes from one of five places:
 
 | Comes from | What it is | Who changes it |
 | --- | --- | --- |
-| `.claude/skills/context-db/prompts/` | The canned text: built-in instructions, one file for each section. They are the same in every project, and the dropdowns above show each one. | Nobody. They come with context-db. |
+| `prompts/` in the skill folder | The canned text: built-in instructions, one file for each section. They are the same in every project, and the dropdowns above show each one. | Nobody. They come with context-db. |
 | `context-db/configuration/ON_<COMMAND>.md` | [The project's rules](#the-rule-files-control-how-the-agent-behaves) for that one command, shared with everyone. | You and your team, by hand. |
 | `context-db/configuration/ON_<COMMAND>.local.md` | Your own rules for that command. Gitignored. | You, by hand. |
 | Your repository, read when the command runs | The list of work in progress, the list of folders with their descriptions, the global context that your settings point to, and the state of git. | Nobody directly. It is whatever the files say at that moment. |

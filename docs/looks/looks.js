@@ -69,7 +69,7 @@
     });
   }
 
-  // What to tell Claude: every pick that differs from the site as it is.
+  // What to tell your agent: every pick that differs from the site as it is.
   function summary() {
     var parts = [];
     GROUPS.forEach(function (group) {
@@ -199,7 +199,7 @@
       );
     });
 
-    panel.appendChild(element("div", "cdb-looks__label", "Your picks, to tell Claude"));
+    panel.appendChild(element("div", "cdb-looks__label", "Your picks, to tell your agent"));
     var readout = panel.appendChild(element("div", "cdb-looks__picks"));
     var actions = panel.appendChild(element("div", "cdb-looks__chips"));
 

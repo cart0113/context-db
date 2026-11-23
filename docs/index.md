@@ -118,7 +118,8 @@ creates the knowledge base. [Setup](setup.md) has the same steps to run by hand.
 ## What it is
 
 context-db is a set of skills that you install in a coding agent such as Claude
-Code. They come as one folder and show up as five commands under `/context-db`.
+Code or Codex. They come as one folder and show up as five commands under
+`/context-db`.
 
 The commands work on a folder in your repository called `context-db/`. That
 folder is the knowledge base. It holds what an agent cannot work out by reading

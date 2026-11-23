@@ -16,7 +16,7 @@ dependencies = []
 context-db = "context_db.cli:main"
 
 # The skill folder is the package, so nothing moves: copying skill/context-db/ into
-# .claude/skills/ keeps working as it always has.
+# an agent's skills folder keeps working as it always has.
 [tool.setuptools]
 packages = ["context_db"]
 

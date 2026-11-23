@@ -1802,7 +1802,7 @@ def describe_python3():
     return f"`{found}` (Python {version or 'unknown'}, {verdict})", usable
 
 
-def v0_leftovers(root, cdb):
+def v0_leftovers(cdb):
     """Signs that this repository still has the v0.0 layout."""
     found = []
     if os.path.isdir(cdb):
@@ -1816,7 +1816,7 @@ def v0_leftovers(root, cdb):
             for name in project_folders(cdb)
             if os.path.isfile(os.path.join(cdb, name, "wip.md"))
         )
-    old_scripts = os.path.join(root, ".claude", "skills", "context-db", "scripts")
+    old_scripts = os.path.join(SKILL_DIR, "scripts")
     if os.path.isdir(old_scripts):
         found.append(rel(old_scripts) + "/")
     return found
@@ -1916,7 +1916,7 @@ def cmd_configure(args):
         else:
             says = "mentions" if CONTEXT_DB in read_text(path) else "does not mention"
             lines.append(f"- `{rel(path)}`: exists, {says} `{CONTEXT_DB}/`")
-    leftovers = v0_leftovers(root, cdb)
+    leftovers = v0_leftovers(cdb)
     if leftovers:
         listed = ", ".join(f"`{path}`" for path in leftovers)
         lines.extend(["", text(V0_LAYOUT_FOUND, leftovers=listed, guide=MIGRATION_GUIDE)])

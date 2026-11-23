@@ -95,5 +95,11 @@ Added by the owner on 2026-11-11:
   title cut down, and all type set 10% smaller, because the defaults read "a
   little big". The name in the header was already the right size. Lean smaller
   and quieter when adding to the look.
+- context-db works in any agent that runs skills, not only Claude Code. The
+  owner (2026-11-23): "careful not to make this look like it only works with
+  claude code", naming Codex, T3, and Antigravity, and "I do not want a lot
+  about this." Examples may use `.claude/skills/`; say once where it appears
+  that other agents use their own folder, such as `.codex/skills/`. Nothing
+  in the script or `SKILL.md` may assume `.claude/`.
 
 Follow [voice.md](./voice.md) for every page.

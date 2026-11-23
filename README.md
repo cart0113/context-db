@@ -118,6 +118,10 @@ them yourself. You need Python 3.8 or newer.
    cp -r /tmp/context-db/skill/context-db .claude/skills/
    ```
 
+   `.claude/skills/` is where Claude Code looks for skills. For another agent,
+   use the folder it reads skills from, such as `.codex/skills/` for Codex, and
+   change the paths below to match.
+
 2. Set it up. An agent runs this command and follows the instructions it
    prints:
 
@@ -125,15 +129,17 @@ them yourself. You need Python 3.8 or newer.
    python3 .claude/skills/context-db/context-db.py configure
    ```
 
-   In Claude Code you can type `/context-db configure` instead. To set it up
-   with no agent at all, run the same script with `configure --project <name>`.
+   In Claude Code you can type `/context-db configure` instead, and other
+   agents invoke the skill their own way. To set it up with no agent at all,
+   run the same script with `configure --project <name>`.
 
 [Setup](https://cart0113.github.io/context-db/setup.html) has the full steps.
 
 ## What it is
 
 context-db is a set of skills that you install in a coding agent such as Claude
-Code. They come as one folder and show up as five commands under `/context-db`.
+Code or Codex. They come as one folder and show up as five commands under
+`/context-db`.
 
 The commands work on a folder in your repository called `context-db/`. That
 folder is the knowledge base. It holds what an agent cannot work out by reading
@@ -252,7 +258,7 @@ holds the project's rules for `prompt`, shared with everyone.
 other commands have the same pair. `/context-db configure` is a helper that
 writes a first version of them by asking you a few questions.
 
-Outside Claude Code, run the same commands from a terminal:
+You can also run the same commands from a terminal:
 
 ```bash
 python3 .claude/skills/context-db/context-db.py prompt "add a refund endpoint"

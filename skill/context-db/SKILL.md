@@ -9,7 +9,10 @@ allowed-tools: Bash,Read,Write,Edit,Glob,Grep
 
 Run the script from the repository root with the user's arguments:
 
-    <python> .claude/skills/context-db/context-db.py <args>
+    <python> <skill>/context-db.py <args>
+
+`<skill>` is the folder this file is in, as a path from the repository root,
+such as `.claude/skills/context-db` or `.codex/skills/context-db`.
 
 `<python>` is the `python:` line at the top of
 `context-db/configuration/settings.local.md` if that file exists and has one,
@@ -27,12 +30,12 @@ below the command. Pass it exactly as they typed it, line breaks included, as
 one single-quoted argument. Single quotes stop the shell from changing `$`,
 backticks, and `!`:
 
-    <python> .claude/skills/context-db/context-db.py update 'Refunds over $10,000 need approval' --push
+    <python> <skill>/context-db.py update 'Refunds over $10,000 need approval' --push
 
 If the instruction itself contains a single quote, pass `-` in its place and
 feed the text on standard input:
 
-    <python> .claude/skills/context-db/context-db.py update - --push <<'EOF_INSTRUCTION'
+    <python> <skill>/context-db.py update - --push <<'EOF_INSTRUCTION'
     Don't retry refunds; they aren't idempotent
     EOF_INSTRUCTION
 
@@ -41,6 +44,6 @@ The script prints instructions for you. Follow them. They may tell you to run
 
 Apart from reading that `python:` line, whenever you look into `context-db/`
 or any other knowledge folder the script names, list the folder with the `toc`
-helper, run the same way: `<python> .claude/skills/context-db/context-db.py toc <folder>`.
+helper, run the same way: `<python> <skill>/context-db.py toc <folder>`.
 It builds the folder's index from its files on the spot. `toc --check` checks
 the format after you write.

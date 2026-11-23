@@ -1,7 +1,7 @@
 # Setup
 
 You need Python 3.8 or newer, and a coding agent that can run shell commands.
-These steps use Claude Code.
+These steps use Claude Code, which reads skills from `.claude/skills/`.
 
 ## Ask your agent to do it
 
@@ -29,7 +29,8 @@ some starter templates. Commit it with your project so that everyone on the team
 has the same version.
 
 If you use a different agent, put the folder wherever that agent keeps its
-skills. You can also run any command yourself from a terminal:
+skills, such as `.codex/skills/` for Codex, and use that path in the commands
+below. You can also run any command yourself from a terminal:
 
 ```bash
 python3 .claude/skills/context-db/context-db.py --help
@@ -46,6 +47,9 @@ In Claude Code, type:
 ```text
 /context-db configure
 ```
+
+Other agents invoke a skill their own way, or you can ask the agent in plain
+words to run the context-db `configure` command.
 
 This is the first thing to run. The agent asks for the project name and creates
 the folders. Then it asks a few questions as a menu about how it should treat
@@ -100,7 +104,7 @@ examples of rules.
 
 ## 4. Tell the agent to leave it alone
 
-Add the text in `.claude/skills/context-db/starters/AGENTS.md` to your
+Add the text in `starters/AGENTS.md`, in the skill folder, to your
 `AGENTS.md` or `CLAUDE.md`.
 
 It tells the agent that the knowledge base exists, and that it should not read
