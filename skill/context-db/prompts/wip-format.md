@@ -22,3 +22,10 @@ order to go on, and nothing else. Keep the whole plan current, and do not
 append a history. Say what is done in a line and cut the detail, because the
 code and the git log hold it. A plan follows the same rule as every note: link
 to the code it is about, and do not describe what the code already shows.
+
+## Feature branches
+
+A useful pattern is one feature branch for each effort, with its plan and its
+line kept on that branch, so that the list there is about that work. Once the
+branch is merged, `{main}` must not list the effort: delete the plan and its
+line before the merge, or on `{main}` straight after it.

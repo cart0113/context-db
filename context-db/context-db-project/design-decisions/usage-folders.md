@@ -35,9 +35,9 @@ easily within a project".
   agents need them".
 - A project reads another's usage knowledge "as easily as it's own internal
   project knowledge", and its own is privileged, "more top of mind". So
-  `prompt.md` tells the agent to start with the project folder on every task,
-  and to look into another project's usage folder when the task involves that
-  project.
+  `prompt.md` has the agent list the project folder on every task, and look
+  into another project's usage folder when the task involves that project.
+  [lessons-learned.md](../lessons-learned.md) has the whole order.
 
 ## The implementing agent's choices
 

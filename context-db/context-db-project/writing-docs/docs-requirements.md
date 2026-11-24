@@ -62,6 +62,12 @@ Added by the owner on 2026-11-11:
   comes first. The rest is on the Layout page. What the owner said of the
   longer opening this replaced is in [voice.md](./voice.md).
 - Sharing is a section of the Layout page, not a page of its own.
+- Feature branches have a section of their own under `wip` on the Commands
+  page (2026-11-24): "a useful work pattern is to create feature branches and
+  focus the wip for that branch. Once you merge, make sure the wip for that
+  feature is no longer in the wip of the mainline branch". Telling the agent
+  the same, at the end of `wip-format.md`, was the implementing agent's
+  reading of "a special section on the wip".
 - The Setup page says where the knowledge is before it explains the settings
   (2026-11-23): "By default, it looks for knowledge in the context-db folder",
   then the `<name>-project` folder and "external knowledge folder either

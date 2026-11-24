@@ -73,6 +73,10 @@ folder. Global folders stay where they are, outside context-db/: the
 what the patterns match. Another project's usage folder is the usual thing to
 mount or to match.
 
+`prompt` has the agent look in a fixed order (prompts/prompt.md): the plans for
+the work in progress, then the project folder, then every other folder, which
+is the background folders and the global folders.
+
 Each of those folders is an Open Knowledge Format (OKF) bundle.
 
 Settings are layered. A settings file can name more settings files on a
@@ -1720,6 +1724,7 @@ def cmd_wip(args):
         "wip_dir": wip_dir(cdb, config),
         "wip_list": wip_list_path(cdb, config),
         "branch": current_branch() or "<branch>",
+        "main": config["main_branch"],
         "today": datetime.date.today().isoformat(),
         "check_cmd": f"{toc_cmd} --check",
     }

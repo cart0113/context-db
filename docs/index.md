@@ -133,6 +133,11 @@ with its description, built from the files on the spot. The agent reads that
 list, opens the one or two files it needs, and leaves the rest alone. Nothing is
 generated ahead of time, so the list is never out of date.
 
+The agent looks in [a fixed order](commands.md#context-db-prompt).
+The plans for the work in progress come first, then your project's own notes,
+then knowledge from outside the project. That last kind is a background folder
+mounted in `context-db/`, or a folder that your settings find somewhere else.
+
 There is no database and no server, in spite of the name. It is a folder of text
 files and one Python script.
 

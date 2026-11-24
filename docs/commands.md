@@ -110,17 +110,20 @@ session has drifted away from your project's rules.
 What the agent does:
 
 1. Reads the plans listed in `wip/wip.md` that bear on the task, if there are
-   any.
-2. Lists the project folder first, with `toc`. Your project knowledge applies
-   to everything done in your repository, so it comes first on every task.
+   any. The work in progress comes first.
+2. Lists the project folder, with `toc`. Your project knowledge comes second,
+   on every task, because it applies to everything done in your repository.
 3. Lists any other folder whose description matches the task: a background
    folder of standards, or the usage folder of a project that the task
-   involves. It lists a subfolder only when its description matches.
-4. Opens only the files whose descriptions match the task.
+   involves. These come last. They are in `context-db/`, or anywhere else
+   that your settings point to as [global context](layout.md#global-context).
+4. Opens only the files whose descriptions match the task, and lists a
+   subfolder only when its description matches.
 5. Gets on with the task, and checks what it read against the code.
 
-When the knowledge base and the code disagree, the agent is told to trust the
-code and to tell you.
+The agent is given that order in three numbered lines, and it is the same on
+every `prompt`. When the knowledge base and the code disagree, the agent is
+told to trust the code and to tell you.
 
 The usage knowledge of another project is read the same way as your own
 notes, with the same listing and the same short files. When a task involves a
@@ -128,10 +131,6 @@ project that yours uses, the agent is told to look into that project's usage
 folder before it reads that project's code.
 [How another project reads it](layout.md#how-another-project-reads-it) shows
 what the agent sees.
-
-If your settings point to [global context](layout.md#global-context), which is
-knowledge kept outside `context-db/`, such as the usage folders of other
-projects, `prompt` lists those folders as well.
 
 To carry on with work that has a [plan](#context-db-wip), name the work. The
 agent sees the list of plans on every `prompt`, and reads the plan for that
@@ -432,6 +431,25 @@ The `wip` command itself is for everything else:
 | `/context-db wip --list` | Shows what is in progress and how long each piece has been going. Changes nothing. |
 | `/context-db wip --maintain` | Checks every plan against git, whichever session wrote it. Deletes the plans for work that has been merged into the main branch, and brings the other lines up to date. Anything worth keeping for the long term is moved into the main knowledge base first. |
 | `/context-db wip --clear` | Shows you every plan, asks you to confirm, then deletes them all and empties the list. |
+
+### Feature branches
+
+A plan works well with a feature branch. Create a branch for the work, run
+`/context-db wip` there, and commit the plan and its line in `wip.md` on that
+branch. The list there is then about that work, and the list on the main
+branch stays as it was.
+
+When you merge, the plan must not stay in the main branch's list. There are
+two ways to see to that:
+
+- Before the merge, run `/context-db update` or `/context-db wip` on the
+  branch once the work is finished. The agent deletes the plan and its line,
+  and the merge brings neither with it.
+- After the merge, run `/context-db wip --maintain` on the main branch. The
+  agent sees that the work was merged, and deletes the plan and its line.
+
+The agent is told this pattern as well. It is the last part of the text
+below.
 
 :::{dropdown} The text the agent receives
 :color: secondary

@@ -844,10 +844,20 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
         "Ledger from another service" in global_context(out)
     )
     flat_out = " ".join(out.split())
-    # Its own project knowledge comes first; another project's usage knowledge is read the same way.
-    assert "A background folder is any other folder in `context-db/`" in flat_out
-    assert "The project folder holds project knowledge" in flat_out
-    assert "Start there on every task, because it applies to everything done in this" in flat_out
+    # The owner's three layers, in order: the work in progress, the project folder, the rest.
+    layers = (
+        "in this order: 1. The work in progress.",
+        "2. The project folder, the first under Folders. It holds project knowledge",
+        "3. The other folders, each when its description bears on the instruction.",
+        "Folders lists this project's usage folders and the background folders",
+        "Global Context, when that section appears below, lists knowledge folders",
+    )
+    order = [flat_out.index(layer) for layer in layers]
+    assert order == sorted(order)
+    assert "List it on every task, because it applies to everything done in this" in flat_out
+    # One order, said once: the shared navigation text names no starting point of its own.
+    assert "Start with" not in out.split("# How to Navigate context-db")[1].split("\n# ")[0]
+    # Another project's usage knowledge is read the same way as this project's own.
     assert "One test applies to every folder: open what bears directly on the" in flat_out
     assert "look into it before you read that project's code" in flat_out
     marks = (
@@ -921,6 +931,22 @@ def test_prompt_starts_from_the_plans_that_bear_on_the_task(example):
     assert "- [Refund endpoint](refund-endpoint.md). Started 2026-11-03" in wip
     start = " ".join(out.split("# How to Navigate")[0].split())
     assert "start with the plans it lists that bear on the instruction" in start
+
+
+def test_the_docs_give_the_order_and_the_feature_branch_pattern():
+    """The owner: wip first, then project knowledge, then the rest. And a branch for each effort."""
+    commands = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
+    steps = flat(commands.split("## /context-db prompt")[1].split("### See what the agent")[0])
+    marks = ("The work in progress comes first.", "knowledge comes second", "These come last.")
+    order = [steps.index(mark) for mark in marks]
+    assert order == sorted(order)
+    wip = commands.split("## /context-db wip")[1].split("## /context-db maintain")[0]
+    pattern = flat(wip.split("### Feature branches")[1].split(":::{dropdown}")[0])
+    assert "When you merge, the plan must not stay in the main branch's list." in pattern
+    for path in (REPO / "README.md", REPO / "docs" / "index.md"):
+        page = flat(path.read_text(encoding="utf-8"))
+        assert "The plans for the work in progress come first, then your project" in page, path
+        assert "then knowledge from outside the project." in page, path
 
 
 def test_prompt_leaves_out_an_empty_wip_list(project):
@@ -1832,6 +1858,16 @@ def test_wip_records_the_current_work(project):
     assert "# How Work In Progress Is Kept" in out and "# File Format" in out
     assert "# Git State" not in out
     assert out.rstrip().endswith("plan the x work")
+    # The owner's pattern: a branch for each effort, and no plan left on the main branch.
+    kept = " ".join(out.split("# How Work In Progress Is Kept")[1].split("\n# ")[0].split())
+    branches = kept.split("## Feature branches")[1]
+    assert "A useful pattern is one feature branch for each effort" in branches
+    assert "Once the branch is merged, `main` must not list the effort" in branches
+    assert "or on `main` straight after it." in branches
+    assert len(branches.split()) < 70
+    # It describes a pattern and orders no commit. A trial agent read "committed on that
+    # branch" as a possible order, and "the last commit before the merge" found none to act on.
+    assert "commit" not in branches
 
 
 def test_wip_maintain_shows_git_state_and_the_list(project):
@@ -1848,6 +1884,10 @@ def test_wip_maintain_shows_git_state_and_the_list(project):
     assert "- Current branch: `feature/x`" in out
     assert "- Main branch: `main`" in out
     assert "Work has landed when it is merged into `main`" in out
+    # On the main branch a merged plan names another branch, and it still goes.
+    assert "has all landed is finished, whichever branch it names: delete it" in " ".join(
+        out.split()
+    )
     assert "add src" in out and "src.py" in out
     assert "x-plan.md" in out.split("git status --short")[1]
     assert "- [x-plan](x-plan.md)" in out.split("# Work In Progress")[1]

@@ -10,7 +10,6 @@ a folder, now or later in the session, instead of listing the folder, opening
 files to see what they are, or reading an `index.md` that the folder may
 carry.
 
-- Start with the project folder and the other folders listed under Folders.
 - Open a file, or list a subfolder, only when its description bears directly
   on the task. Skip everything else.
 - Links inside a file are relative to that file.

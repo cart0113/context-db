@@ -120,15 +120,16 @@ separating sections of a composed prompt, and headers need no closing tag. Each
 prompt file opens with one H1; the script adds H1 sections for dynamic content
 (`# Folders`, `# Work In Progress`, `# Git State`, `# User Instruction`).
 
-## On reads, the project folder first and one test for every folder
+## On reads, a fixed order and one test for every folder
 
-Write commands say exactly where to write, because writes need direction. On
-`prompt` the project folder is named as the place to start, which the owner
-decided on 2026-11-22; see
-[usage-folders.md](./design-decisions/usage-folders.md). Keep the other half as
-it was: the test for opening a note is the same for every folder. Wording that
-narrowed attention to the project folder once biased the agent away from
-standards that apply.
+Write commands say exactly where to write. On `prompt` the order is the
+owner's (2026-11-24): "The first place to look is the wip, then the project
+knowledge, then the extra project knowledge (which can be in the context-db/
+folder or anywhere with correct config)". Only `prompt.md` names it, in three
+numbered steps. Each step says when it applies and every kind of folder has
+one: a trial agent could not place a usage folder, and read "Every other
+folder" as a duty to list each. The test for opening a note stays the same for
+every folder, or the agent passes over standards that apply.
 
 ## Measure the whole message, not the file
 

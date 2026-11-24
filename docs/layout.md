@@ -30,6 +30,12 @@ context-db/
 └── acme-ledger-usage -> ...     the usage folder of a project that yours uses
 ```
 
+[`prompt`](commands.md#context-db-prompt) has the agent look in a fixed order.
+The plans in `wip/` come first, then the rest of the project folder, then the
+[background folders](#background-folders) and any
+[global context](#global-context), which is knowledge kept outside
+`context-db/`.
+
 ## Where each thing goes
 
 Everything your project knows has one place to live, and only one. A second
@@ -54,8 +60,7 @@ something that belongs in another row, it says so and writes no note.
 ## The project folder
 
 `<name>-project/` holds project knowledge: what is specific to this repository,
-for agents working on it. It is the knowledge the agent starts with on every
-task.
+for agents working on it. It is the knowledge the agent reads on every task.
 
 What belongs in it:
 
@@ -529,6 +534,9 @@ branch: feature/refunds
 [`wip`](commands.md#context-db-wip) writes the plans, `update` keeps the one a
 session worked from up to date, `wip --maintain` and `maintain` check them
 all, and the checker warns about a plan that `wip.md` does not list.
+
+A plan can be kept on a feature branch, and deleted when the branch is merged.
+[Feature branches](commands.md#feature-branches) says how.
 
 ## What the checker looks for
 
