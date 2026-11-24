@@ -516,7 +516,7 @@ def test_toc_runs_but_is_not_listed(project):
 
 
 SHOWN = re.compile(
-    r"(?s)\A(# Context-db Show Context\n.*?)\n======== start of the message ========\n"
+    r"(?s)\A(# context-db Show Context\n.*?)\n======== start of the message ========\n"
     r"(.*)\n======== end of the message ========\n\n(.*)\Z"
 )
 
@@ -549,7 +549,7 @@ def test_show_context_also_covers_a_repository_that_is_not_set_up(tmp_path):
     (tmp_path / "context-db").mkdir()
     for command in ("prompt", "update", "wip", "maintain"):
         out = run(tmp_path, command, "x", "--show-context").stdout
-        assert out.startswith("# Context-db Show Context"), command
+        assert out.startswith("# context-db Show Context"), command
         assert "/context-db configure" in SHOWN.match(out).group(2)
 
 
@@ -626,9 +626,9 @@ EVERY_SECTION = {  # the flags that make each command send every section it can
 
 
 def test_the_docs_list_the_sections_each_command_sends(example):
-    """docs/commands.md, How it all fits together: one table per command, in order."""
+    """docs/commands.md, What each command sends: one table per command, in order."""
     page = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
-    page = page.split("## How it all fits together")[1]
+    page = page.split("## What each command sends")[1]
     tables = re.findall(r"(?m)^`/context-db (\w+)` sends:\n\n((?:\|.*\n)+)", page)
     assert tuple(name for name, _ in tables) == USER_COMMANDS
     prompts = SCRIPT.parent / "prompts"
@@ -701,9 +701,9 @@ def test_sections_about_plans_and_usage_folders_are_sent_only_when_there_are_any
         sections_sent(run(project, "maintain").stdout) == bare[:cut] + plans + [usage] + bare[cut:]
     )
     sent = sections_sent(run(project, "update").stdout)
-    assert sent[:2] == ["# Context-db Update", "# Usage Knowledge"]
+    assert sent[:2] == ["# context-db Update", "# Usage Knowledge"]
     page = (REPO / "docs" / "commands.md").read_text(encoding="utf-8")
-    page = page.split("## How it all fits together")[1]
+    page = page.split("## What each command sends")[1]
     table = page.split("`/context-db maintain` sends:")[1]
     for heading in plans + [usage]:
         assert re.search(rf"(?m)^\| `{heading}` \| .*Only when .* \|$", table), heading
@@ -846,8 +846,9 @@ def test_prompt_lists_folders_and_wip_then_rules_then_instruction(example):
     flat_out = " ".join(out.split())
     # Its own project knowledge comes first; another project's usage knowledge is read the same way.
     assert "A background folder is any other folder in `context-db/`" in flat_out
-    assert "two kinds of knowledge, in one format, and you read both the same way" in flat_out
-    assert "It is in the project folder, and it comes first: start there on every task" in flat_out
+    assert "The project folder holds project knowledge" in flat_out
+    assert "Start there on every task, because it applies to everything done in this" in flat_out
+    assert "One test applies to every folder: open what bears directly on the" in flat_out
     assert "look into it before you read that project's code" in flat_out
     marks = (
         "# Work In Progress",
@@ -884,7 +885,7 @@ def test_audit_says_what_to_report_only_after_the_reading_is_done(example):
     assert audited.rstrip().endswith("add a refund endpoint")
 
     helper = run(example, "audit")
-    assert helper.returncode == 0 and helper.stdout.startswith("# Context-db Audit\n")
+    assert helper.returncode == 0 and helper.stdout.startswith("# context-db Audit\n")
     told = " ".join(helper.stdout.split())
     assert "You were not told what the report holds before you read, so that it could not" in told
     assert "Read nothing more for it." in told
@@ -892,7 +893,7 @@ def test_audit_says_what_to_report_only_after_the_reading_is_done(example):
     assert "what led you to it" in told and "What came from outside this project" in told
     assert "What you looked for and did not find, and any description that misled you" in told
     assert "Then carry out the instruction, without waiting for a reply." in told
-    assert "`Context-db audit, after the work`" in told
+    assert "`context-db audit, after the work`" in told
     assert "Which files the work rested on in the end, and which it did not need." in told
 
     # The agent runs the helper, so --help leaves it out. No other command takes the flag,
@@ -1409,7 +1410,7 @@ def test_update_writes_usage_knowledge_once_a_usage_folder_exists(project):
     usage_folder(project / "context-db" / "demo-project" / "demo-usage")
     out = run(project, "update", "callers must send a key").stdout
     marks = (
-        "# Context-db Update",
+        "# context-db Update",
         "- What this session changed or showed about using this project from outside.",
         "tell the user there is nothing to change and stop",
         "a usage folder (`context-db/demo-project/demo-usage/`). Usage Knowledge, below",
@@ -1453,7 +1454,7 @@ def test_maintain_covers_the_usage_folders_once_one_exists(project):
     usage_folder(project / "context-db" / "demo-project" / "demo-usage")
     out = run(project, "maintain", "the calling rules").stdout
     marks = (
-        "# Context-db Maintain",
+        "# context-db Maintain",
         RULE,
         "# Git History",
         "# Folders",
@@ -1482,7 +1483,7 @@ def test_the_usage_folder_is_listed_once_it_exists(project):
     listing = toc(project)
     assert "* [demo-usage](context-db/demo-project/demo-usage/) - How to call demo" in listing
     assert run(project, "toc", "--check").returncode == 0
-    assert "This project's own usage folder, if Folders lists one, is what it tells others" in (
+    assert "Look into this project's own usage folder, if Folders lists one, when the" in (
         " ".join(run(project, "prompt", "x").stdout.split())
     )
 
@@ -1672,7 +1673,7 @@ def test_maintain_checks_first_and_can_stop(project):
     assert "If you find nothing worth changing, say so in one line and stop." in flat_out
     assert "context-db.py toc --check" in out
     assert "**Project folder** `context-db/demo-project/`" in out
-    marks = ("# Context-db Maintain", "# Folders", "# File Format", "legal/", "# User Instruction")
+    marks = ("# context-db Maintain", "# Folders", "# File Format", "legal/", "# User Instruction")
     order = [out.index(mark) for mark in marks]
     assert order == sorted(order)
     assert out.rstrip().endswith("the api notes")
@@ -1683,8 +1684,8 @@ def test_maintain_without_config_asks_for_configure(tmp_path):
     assert "/context-db configure" in run(tmp_path, "maintain").stdout
 
 
-RULE = "# Context-db Is Not a Mirror of the Code"
-SMALL = "# Keep Context-db Small"
+RULE = "# No Duplication"
+SMALL = "# Keep context-db Small"
 WRITES_NOTES = (
     ("update",),
     ("maintain",),
@@ -1698,9 +1699,12 @@ def test_every_command_that_reads_or_writes_notes_repeats_the_rule(project):
     for args in READS_OR_WRITES_NOTES:
         out = run(project, *args).stdout
         assert out.count(RULE) == 1, args
-        test = "could an agent learn this by reading the project, meaning its code, its comments"
-        assert test in " ".join(out.split()), args
-        assert "or anything a code comment, the README, or the docs already say" in out, args
+        rule = " ".join(out.split(RULE)[1].split("\n# ")[0].split())
+        assert rule.startswith(
+            "context-db does not duplicate information found in the project's assets (code, code "
+            "comments, configs, docs)."
+        ), args
+        assert "or anything a code comment, the README, or the docs already say" in rule, args
     for args in (("wip", "--list"), ("configure",)):
         assert RULE not in run(project, *args).stdout
 
@@ -1710,7 +1714,7 @@ def test_every_command_that_writes_notes_is_told_to_keep_the_knowledge_base_smal
     for args in WRITES_NOTES:
         out = run(project, *args).stdout
         assert out.count(SMALL) == 1, args
-        marks = (RULE, SMALL, "# How to Navigate Context-db", "# File Format")
+        marks = (RULE, SMALL, "# How to Navigate context-db", "# File Format")
         order = [out.index(mark) for mark in marks]
         assert order == sorted(order), args
         rule = " ".join(out.split(SMALL)[1].split("\n# ")[0].split())
@@ -1730,7 +1734,7 @@ def test_every_command_that_writes_notes_is_told_to_keep_the_knowledge_base_smal
 def test_every_command_that_reads_notes_says_how_to_navigate(project):
     for args in READS_OR_WRITES_NOTES:
         out = run(project, *args).stdout
-        assert out.count("# How to Navigate Context-db") == 1, args
+        assert out.count("# How to Navigate context-db") == 1, args
         assert "context-db.py toc <folder>" in out, args
     prompts = REPO / "skill" / "context-db" / "prompts"
     mentions = sorted(p.name for p in prompts.glob("*.md") if "index.md" in p.read_text())
@@ -1741,7 +1745,7 @@ def test_every_command_that_reads_notes_says_how_to_navigate(project):
 
 def test_maintain_enforces_the_rule_against_code_and_comments(project):
     out = " ".join(run(project, "maintain").stdout.split())
-    assert "Your main job is to enforce the rule" in out
+    assert "Your main job is to enforce No Duplication, below" in out
     assert "open the code it is about, comments included" in out
     assert "do not edit the code yourself" in out
     assert "Git History, below, says which notes the code has moved furthest past" in out
@@ -1749,8 +1753,7 @@ def test_maintain_enforces_the_rule_against_code_and_comments(project):
 
 def test_maintain_cuts_back_what_is_no_longer_needed_and_shapes_the_rest(project):
     out = " ".join(run(project, "maintain").stdout.split())
-    assert "Your second job is the rule under Keep Context-db Small." in out
-    assert "A knowledge base only grows unless someone cuts it back" in out
+    assert "Your second job is Keep context-db Small: cut back what is no longer" in out
     looks_for = out.split("## What to look for")[1].split("## How to change it")[0]
     marks = (
         "**Repeats the project.**",
@@ -1841,14 +1844,14 @@ def test_wip_maintain_shows_git_state_and_the_list(project):
     git(project, "commit", "-q", "-m", "add src")
     add_plan(project)
     out = run(project, "wip", "--maintain").stdout
-    assert "# Context-db Wip Maintain" in out
+    assert "# context-db Wip Maintain" in out
     assert "- Current branch: `feature/x`" in out
     assert "- Main branch: `main`" in out
     assert "Work has landed when it is merged into `main`" in out
     assert "add src" in out and "src.py" in out
     assert "x-plan.md" in out.split("git status --short")[1]
     assert "- [x-plan](x-plan.md)" in out.split("# Work In Progress")[1]
-    marks = ("# Context-db Wip Maintain", "# How to Check the Plans", "# Git State", "# Work In Pr")
+    marks = ("# context-db Wip Maintain", "# How to Check the Plans", "# Git State", "# Work In Pr")
     order = [out.index(mark) for mark in marks]
     assert order == sorted(order)
     # `maintain` checks the plans the same way, as part of its sweep.
@@ -2233,6 +2236,23 @@ def test_example_project_and_shared_folders_are_conformant(example):
 def test_this_repos_own_knowledge_base_is_conformant():
     result = run(REPO, "toc", "--check")
     assert result.returncode == 0, result.stdout
+
+
+def test_this_repo_and_the_example_are_set_up_by_the_current_skill():
+    """Both run the skill in skill/, and carry its current settings comment and starter text."""
+    starters = SCRIPT.parent / "starters"
+    comment = re.compile(r"(?s)\A<!--.*?-->")
+    note = (starters / "AGENTS.md").read_text(encoding="utf-8").strip()
+    for root in (REPO, REPO / "example" / "acme-payments-repo"):
+        assert (root / ".claude" / "skills" / "context-db").resolve() == SCRIPT.parent, root
+        assert note in (root / "AGENTS.md").read_text(encoding="utf-8"), root
+        conf = root / "context-db" / "configuration"
+        body = (conf / "settings.md").read_text(encoding="utf-8").split("---\n", 2)[2]
+        assert body.strip() == context_db.text(context_db.SETTINGS_BODY), conf
+        for command in context_db.ON_COMMANDS:
+            name = f"ON_{command.upper()}.md"
+            current = comment.match((starters / name).read_text(encoding="utf-8")).group()
+            assert (conf / name).read_text(encoding="utf-8").startswith(current), conf / name
 
 
 def shipped_documents():

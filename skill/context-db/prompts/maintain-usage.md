@@ -5,7 +5,7 @@ an agent working in another project needs to know to use this one. Those
 projects mount a usage folder, or list it as global context, so its reader
 may never have seen this repository.
 
-Go through each one the way Context-db Maintain says, for that reader: one
+Go through each one the way context-db Maintain says, for that reader: one
 who uses this project and does not read its insides. This is what changes:
 
 - **Repeats the project** means what the project already tells its users: its

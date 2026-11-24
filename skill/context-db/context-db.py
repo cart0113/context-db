@@ -192,7 +192,7 @@ On any command
 """
 
 SHOW_CONTEXT = """
-# Context-db Show Context
+# context-db Show Context
 
 The user added `--show-context` to `/context-db {command}`. They want to read
 the message that command sends you. They do not want it carried out.
@@ -1610,7 +1610,7 @@ def cmd_prompt(args):
         [
             load_prompt("prompt", cdb=cdb),
             navigate_section(config),
-            load_prompt("not-a-mirror"),
+            load_prompt("no-duplication"),
             wip_section(cdb, config, WIP_FOR_PROMPT, show_empty=False, on_branch=on_branch),
             folders_section(cdb, config),
             global_context_section(cdb, config),
@@ -1665,7 +1665,7 @@ def cmd_update(args):
             nothing_to_add=text(NOTHING_TO_ADD_BUT_COMMIT if commit else NOTHING_TO_ADD),
         ),
         load_prompt("update-usage", **names) if usage else "",
-        load_prompt("not-a-mirror"),
+        load_prompt("no-duplication"),
         load_prompt("keep-small"),
         navigate_section(config),
         folders_section(cdb, config, usage_missing=usage),
@@ -1693,7 +1693,7 @@ def cmd_maintain(args):
             toc_cmd=toc_cmd,
             check_cmd=f"{toc_cmd} --check",
         ),
-        load_prompt("not-a-mirror"),
+        load_prompt("no-duplication"),
         load_prompt("keep-small"),
         navigate_section(config),
         git_history_section(cdb, config),
@@ -1731,7 +1731,7 @@ def cmd_wip(args):
     if mode != "list":
         sections.append(load_prompt("wip-format", **values))
     if mode in ("", "maintain"):
-        sections.append(load_prompt("not-a-mirror"))
+        sections.append(load_prompt("no-duplication"))
         sections.append(load_prompt("keep-small"))
         sections.append(navigate_section(config))
         sections.append(load_prompt("format"))

@@ -1,4 +1,4 @@
-# Context-db Wip Clear
+# context-db Wip Clear
 
 The user wants to clear the record of work in progress: delete every plan in
 `{wip_dir}/` and empty the list in `{wip_list}`.

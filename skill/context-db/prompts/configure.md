@@ -1,4 +1,4 @@
-# Context-db Configure
+# context-db Configure
 
 `/context-db configure` is a helper. The user runs it first, to get context-db
 working in this repository, and again whenever they want to change how it

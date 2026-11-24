@@ -77,10 +77,10 @@ below it, two of three agents first ran the command with no instruction.
 read. A folder line that said "its index lists ..." made a fresh agent stop and
 ask which index was meant (2026-11-19). The line now says what the folder holds.
 Before adding wording to the script, read it next to `navigate.md` and
-`not-a-mirror.md`, which are sent with it.
+`no-duplication.md`, which are sent with it.
 
 The same trial showed that a section which introduces a new kind of folder must
-name the command for it. "Look into one the way How to Navigate Context-db
+name the command for it. "Look into one the way How to Navigate context-db
 says" left the agent guessing whether `toc` works outside `context-db/`.
 
 ## Configure is a menu, not a form

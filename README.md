@@ -78,7 +78,7 @@ project, before it reads your code.
   rules, sent when you run a command. Your rules are plain Markdown files in
   `context-db/configuration/`, named after the commands: `ON_PROMPT.md` is added
   to every `prompt` and `ON_UPDATE.md` to every `update`.
-  [How it all fits together](https://cart0113.github.io/context-db/commands.html#how-it-all-fits-together) shows every word the agent receives.
+  [What each command sends](https://cart0113.github.io/context-db/commands.html#what-each-command-sends) shows every word the agent receives.
 - A small Python script builds each folder's OKF index
   [on the fly](https://cart0113.github.io/context-db/layout.html#dynamic-indexing), from the notes as they are at that moment. No `index.md`
   files are kept in your repo, so there is nothing to keep in sync and the
@@ -287,7 +287,7 @@ agent would get wrong without it, and most sessions add nothing. `maintain`
 goes back over everything: it cuts what has gone stale and what repeats the
 code, and splits what has grown into shorter files and deeper folders, so
 that the right note stays easy to find.
-[The rule every command repeats](https://cart0113.github.io/context-db/commands.html#the-rule-every-command-repeats) has the exact text.
+[The no-duplication rule](https://cart0113.github.io/context-db/commands.html#the-no-duplication-rule) has the exact text.
 
 ## Documentation
 

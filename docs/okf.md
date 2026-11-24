@@ -51,7 +51,7 @@ November 2026
   `open-knowledge-format`, where version 0.3 is in progress. That repository was
   not yet public when this page was written.
 
-## OKF in two minutes
+## OKF in brief
 
 - A **bundle** is a folder of Markdown files. It is the unit that gets shared.
 - Each file is a **concept**: one piece of knowledge. It starts with a block of
@@ -174,7 +174,7 @@ Rules for what gets written
 : OKF does not say how much to write. context-db tells the agent on every
   command that the knowledge base is not a copy of the code, and on every
   command that writes to keep it small. See
-  [Commands](commands.md#the-rule-every-command-repeats).
+  [Commands](commands.md#the-no-duplication-rule).
 
 Settings and rules kept outside the bundles
 : The settings file and the `ON_*.md` files sit next to the bundles, not inside
@@ -237,8 +237,8 @@ the agent can read them whenever it wants. A page that repeats them is a second
 copy that goes out of date. So context-db takes the format and not the habit of
 writing everything down. Most sessions add nothing, and the agent is told to
 delete what is no longer needed.
-[The rule every command repeats](commands.md#the-rule-every-command-repeats)
-explains the reasoning.
+[The no-duplication rule](commands.md#the-no-duplication-rule) explains the
+reasoning.
 
 ## Using other tools
 

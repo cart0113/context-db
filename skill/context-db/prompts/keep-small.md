@@ -1,8 +1,8 @@
-# Keep Context-db Small
+# Keep context-db Small
 
-Whatever is written here, later agents have to read, and someone has to keep
-true as the project changes. So your job is to look after the knowledge base,
-not to add to it. Leaving it smaller is as good a result as leaving it larger.
+Every note in the knowledge base has to be read by later agents and kept true
+as the project changes. Leaving it smaller is as good a result as leaving it
+larger.
 
 - Write the least that does the job: the fact, the rule, the pitfall, and the
   reason when the reason is the point. No background, and no account of how

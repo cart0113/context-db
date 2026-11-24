@@ -3,10 +3,11 @@
 There are five commands: `prompt`, `update`, `wip`, `maintain`, and
 `configure`. `/context-db --help` lists them. Each one prints a set of
 instructions, and the agent follows them. Nothing is hidden: the exact text is
-under each command below, and [How it all fits together](#how-it-all-fits-together)
-shows the whole message each command sends. Add `--show-context` to any command
-and the agent [shows you that message](#see-the-message-for-your-own-project)
-for your own project.
+under each command below, and
+[What each command sends](#what-each-command-sends) shows the whole message.
+Add `--show-context` to any command and the agent
+[shows you that message](#see-the-message-for-your-own-project) for your own
+project.
 
 In Claude Code you type a command as `/context-db <command>`, and these pages
 write every command that way. Other agents invoke a skill their own way. To
@@ -62,29 +63,26 @@ knowledge base and compares it with the project as it is now, using the git
 history to see what has moved. Run `update` after most sessions, and
 `maintain` rarely.
 
-## The rule every command repeats
+## The no-duplication rule
 
-The knowledge base is not a mirror of the code. Anything an agent can learn by
-reading the code, its comments, and your docs stays there, because a copy
-drifts out of date and the next agent trusts it. `prompt`, `update`, `wip`, and
-`maintain` all give the agent this text, so it hears the rule every time it
-reads or writes the knowledge base:
+The knowledge base does not duplicate information found in your project's
+assets: the code, its comments, the configs, and your docs. A copy goes out of
+date, and the next agent trusts it. `prompt`, `update`, `wip`, and `maintain`
+all send the agent this text:
 
-```{literalinclude} ../skill/context-db/prompts/not-a-mirror.md
+```{literalinclude} ../skill/context-db/prompts/no-duplication.md
 :language: markdown
 ```
 
 `update` follows it when it writes. `maintain` enforces it: it compares notes
 with the code they describe and removes what the code already says.
 
-### Keep it small
+## The keep-small rule
 
-The first rule says what does not belong. The second is about everything that
-does. A note is not free once it is written. Every later session has to read
-past it, and someone has to keep it true as the code changes. An agent does not
-weigh that cost by itself, because its task is over once the note is written.
-So `update`, `wip`, and `maintain` also give the agent this text whenever it is
-about to write:
+Every note has a cost. Each later session reads past it, and someone has to
+keep it true as the code changes. An agent does not weigh that cost by itself,
+because its task is over once the note is written. So `update`, `wip`, and
+`maintain` also send the agent this text:
 
 ```{literalinclude} ../skill/context-db/prompts/keep-small.md
 :language: markdown
@@ -174,7 +172,7 @@ find, and which descriptions misled it or left it unsure. This one is from the
 shortened:
 
 ```text
-Context-db audit
+context-db audit
 
 Trail:
 1. context-db/acme-payments-project/, listed. Led by the Folders section, as
@@ -205,7 +203,7 @@ to guess because nothing said it, and any note that the code contradicted.
 For the same question:
 
 ```text
-Context-db audit, after the work
+context-db audit, after the work
 
 Further steps in those folders: none.
 
@@ -239,8 +237,8 @@ opened are in the session, if you want to check one against the other.
 :color: secondary
 
 Words in braces are filled in when the command runs. After this text the agent
-sees [the rule every command repeats](#the-rule-every-command-repeats), the list
-from `wip/wip.md` when it lists anything, the folder list, the global context
+sees [the no-duplication rule](#the-no-duplication-rule), the list from
+`wip/wip.md` when it lists anything, the folder list, the global context
 when there is any, your `ON_PROMPT.md` rules, and your instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/prompt.md
@@ -375,9 +373,8 @@ When you have a usage folder, this follows:
 :language: markdown
 ```
 
-The agent also receives [the rule every command
-repeats](#the-rule-every-command-repeats), the rule to
-[keep it small](#keep-it-small), and the format rules:
+The agent also receives [the no-duplication rule](#the-no-duplication-rule),
+[the keep-small rule](#the-keep-small-rule), and the format rules:
 
 ```{literalinclude} ../skill/context-db/prompts/format.md
 :language: markdown
@@ -439,9 +436,9 @@ The `wip` command itself is for everything else:
 :::{dropdown} The text the agent receives
 :color: secondary
 
-For `/context-db wip`, followed by the list, the rules below, the two rules
-every writing command repeats, the format rules, your `ON_WIP.md`, and your
-instruction:
+For `/context-db wip`, followed by the list, the rules below, the
+no-duplication and keep-small rules, the format rules, your `ON_WIP.md`, and
+your instruction:
 
 ```{literalinclude} ../skill/context-db/prompts/wip.md
 :language: markdown
@@ -501,16 +498,15 @@ A knowledge base only grows unless someone cuts it back. Notes are added one
 session at a time, the project moves on, and what mattered then matters less
 now. `maintain` is the sweep that cuts it back.
 
-Its main job is to enforce [the rule every command
-repeats](#the-rule-every-command-repeats). `update` keeps to the rule when it
-writes one note; `maintain` goes through the notes looking for where it has been
-broken.
+Its main job is to enforce [the no-duplication rule](#the-no-duplication-rule).
+`update` keeps to the rule when it writes one note; `maintain` goes through the
+notes looking for where it has been broken.
 
 What the agent does:
 
 1. Checks first. If nothing needs changing, it says so and stops.
 2. Starts with the notes the code has moved furthest past, which
-   [the git history](#it-reads-the-git-history) shows.
+   [the git history](#git-history) shows.
 3. Opens the code each note talks about, comments included. It deletes what the
    code, its comments, or your docs already say, and links to them instead.
 4. Lists facts about one piece of code that would be better as a comment next
@@ -537,7 +533,7 @@ What the agent does:
 in and the notes the session showed to be wrong, and it asks you about anything
 else it noticed, so that recording one fact never turns into a reorganization.
 
-### It reads the git history
+### Git history
 
 `maintain` takes it that your project is in git, and uses git to find what has
 gone out of date. The agent is handed two things, read from git when the
@@ -565,10 +561,10 @@ Do not read the git history. Compare the notes with the code as it is.
 :::{dropdown} The text the agent receives
 :color: secondary
 
-After this text the agent sees the rule every command repeats, the rule to
-keep it small, the git history, the folder list, how to check the plans when
-there are any, how to check the usage folders when you have any, the format
-rules, your `ON_MAINTAIN.md`, and your instruction.
+After this text the agent sees the no-duplication rule, the keep-small rule,
+the git history, the folder list, how to check the plans when there are any,
+how to check the usage folders when you have any, the format rules, your
+`ON_MAINTAIN.md`, and your instruction.
 
 ```{literalinclude} ../skill/context-db/prompts/maintain.md
 :language: markdown
@@ -653,7 +649,7 @@ These are the files it writes:
 ```
 :::
 
-## The rule files control how the agent behaves
+## Rule files
 
 The commands come with built-in instructions, shown in the dropdowns above. You
 do not edit those. To change what the agent does, you add your own rules to five
@@ -717,7 +713,7 @@ context-db/configuration/*.local.md
 git check-ignore -v context-db/configuration/ON_PROMPT.local.md
 ```
 
-## Setting up without questions
+## Setting flags
 
 `configure` asks nothing when you pass it a setting. It writes the settings,
 creates whatever is missing, and never overwrites a file:
@@ -731,7 +727,7 @@ Its options are `--project`, `--main-branch`, `--python`, `--usage-folder`,
 to you. Give `--usage-folder` or `--global-context` once for each value.
 [Setup](setup.md#settings) describes each setting.
 
-## Listing and checking: toc
+## The `toc` helper
 
 context-db keeps no `index.md` files. Whenever the agent looks into the
 knowledge base, it runs a small helper that lists a folder on the spot, one line
@@ -772,7 +768,7 @@ that file for such a folder, and builds the listing only when there is none.
 [Dynamic indexing](layout.md#dynamic-indexing) describes the listing, and the
 [OKF page](okf.md#dynamic-indexing) why context-db builds it on demand.
 
-## How it all fits together
+## What each command sends
 
 context-db is nothing more than context: text that is put in front of the agent
 when you ask for it. Some of that text is canned. It comes with context-db and
@@ -811,7 +807,7 @@ Every section of that message comes from one of five places:
 | Comes from | What it is | Who changes it |
 | --- | --- | --- |
 | `prompts/` in the skill folder | The canned text: built-in instructions, one file for each section. They are the same in every project, and the dropdowns above show each one. | Nobody. They come with context-db. |
-| `context-db/configuration/ON_<COMMAND>.md` | [The project's rules](#the-rule-files-control-how-the-agent-behaves) for that one command, shared with everyone. | You and your team, by hand. |
+| `context-db/configuration/ON_<COMMAND>.md` | [The project's rules](#rule-files) for that one command, shared with everyone. | You and your team, by hand. |
 | `context-db/configuration/ON_<COMMAND>.local.md` | Your own rules for that command. Gitignored. | You, by hand. |
 | Your repository, read when the command runs | The list of work in progress, the list of folders with their descriptions, the global context that your settings point to, and the state of git. | Nobody directly. It is whatever the files say at that moment. |
 | What you typed | Your instruction. It always comes last. | You. |
@@ -823,9 +819,9 @@ heading shown.
 
 | The agent sees | It comes from |
 | --- | --- |
-| `# Context-db Prompt` | `prompts/prompt.md` |
-| `# How to Navigate Context-db` | `prompts/navigate.md` |
-| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
+| `# context-db Prompt` | `prompts/prompt.md` |
+| `# How to Navigate context-db` | `prompts/navigate.md` |
+| `# No Duplication` | `prompts/no-duplication.md` |
 | `# Work In Progress` | The list in `wip/wip.md`. Left out when it lists nothing. |
 | `# Folders` | The project folder, your usage folders if there are any, and each background folder, one line each with its description. |
 | `# Global Context` | Each folder outside `context-db/` that the `global_context` setting matches, one line each with its description. Left out when nothing matches. |
@@ -835,17 +831,17 @@ heading shown.
 | `# User Instruction` | What you typed. |
 
 With `--audit`, the helper that the agent runs after its reading prints one
-more section, `# Context-db Audit`, from `prompts/audit.md`.
+more section, `# context-db Audit`, from `prompts/audit.md`.
 
 `/context-db update` sends:
 
 | The agent sees | It comes from |
 | --- | --- |
-| `# Context-db Update` | `prompts/update.md` |
+| `# context-db Update` | `prompts/update.md` |
 | `# Usage Knowledge` | `prompts/update-usage.md`. Only when you have a usage folder. |
-| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
-| `# Keep Context-db Small` | `prompts/keep-small.md` |
-| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# No Duplication` | `prompts/no-duplication.md` |
+| `# Keep context-db Small` | `prompts/keep-small.md` |
+| `# How to Navigate context-db` | `prompts/navigate.md` |
 | `# Folders` | The project folder, your usage folders if there are any, and each background folder, one line each with its description. |
 | `# File Format` | `prompts/format.md` |
 | `# Commit` | `prompts/commit.md`. Only with `--commit` or `--push`. |
@@ -857,12 +853,12 @@ more section, `# Context-db Audit`, from `prompts/audit.md`.
 
 | The agent sees | It comes from |
 | --- | --- |
-| `# Context-db Wip` | `prompts/wip.md` |
+| `# context-db Wip` | `prompts/wip.md` |
 | `# Work In Progress` | The list in `wip/wip.md`, or one line saying that nothing is recorded. |
 | `# How Work In Progress Is Kept` | `prompts/wip-format.md` |
-| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
-| `# Keep Context-db Small` | `prompts/keep-small.md` |
-| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# No Duplication` | `prompts/no-duplication.md` |
+| `# Keep context-db Small` | `prompts/keep-small.md` |
+| `# How to Navigate context-db` | `prompts/navigate.md` |
 | `# File Format` | `prompts/format.md` |
 | `# Project Rules` | `configuration/ON_WIP.md` |
 | `# User Rules` | `configuration/ON_WIP.local.md`, if you have one. |
@@ -881,10 +877,10 @@ and your rules.
 
 | The agent sees | It comes from |
 | --- | --- |
-| `# Context-db Maintain` | `prompts/maintain.md` |
-| `# Context-db Is Not a Mirror of the Code` | `prompts/not-a-mirror.md` |
-| `# Keep Context-db Small` | `prompts/keep-small.md` |
-| `# How to Navigate Context-db` | `prompts/navigate.md` |
+| `# context-db Maintain` | `prompts/maintain.md` |
+| `# No Duplication` | `prompts/no-duplication.md` |
+| `# Keep context-db Small` | `prompts/keep-small.md` |
+| `# How to Navigate context-db` | `prompts/navigate.md` |
 | `# Git History` | `prompts/maintain-git.md`, then one line for each note, read from git. |
 | `# Folders` | The project folder, your usage folders if there are any, and each background folder, one line each with its description. |
 | `# How to Check the Plans` | `prompts/wip-check.md`. Only when `wip/` holds a plan. |
@@ -900,7 +896,7 @@ and your rules.
 
 | The agent sees | It comes from |
 | --- | --- |
-| `# Context-db Configure` | `prompts/configure.md` |
+| `# context-db Configure` | `prompts/configure.md` |
 | `# Detected State` | What the script found: the Python on your machine, the repository name, the main branch, the settings, and whether `AGENTS.md` or `CLAUDE.md` mention context-db. |
 | `# Current Rules` | The text of every ON file as it is now, so that the agent can show you what each one does. |
 | `# Project Rules` | `configuration/ON_CONFIGURE.md` |

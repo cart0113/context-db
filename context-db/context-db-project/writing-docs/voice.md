@@ -2,9 +2,9 @@
 type: Convention
 description:
   How the docs and README must read — plain, simple, not AI-sounding, no first
-  person, ideas and not studies; the words to use (project knowledge, usage
-  knowledge, project folder, background folder); how to show a command in an
-  example
+  person, ideas and not studies, factual headings; the words to use (project
+  knowledge, usage knowledge, project folder, background folder, context-db in
+  lower case); how to show a command in an example
 ---
 
 # Voice
@@ -24,6 +24,12 @@ just too detailed and too soon in the page."
 The same day, of a Motivation section that opened with what goes wrong on a
 large project and ran to ten paragraphs: "less vacuum salesman throwing dirt
 on the carpet and more about just what it is."
+
+On 2026-11-24, of the heading "The rule every command repeats" and of the
+rule's own title, "Context-db Is Not a Mirror of the Code": "I think we want
+more factual", and of titles, "more factual, drier". The rule was to "read
+more like" a plain statement that context-db does not duplicate information
+found in project assets.
 
 ## What that means in practice
 
@@ -49,6 +55,10 @@ the v0.1 rewrite of the docs.
   asked for one "without the word project used so often".
 - Say a thing directly. A colon followed by a list of clauses, and "it is to
   X what Y is to Z", are what the owner called "too complicated".
+- A heading names its subject in a few plain words, such as "The
+  no-duplication rule" or "Git history". No metaphor, and no clause that
+  describes the subject without naming it. This holds for the headings and
+  the wording of the prompt files too.
 
 A correction to one passage applies to the whole page. On 2026-11-23, after
 pointing at three passages one at a time, the owner said: "I want you to fix
@@ -108,6 +118,10 @@ the README does.
 The lead sentence of the home page and the README is the one exception: it
 says "usage information: the knowledge". The owner chose that on 2026-11-23
 over the agent's "usage knowledge: the information". Leave it.
+
+The name is always `context-db`, in lower case, at the start of a sentence and
+in a heading too. The owner, 2026-11-24: "everywhere it's context-db not
+Context-db".
 
 "Bundle" and "concept" are OKF's words. Use them only on the OKF page and when
 explaining how context-db maps onto OKF. The same vocabulary applies to the

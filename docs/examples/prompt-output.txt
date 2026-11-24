@@ -1,90 +1,71 @@
-# Context-db Prompt
+# context-db Prompt
 
-`context-db/` is this project's knowledge base: conventions, decisions, gotchas, and
-current plans that cannot be learned from reading any single project file.
-Consult it now, for the user instruction at the end of this output.
+`context-db/` is this project's knowledge base: conventions, decisions, pitfalls,
+and plans that cannot be learned by reading the project. Consult it now, for
+the user instruction at the end of this output.
 
 If a Work In Progress section appears below, start with the plans it lists
 that bear on the instruction. Then look into the folders listed under Folders,
-the way How to Navigate Context-db says.
+the way How to Navigate context-db says.
 
-The folders hold two kinds of knowledge, in one format, and you read both the
-same way.
+- The project folder holds project knowledge: this project's own, for agents
+  working on it. Start there on every task, because it applies to everything
+  done in this repository.
+- A usage folder holds usage knowledge: what a project tells agents in other
+  projects about using it. When the instruction involves a project that this
+  one uses, look for that project's usage folder among the background folders
+  and under Global Context, and look into it before you read that project's
+  code. Look into this project's own usage folder, if Folders lists one, when
+  the instruction changes how this project is used.
+- A background folder is any other folder in `context-db/`, such as shared
+  standards or domain knowledge. Global Context, when that section appears
+  below, lists knowledge folders that are kept outside `context-db/`.
 
-- Project knowledge is this project's own, for agents working on it. It is in
-  the project folder, and it comes first: start there on every task, because
-  it applies to everything done in this repository.
-- Usage knowledge is what a project tells agents in other projects about using
-  it. When the instruction involves a project that this one uses, look for
-  that project's usage folder among the background folders and under Global
-  Context, and look into it before you read that project's code: it says what
-  its users get wrong. This project's own usage folder, if Folders lists one,
-  is what it tells others. Look into it when the instruction changes how this
-  project is used.
-
-A background folder is any other folder in `context-db/`, such as shared standards
-or domain knowledge. Global Context, when that section appears below, lists
-knowledge folders that are kept outside `context-db/`. One test applies to every
-folder: open what bears directly on the instruction.
-
-## How to use what you find
-
-Context-db is a map, not the territory. Use it to orient, then verify against
-the project's assets (code, code comments, configs, docs). Where they conflict,
-trust the project's assets, especially code, and tell the user what is out of
-date. The rule below says why, and what may be written here.
+One test applies to every folder: open what bears directly on the
+instruction. Verify what you find against the project's assets (code, code
+comments, configs, docs), and tell the user what is out of date. Whether you
+may write to context-db on your own is stated in the rules near the end of
+this output.
 
 Do not run `/context-db prompt` yourself; the user invokes it. To consult
-context-db again later in the session, navigate it the same way. Whether you may
-write to it on your own is stated in the rules near the end of this output.
+context-db again later in the session, navigate it the same way.
 
-# How to Navigate Context-db
+# How to Navigate context-db
 
-To see what a folder holds, run:
+To list a folder, run:
 
     python3 .claude/skills/context-db/context-db.py toc <folder>
 
-It prints one line for each file and subfolder, with its description. This is
-context-db's dynamic index: the listing is built every time it is asked for,
-from the files as they are now, so it is never out of date. Use it every time
-you look into a folder, now or later in the session, instead of listing the
-folder, opening files to see what they are, or reading an `index.md` that the
-folder may carry.
+It prints each file and subfolder with its description, built from the files
+as they are now, so it is never out of date. Use it every time you look into
+a folder, now or later in the session, instead of listing the folder, opening
+files to see what they are, or reading an `index.md` that the folder may
+carry.
 
 - Start with the project folder and the other folders listed under Folders.
-- Open a file only when its description says it bears directly on the task.
-- Run `python3 .claude/skills/context-db/context-db.py toc` on a subfolder only when its description does.
-- Skip everything else. Reading widely dilutes what matters.
+- Open a file, or list a subfolder, only when its description bears directly
+  on the task. Skip everything else.
 - Links inside a file are relative to that file.
 
-# Context-db Is Not a Mirror of the Code
+# No Duplication
 
-Context-db holds what an agent cannot learn by reading the project: why
-decisions were made, conventions the code does not show, pitfalls, rules
-imposed from outside, domain knowledge, and plans. Everything else already has
-a home in the project's assets (code, code comments, configs, docs), and lives
-there only.
+context-db does not duplicate information found in the project's assets
+(code, code comments, configs, docs). A copy goes out of date as the project
+changes, and the next agent trusts it.
 
-A note that restates the project is a second copy. The copy drifts as the
-project changes, nobody notices, and the next agent trusts it over the code.
-So:
-
+- It holds what cannot be learned by reading the project: reasons for
+  decisions, conventions the code does not show, pitfalls, rules imposed from
+  outside, domain knowledge, and plans.
 - Never write down what can be read from the project: file layouts, function
-  signatures, CLI flags, what a function does, step-by-step walks through code,
-  or anything a code comment, the README, or the docs already say. Link to it
-  instead.
-- A fact about one piece of code belongs in a comment next to that code, not in
-  a note. Suggest the comment to the user instead of writing the note. When
-  the fact is the reason for a decision, write the note too, so that the
-  reason is not lost, and delete it once the comment is there.
-- Where a note and the project disagree, trust the project's assets,
-  especially code, and fix or delete the note. The exception is a note that
-  says the code does not follow it yet: that is a requirement still to be
-  built, not a stale note.
-
-The test for every line: could an agent learn this by reading the project,
-meaning its code, its comments, and its docs? If so, it does not belong in
-context-db.
+  signatures, CLI flags, what a function does, walks through code, or anything
+  a code comment, the README, or the docs already say. Link to it instead.
+- A fact about one piece of code goes in a comment next to that code. Suggest
+  the comment to the user and write no note. When the fact is the reason for
+  a decision, write the note too, so that the reason is not lost, and delete
+  it once the comment is there.
+- Where a note and the project's assets disagree, trust the assets, especially
+  code, and fix or delete the note. A note that says the code does not follow
+  it yet is a requirement still to be built, so it stays.
 
 # Work In Progress
 

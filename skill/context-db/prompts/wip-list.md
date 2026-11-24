@@ -1,4 +1,4 @@
-# Context-db Wip List
+# context-db Wip List
 
 Show the user what is in progress, from the list under Work In Progress below.
 Today is {today}. Give one line per effort: its name, how long it has been going

@@ -99,8 +99,7 @@ Rules that are only yours go in a file of the same name ending in `.local.md`,
 such as `ON_PROMPT.local.md`. It is added after the project's file, and it is
 gitignored.
 
-[Commands](commands.md#the-rule-files-control-how-the-agent-behaves) has
-examples of rules.
+[Commands](commands.md#rule-files) has examples of rules.
 
 ## 4. Tell the agent to leave it alone
 

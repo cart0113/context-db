@@ -6,9 +6,9 @@ which those projects mount or list as global context, so its reader may never
 have seen this repository. Folders, below, describes each usage folder, or
 says that it does not exist yet.
 
-The test is the same as above, for that reader: would an agent in another
-project use this one wrongly, or fail to use it, without the change? Most
-sessions change nothing here.
+The test, for that reader: would an agent in another project use this one
+wrongly, or fail to use it, without the change? Most sessions change nothing
+here.
 
 What belongs is what the project does not already tell its users: what it is
 for and when to use it, where to start and where it describes its own

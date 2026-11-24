@@ -45,7 +45,7 @@ home.
 | Project knowledge: what an agent needs in order to work on your project, and cannot read from any of those | The [project folder](#the-project-folder) | `update` and `maintain` |
 | Usage knowledge: what an agent in another project needs in order to use yours, and your docs do not say | A [usage folder](#usage-folders) | `update` and `maintain`, once you have one |
 | Where the work in progress stands | The [`wip/` folder](#the-wip-folder) | `wip`, and `update` for the plan a session worked from |
-| Rules the agent must see every time a command runs | The [ON files](commands.md#the-rule-files-control-how-the-agent-behaves) | You, or `configure` |
+| Rules the agent must see every time a command runs | The [ON files](commands.md#rule-files) | You, or `configure` |
 | What another project knows, or your whole team | [Background folders](#background-folders) and [global context](#global-context) | Their owners. Your agent only reads them. |
 
 The commands repeat this to the agent whenever it writes. When it learns
@@ -66,11 +66,11 @@ What belongs in it:
 
 What does not belong in it is anything the agent can read from the project:
 file layouts, function signatures, flags, summaries of modules, what a function
-does, anything your docs already say. The knowledge base is not a mirror of the
-code. A note that copies the code goes out of date as the code changes, and the
+does, anything your docs already say. The knowledge base does not duplicate
+them. A note that copies the code goes out of date as the code changes, and the
 agent trusts it over the code. A fact about one piece of code belongs in a
-comment next to it. Every command repeats this rule to the agent;
-[Commands](commands.md#the-rule-every-command-repeats) shows the text.
+comment next to it. Every command sends this rule to the agent;
+[Commands](commands.md#the-no-duplication-rule) shows the text.
 
 ## Usage folders
 

@@ -1,17 +1,14 @@
-# Context-db Maintain
+# context-db Maintain
 
 Tidy this project's knowledge base, following the user instruction at the end
 of this output if there is one. With none, look at all of it: the project
 folder, `{project_dir}/`, with its plans, and the usage folders. With a folder
-or a topic, look only there. This is a spring cleaning: take a broad view,
-whatever this session worked on.
+or a topic, look only there. Take a broad view, whatever this session worked
+on.
 
-Your main job is to enforce the rule under Context-db Is Not a Mirror of the
-Code, below. `update` follows that rule when it writes; `maintain` goes looking
-for where it has been broken, because every note that repeats the project is a
-copy that will drift. Your second job is the rule under Keep Context-db Small.
-A knowledge base only grows unless someone cuts it back, and what mattered
-when a note was written may matter less now.
+Your main job is to enforce No Duplication, below: find the notes that repeat
+the project. Your second job is Keep context-db Small: cut back what is no
+longer needed.
 
 Check first, change second. A knowledge base that is in good shape needs
 nothing. If you find nothing worth changing, say so in one line and stop.
@@ -92,8 +89,8 @@ Run:
 
     {check_cmd}
 
-and fix what it reports, until it is clean.
-Then tell the user in a few lines what you removed, and whether that was
-because the project already says it or because it is no longer needed, what
-you fixed, split, or merged, and which code comments you suggest.
-Leave the changes uncommitted unless the user asks you to commit them.
+and fix what it reports, until it is clean. Then tell the user in a few lines
+what you removed, and whether that was because the project already says it or
+because it is no longer needed, what you fixed, split, or merged, and which
+code comments you suggest. Leave the changes uncommitted unless the user asks
+you to commit them.

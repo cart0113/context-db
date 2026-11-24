@@ -1,11 +1,11 @@
-# Context-db Audit
+# context-db Audit
 
 The user wants to see what you read, for the instruction, from the folders
 that `/context-db prompt` listed, and by what path, so that they can make the
 knowledge base better. You were not told what the report holds before you
 read, so that it could not change what you read. Read nothing more for it.
 
-Show the user this report now, under the heading `Context-db audit`. Work from
+Show the user this report now, under the heading `context-db audit`. Work from
 the commands you ran, so that no step in those folders is left out: a file
 that turned out not to matter is what they most need to see.
 
@@ -26,7 +26,7 @@ that turned out not to matter is what they most need to see.
 Then carry out the instruction, without waiting for a reply.
 
 When you have finished it, end your reply with a second part, under the
-heading `Context-db audit, after the work`:
+heading `context-db audit, after the work`:
 
 - Any further steps in those folders, in the same form.
 - Which files the work rested on in the end, and which it did not need.

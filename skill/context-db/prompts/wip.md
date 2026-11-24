@@ -1,4 +1,4 @@
-# Context-db Wip
+# context-db Wip
 
 Record where the work in progress stands, so that a later session can pick it
 up cold, and write nothing else. Follow the user instruction at the end of

@@ -37,7 +37,7 @@ Added by the owner on 2026-11-11:
   information that does not duplicate information that can be found by
   reading the code, docs or other project assets". The reasoning about what a
   note costs, and why agents write too much, stays on the Commands page under
-  the rule every command repeats.
+  the no-duplication rule and the keep-small rule.
   Migration is the owner's own task; its guide stays in this knowledge base
   and out of the docs.
 - On the Commands page, each command's section is headed by the full command,
@@ -78,7 +78,7 @@ Added by the owner on 2026-11-11:
   one small line. The owner had the copyright line removed and the footer
   halved because it "looks really bad on a phone". Check a footer change at
   phone width.
-- The Commands page ends with "How it all fits together": what the script
+- The Commands page ends with "What each command sends": what the script
   sends for each command, section by section, next to the ON files. The owner
   wants it "crystal clear how the whole system works", and wants this stressed:
   context-db "is nothing more than some canned context alongside user

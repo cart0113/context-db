@@ -57,8 +57,8 @@ knowledge base" made `update` do work when there was nothing to do. So:
   showed to be wrong or not needed, and names any others it noticed and asks.
   An agent that a note has just misled is the one that knows the note is wrong.
 - `maintain` does sweeps, checks first, and stops when nothing needs changing.
-  Its main job is enforcing the not-a-mirror rule (below), and its second the
-  keep-small rule.
+  Its main job is enforcing the no-duplication rule (below), and its second
+  the keep-small rule.
 
 `configure` asks how freely `update` cleans up. That is the implementing
 agent's choice: the owner said only that asking the user how far to go is fine
@@ -132,9 +132,9 @@ prints it, both front pages repeat it, and a test compares them.
 ## Shared core text
 
 Two prompt files go to the agent on every command that reads or writes notes,
-so the system says one thing everywhere: `not-a-mirror.md` (context-db never
+so the system says one thing everywhere: `no-duplication.md` (context-db never
 restates what the code and its comments say) and `navigate.md` (see
-[dynamic-index.md](./dynamic-index.md)). The owner asked for the not-a-mirror
+[dynamic-index.md](./dynamic-index.md)). The owner asked for the no-duplication
 rule to be stressed uniformly "throughout and in our main page, the motivation
 section". Edit the rule in that file, and keep the docs' wording of it in step.
 

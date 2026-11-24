@@ -1,4 +1,4 @@
-# Context-db Wip Maintain
+# context-db Wip Maintain
 
 Tidy the record of work in progress, and nothing else: delete the plans for
 work that has landed, and bring the rest up to date. Follow the user

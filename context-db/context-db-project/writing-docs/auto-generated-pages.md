@@ -14,7 +14,7 @@ When a docs page would restate what the agent reads, include the source file.
 dropdown so that the page stays short. Editing a prompt changes the docs on the
 next build; there is no generator script and nothing to regenerate.
 
-"How it all fits together" on that page is the exception. Its per-command
+"What each command sends" on that page is the exception. Its per-command
 tables are hand-written, and `docs/examples/prompt-output.txt` is a captured
 `prompt` message. Tests compare both with what the script prints, so a change
 to the order of sections or to a prompt file fails until they are updated.
