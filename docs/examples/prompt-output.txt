@@ -4,8 +4,8 @@
 and plans that cannot be learned by reading the project. Consult it now, for
 the user instruction at the end of this output, in this order:
 
-1. The work in progress. If a Work In Progress section appears below, start
-   with the plans it lists that bear on the instruction.
+1. The work in progress. If Work In Progress appears below, start with the
+   plans it lists that bear on the instruction. Without it, there are none.
 2. The project folder, the first under Folders. It holds project knowledge:
    this project's own, for agents working on it. List it on every task,
    because it applies to everything done in this repository.

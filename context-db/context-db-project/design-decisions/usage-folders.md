@@ -37,7 +37,7 @@ easily within a project".
   project knowledge", and its own is privileged, "more top of mind". So
   `prompt.md` has the agent list the project folder on every task, and look
   into another project's usage folder when the task involves that project.
-  [lessons-learned.md](../lessons-learned.md) has the whole order.
+  [knowledge-order.md](../knowledge-order.md) has the whole order.
 
 ## The implementing agent's choices
 

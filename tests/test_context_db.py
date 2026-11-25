@@ -696,9 +696,11 @@ def test_sections_about_plans_and_usage_folders_are_sent_only_when_there_are_any
     assert "# Usage Knowledge" not in sections_sent(run(project, "update").stdout)
     add_plan(project)
     usage_folder(project / "context-db" / "demo-project" / "demo-usage")
-    cut = bare.index("# Folders") + 1
+    # The plans come before the notes, and the usage folders after them.
+    first, last = bare.index("# Git History"), bare.index("# Folders") + 1
     assert (
-        sections_sent(run(project, "maintain").stdout) == bare[:cut] + plans + [usage] + bare[cut:]
+        sections_sent(run(project, "maintain").stdout)
+        == bare[:first] + plans + bare[first:last] + [usage] + bare[last:]
     )
     sent = sections_sent(run(project, "update").stdout)
     assert sent[:2] == ["# context-db Update", "# Usage Knowledge"]
@@ -947,10 +949,32 @@ def test_the_docs_give_the_order_and_the_feature_branch_pattern():
         page = flat(path.read_text(encoding="utf-8"))
         assert "The plans for the work in progress come first, then your project" in page, path
         assert "then knowledge from outside the project." in page, path
+    # Every command takes them in that order, and the Layout page says so once.
+    layout = flat((REPO / "docs" / "layout.md").read_text(encoding="utf-8"))
+    marks = (
+        "The plans in wip/ come first, when there are any.",
+        "The rest of the project folder comes second.",
+        "Knowledge from outside the project comes last",
+        "which the commands read and never change.",
+    )
+    order = [layout.index(mark) for mark in marks]
+    assert order == sorted(order)
+    for command, marks in (
+        ("update", ("worked from a plan in wip/", "in the project folder", "usage folder")),
+        ("maintain", ("Checks the plans in wip/", "Goes on to the notes", "[usage folders]")),
+    ):
+        section = commands.split(f"## /context-db {command}\n")[1]
+        steps = flat(section.split("What the agent does:")[1].split("\n\n")[1])
+        order = [steps.index(mark) for mark in marks]
+        assert order == sorted(order), command
 
 
 def test_prompt_leaves_out_an_empty_wip_list(project):
-    assert "# Work In Progress" not in run(project, "prompt", "x").stdout
+    out = run(project, "prompt", "x").stdout
+    assert "# Work In Progress" not in out
+    # And says what that means. A trial agent could not tell "no plans" from "plans not shown".
+    assert "If Work In Progress appears below" in out
+    assert "Without it, there are none." in " ".join(out.split())
     shutil.rmtree(project / "context-db" / "demo-project" / "wip")
     assert "# Work In Progress" not in run(project, "prompt", "x").stdout
 
@@ -1248,22 +1272,40 @@ def test_update_brings_the_plan_the_session_worked_from_up_to_date(project):
         "says where the work stands." in gate
     )
     assert "If there is none of these, tell the user there is nothing to change and stop" in gate
-    homes = out.split("Some things have a home of their own")[1].split("## Finish")[0]
+    homes = out.split("## Where it goes")[1].split("## Finish")[0]
     assert (
         "Bring a plan this session worked from, and its line in `wip.md`, up to date, and "
         "delete both once the work is finished." in homes
     )
+    # The work in progress first, then project knowledge, then what is owned elsewhere.
+    for part, marks in (
+        (gate, ("- Whether a plan in", "- What you learned", "- What the notes you read")),
+        (
+            homes,
+            (
+                "- Plans and the status of ongoing work: `context-db/demo-project/wip/`.",
+                "- Project knowledge, which is what agents working on this project need",
+                "- Usage knowledge",
+                "- What must be seen on every run",
+                "- What you learned about using a project that this one depends on",
+            ),
+        ),
+    ):
+        order = [part.index(mark) for mark in marks]
+        assert order == sorted(order), marks
     assert "--wip" not in run(project, "update", "--help").stdout
     assert run(project, "update", "--wip").returncode != 0
 
 
-def test_update_names_the_home_of_what_does_not_go_in_the_main_tree(project):
+def test_update_names_where_each_thing_goes(project):
     out = " ".join(run(project, "update").stdout.split())
-    homes = out.split("Some things have a home of their own")[1].split("## Finish")[0]
+    homes = out.split("## Where it goes")[1].split("## Finish")[0]
+    assert "context-db.py toc context-db/demo-project` first, to see what is already" in homes
     assert "`/context-db wip` handles the other plans." in homes
     assert "a usage folder, which this project does not have yet." in homes
     assert "an ON file in `context-db/configuration/`" in homes and "ask the user first" in homes
-    assert "it belongs in that project's own usage folder, which you cannot write" in homes
+    assert "that project's own usage folder, which is owned elsewhere. Tell the user" in homes
+    assert "in one line what it should say. Never edit a background folder." in homes
 
 
 def test_update_carries_the_split_as_you_go_rule(project):
@@ -1473,10 +1515,10 @@ def test_maintain_covers_the_usage_folders_once_one_exists(project):
     assert "# How to Check the Usage Folders" not in none and "**Usage folder**" not in none
     flat_none = " ".join(none.split())
     assert (
-        "look at all of it: the project folder, `context-db/demo-project/`, with its plans, "
-        "and the usage folders." in flat_none
+        "look at all of it: the plans for the work in progress, the rest of the project folder "
+        "(`context-db/demo-project/`), and this project's usage folders." in flat_none
     )
-    assert "And the usage folders, if How to Check the Usage Folders appears below." in flat_none
+    assert "Last, the usage folders, if How to Check the Usage Folders appears below." in flat_none
     usage_folder(project / "context-db" / "demo-project" / "demo-usage")
     out = run(project, "maintain", "the calling rules").stdout
     marks = (
@@ -1894,11 +1936,20 @@ def test_wip_maintain_shows_git_state_and_the_list(project):
     marks = ("# context-db Wip Maintain", "# How to Check the Plans", "# Git State", "# Work In Pr")
     order = [out.index(mark) for mark in marks]
     assert order == sorted(order)
-    # `maintain` checks the plans the same way, as part of its sweep.
+    # `maintain` checks the plans the same way, and before the notes: the work in progress first.
     swept = run(project, "maintain").stdout
-    for mark in marks[1:]:
-        assert mark in swept, mark
-    assert "`/context-db wip --maintain` does this part alone." in " ".join(swept.split())
+    order = [swept.index(mark) for mark in marks[1:] + ("# Git History", "# Folders")]
+    assert order == sorted(order)
+    told = " ".join(swept.split("## What to look for")[1].split("## How to change it")[0].split())
+    assert "`/context-db wip --maintain` does this part alone." in told
+    steps = (
+        "Start with the format check.",
+        "Then the plans in `context-db/demo-project/wip/`, if How to Check the Plans appears",
+        "Then the notes.",
+        "Last, the usage folders",
+    )
+    order = [told.index(step) for step in steps]
+    assert order == sorted(order)
     assert run(project, "wip", "--cleanup").returncode != 0
 
 

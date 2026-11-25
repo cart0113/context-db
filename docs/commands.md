@@ -29,9 +29,9 @@ you from saying the same things again whenever you want an agent to read or
 write what your project knows.
 
 So each command is a common default, and the rest is yours to say. `prompt`,
-`update`, and `maintain` cover the whole knowledge base: your project
-knowledge, the plans for work in progress, and your usage folders. No flag
-narrows that. When you want something narrower, or something different, say
+`update`, and `maintain` cover the whole knowledge base: the plans for work in
+progress, your project knowledge, and your usage folders. No flag narrows
+that. When you want something narrower, or something different, say
 so in plain words, on the line after the command:
 
 ```text
@@ -53,7 +53,7 @@ further, or to stop.
 | Command | What it does unless you say otherwise | Things you might say |
 | --- | --- | --- |
 | `prompt` | Reads what bears on the task: the plans, your project knowledge, and the usage knowledge of any project the task involves. | "Carry on with the refund endpoint." "Ignore the plans, this is unrelated." |
-| `update` | Works from what the agent remembers of this session. Writes your project knowledge, the plan the session worked from, and your usage folders if you have any. | "Also read `git diff main`. I changed the retry code by hand." "Only the usage folder." |
+| `update` | Works from what the agent remembers of this session. Writes the plan the session worked from, your project knowledge, and your usage folders if you have any. | "Also read `git diff main`. I changed the retry code by hand." "Only the usage folder." |
 | `maintain` | Goes through the whole knowledge base, and compares it with the code and the git history. | "Only `data-model/`." "Do not read the git history." |
 
 `update` and `maintain` differ in how far they look. `update` records what one
@@ -174,26 +174,32 @@ shortened:
 context-db audit
 
 Trail:
-1. context-db/acme-payments-project/, listed. Led by the Folders section, as
-   the project folder.
-2. context-db/acme-payments-project/acme-payments-usage/, listed. Led by the
-   Folders section. Its one file, calling.md, is about callers of this API,
-   not about posting to the ledger. Not opened.
-3. ../acme-ledger-repo/okf/acme-ledger-usage/, listed. Led by the Global
+1. context-db/acme-payments-project/wip/refund-endpoint.md, opened. Led by
+   the Work In Progress section. Took: refunds are queued, not inline, and
+   the queue consumer and the ledger entry are still to do.
+2. context-db/acme-payments-project/, listed. Led by the reading order: the
+   project folder is listed on every task.
+3. context-db/acme-payments-project/architecture.md, opened. Led by its
+   description, which names the ledger. Took: services talk only through the
+   message queue.
+4. ../acme-ledger-repo/okf/acme-ledger-usage/, listed. Led by the Global
    Context section: the instruction involves the ledger.
-4. ../acme-ledger-repo/okf/acme-ledger-usage/posting.md, opened. Led by its
+5. ../acme-ledger-repo/okf/acme-ledger-usage/posting.md, opened. Led by its
    description in the listing. Took the three posting rules, and a pointer to
    the ledger API page, which was not fetched.
-5. context-db/acme-payments-project/wip/refund-endpoint.md, opened. Led by
-   the Work In Progress section. Took: refunds are queued, not inline, and
-   "Queue consumer and ledger entry" is still to do.
+6. context-db/acme-payments-project/data-model/, listed. Led by its
+   description, which names the refund entity.
+7. context-db/acme-payments-project/data-model/entities.md, opened. Led by
+   its description. Took: a refund's amount is a decimal, with no unit given.
 
-From outside this project: steps 3 and 4, a Global Context folder in another
+From outside this project: steps 4 and 5, a Global Context folder in another
 repository. No background folder was opened, and no web page.
 
-Looked for and not found: which accounts a refund debits and credits. No
-description misled me. The description of acme-payments-usage ("asynchronous
-refunds") left me unsure for a moment whether it bore on this.
+Looked for and not found: which accounts a refund debits and credits. The
+description of entities.md ("including amounts in minor units") made me
+expect the unit of a refund's amount, and the file gives it only for a
+payment. The description of acme-payments-usage ("asynchronous refunds") left
+me unsure whether it bore on this.
 ```
 
 The second report says what else the agent read while it worked, which files
@@ -206,10 +212,11 @@ context-db audit, after the work
 
 Further steps in those folders: none.
 
-The work rested on posting.md and refund-endpoint.md. Not needed: calling.md.
+The work rested on posting.md, refund-endpoint.md, and entities.md.
+architecture.md added nothing that the plan had not already said.
 
-Guessed: which accounts to debit and credit for a refund, and whether a
-refund counts as a reversal of the capture entry or as a new entry. No note
+Guessed: which accounts to debit and credit for a refund, and whether the
+consumer reaches the ledger through the queue or through its API. No note
 says, and the repository has no ledger code.
 ```
 
@@ -267,12 +274,12 @@ What the agent does:
 
 1. Decides whether the knowledge base needs to change at all. Most of the time
    it does not, and the agent stops there.
-2. If it learned something the next agent would need, finds the right file in
-   the project folder, or creates one.
-3. If a note it read during the session turned out to be wrong, or only
-   repeated the code, fixes or deletes that note.
-4. If the session worked from a plan in `wip/`, brings that plan up to date,
+2. If the session worked from a plan in `wip/`, brings that plan up to date,
    and deletes it once the work is finished.
+3. If it learned something the next agent would need, finds the right file in
+   the project folder, or creates one.
+4. If a note it read during the session turned out to be wrong, or only
+   repeated the code, fixes or deletes that note.
 5. If you have a [usage folder](#usage-knowledge) and the session changed what
    other projects need to know, updates that folder as well.
 6. Leaves everything else alone. If it came across other notes that look out
@@ -287,8 +294,9 @@ What the agent does:
    `--push`, pushes as well.
 
 When what it learned belongs somewhere else, it says so and writes no note: a
-fact about one piece of code belongs in a comment, and a new plan is written
-by [`wip`](#context-db-wip).
+fact about one piece of code belongs in a comment, a new plan is written by
+[`wip`](#context-db-wip), and what it learned about using another project
+belongs in that project's usage folder.
 [Where each thing goes](layout.md#where-each-thing-goes) has the whole list.
 
 Typed with nothing after it, the agent looks back over the session and decides
@@ -509,8 +517,8 @@ Look at data-model/. It has grown.
 Run it rarely, as a spring cleaning, or when a part of the knowledge base feels
 cluttered. `update` records one session. `maintain` takes a broad view of the
 whole knowledge base and compares it with the project as it is now. With
-nothing after it, the agent goes through all of it: the project folder, the
-plans, and your usage folders. You can name a folder or a topic instead.
+nothing after it, the agent goes through all of it: the plans, the project
+folder, and your usage folders. You can name a folder or a topic instead.
 
 A knowledge base only grows unless someone cuts it back. Notes are added one
 session at a time, the project moves on, and what mattered then matters less
@@ -523,21 +531,21 @@ notes looking for where it has been broken.
 What the agent does:
 
 1. Checks first. If nothing needs changing, it says so and stops.
-2. Starts with the notes the code has moved furthest past, which
-   [the git history](#git-history) shows.
-3. Opens the code each note talks about, comments included. It deletes what the
+2. Checks the plans in `wip/`, if there are any, as
+   [`wip --maintain`](#context-db-wip) does.
+3. Goes on to the notes, and starts with the ones the code has moved furthest
+   past, which [the git history](#git-history) shows.
+4. Opens the code each note talks about, comments included. It deletes what the
    code, its comments, or your docs already say, and links to them instead.
-4. Lists facts about one piece of code that would be better as a comment next
+5. Lists facts about one piece of code that would be better as a comment next
    to it, as suggestions. It does not edit your code.
-5. Fixes what has drifted from the code.
-6. Removes what is no longer needed: notes about work that is finished, code
+6. Fixes what has drifted from the code.
+7. Removes what is no longer needed: notes about work that is finished, code
    that is gone, or a decision that was reversed. Cuts notes that say more
    than the next agent needs down to the fact and its reason.
-7. Splits files that have grown too long or that hold several topics, groups a
+8. Splits files that have grown too long or that hold several topics, groups a
    crowded folder into subfolders, merges files on the same topic, and
    rewrites vague descriptions.
-8. Checks the plans in `wip/`, if there are any, as
-   [`wip --maintain`](#context-db-wip) does.
 9. Goes through your [usage folders](layout.md#usage-folders), if you have
    any, for their own reader: an agent in another project that uses yours and
    does not read its insides. It deletes what your README, your docs, and your
@@ -580,7 +588,7 @@ Do not read the git history. Compare the notes with the code as it is.
 :color: secondary
 
 After this text the agent sees the no-duplication rule, the keep-small rule,
-the git history, the folder list, how to check the plans when there are any,
+how to check the plans when there are any, the git history, the folder list,
 how to check the usage folders when you have any, the format rules, your
 `ON_MAINTAIN.md`, and your instruction.
 
@@ -899,11 +907,11 @@ and your rules.
 | `# No Duplication` | `prompts/no-duplication.md` |
 | `# Keep context-db Small` | `prompts/keep-small.md` |
 | `# How to Navigate context-db` | `prompts/navigate.md` |
-| `# Git History` | `prompts/maintain-git.md`, then one line for each note, read from git. |
-| `# Folders` | The project folder, your usage folders if there are any, and each background folder, one line each with its description. |
 | `# How to Check the Plans` | `prompts/wip-check.md`. Only when `wip/` holds a plan. |
 | `# Git State` | The current branch, the uncommitted changes, and the commits that are not on the main branch. Only when `wip/` holds a plan. |
 | `# Work In Progress` | The list in `wip/wip.md`. Only when `wip/` holds a plan. |
+| `# Git History` | `prompts/maintain-git.md`, then one line for each note, read from git. |
+| `# Folders` | The project folder, your usage folders if there are any, and each background folder, one line each with its description. |
 | `# How to Check the Usage Folders` | `prompts/maintain-usage.md`. Only when you have a usage folder. |
 | `# File Format` | `prompts/format.md` |
 | `# Project Rules` | `configuration/ON_MAINTAIN.md` |

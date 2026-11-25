@@ -3,13 +3,13 @@
 Decide first whether the knowledge base needs to change at all. Think back
 over this session, for these things:
 
+- Whether a plan in `{wip_dir}/` that this session worked from still says
+  where the work stands.
 - What you learned that the next agent would get wrong, or miss, without it:
   corrections the user made, conventions, pitfalls, decisions and the reasons
   for them.
 - What the notes you read turned out to be: one that is out of date, one that
-  sent you the wrong way, one that says only what the code shows.
-- Whether a plan in `{wip_dir}/` that this session worked from still says
-  where the work stands.{usage_thought}
+  sent you the wrong way, one that says only what the code shows.{usage_thought}
 
 If there is none of these, {nothing_to_add}. Most sessions change nothing,
 and that is the normal outcome.
@@ -36,25 +36,19 @@ in "Delete this once the v1 endpoints are gone."
 
 ## Where it goes
 
-Write inside the project folder, `{project_dir}/`, which holds project
-knowledge: what agents working on this project need. Never edit a background
-folder; it is owned elsewhere.
-
-Run `{toc_cmd} {project_dir}` first, to see what is already documented.
-
-Some things have a home of their own, and do not go in the main tree:
-
 - Plans and the status of ongoing work: `{wip_dir}/`. Bring a plan this
   session worked from, and its line in `wip.md`, up to date, and delete both
   once the work is finished. `/context-db wip` handles the other plans.
+- Project knowledge, which is what agents working on this project need: the
+  project folder, `{project_dir}/`. Run `{toc_cmd} {project_dir}` first, to
+  see what is already documented.
 - Usage knowledge, which is what agents in other projects need to know to use
   this one: {usage_home}
 - What must be seen on every run: an ON file in `{conf_dir}/`. Each line
   there costs tokens on every run of its command, so ask the user first.
-
-If you learned something about using a project that this one depends on, it
-belongs in that project's own usage folder, which you cannot write. Tell the
-user in one line what that folder should say.
+- What you learned about using a project that this one depends on: that
+  project's own usage folder, which is owned elsewhere. Tell the user in one
+  line what it should say. Never edit a background folder.
 
 context-db is the project's memory. Do not also save this to an auto-memory or
 any vendor-specific memory file.

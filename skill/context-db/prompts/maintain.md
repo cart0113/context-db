@@ -1,10 +1,10 @@
 # context-db Maintain
 
 Tidy this project's knowledge base, following the user instruction at the end
-of this output if there is one. With none, look at all of it: the project
-folder, `{project_dir}/`, with its plans, and the usage folders. With a folder
-or a topic, look only there. Take a broad view, whatever this session worked
-on.
+of this output if there is one. With none, look at all of it: the plans for
+the work in progress, the rest of the project folder (`{project_dir}/`), and
+this project's usage folders. With a folder or a topic, look only there. Take
+a broad view, whatever this session worked on.
 
 Your main job is to enforce No Duplication, below: find the notes that repeat
 the project. Your second job is Keep context-db Small: cut back what is no
@@ -20,10 +20,15 @@ Start with the format check. Run:
     {check_cmd}
 
 It names files and descriptions that are too long, folders with too many
-items, broken links, and missing descriptions. Then run `{toc_cmd}` on each
-folder in scope and read the notes there. For this command, every note in
-scope bears on the task. Git History, below, says which notes the code has
-moved furthest past: start with those.
+items, broken links, and missing descriptions.
+
+Then the plans in `{wip_dir}/`, if How to Check the Plans appears below. That
+section, and not the rules here, decides what happens to a plan.
+`/context-db wip --maintain` does this part alone.
+
+Then the notes. Run `{toc_cmd}` on each folder in scope and read the notes
+there. For this command, every note in scope bears on the task. Git History,
+below, says which notes the code has moved furthest past: start with those.
 
 First, what the project already says. For every note that talks about code,
 open the code it is about, comments included, and compare:
@@ -65,11 +70,7 @@ alone:
   or no longer matches it, gets rewritten. It is all an agent sees before
   deciding whether to open the file.
 
-Last, the plans in `{wip_dir}/`, if How to Check the Plans appears below. That
-section, and not the rules here, decides what happens to a plan.
-`/context-db wip --maintain` does this part alone.
-
-And the usage folders, if How to Check the Usage Folders appears below. They
+Last, the usage folders, if How to Check the Usage Folders appears below. They
 have a different reader, and that section says what changes for them.
 
 ## How to change it

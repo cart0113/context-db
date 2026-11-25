@@ -30,11 +30,11 @@ context-db/
 └── acme-ledger-usage -> ...     the usage folder of a project that yours uses
 ```
 
-[`prompt`](commands.md#context-db-prompt) has the agent look in a fixed order.
-The plans in `wip/` come first, then the rest of the project folder, then the
+The [commands](commands.md) go through these in the same order. The plans in
+`wip/` come first, when there are any. The rest of the project folder comes
+second. Knowledge from outside the project comes last: the
 [background folders](#background-folders) and any
-[global context](#global-context), which is knowledge kept outside
-`context-db/`.
+[global context](#global-context), which the commands read and never change.
 
 ## Where each thing goes
 
@@ -48,9 +48,9 @@ home.
 | What the code does | The code | You |
 | A fact about one piece of code | A comment next to that code | You. The agent suggests the comment. |
 | How to use your project, for people | Your README and your docs | You |
-| Project knowledge: what an agent needs in order to work on your project, and cannot read from any of those | The [project folder](#the-project-folder) | `update` and `maintain` |
-| Usage knowledge: what an agent in another project needs in order to use yours, and your docs do not say | A [usage folder](#usage-folders) | `update` and `maintain`, once you have one |
 | Where the work in progress stands | The [`wip/` folder](#the-wip-folder) | `wip`, and `update` for the plan a session worked from |
+| Project knowledge: what an agent needs in order to work on your project, and cannot read from the code or your docs | The [project folder](#the-project-folder) | `update` and `maintain` |
+| Usage knowledge: what an agent in another project needs in order to use yours, and your docs do not say | A [usage folder](#usage-folders) | `update` and `maintain`, once you have one |
 | Rules the agent must see every time a command runs | The [ON files](commands.md#rule-files) | You, or `configure` |
 | What another project knows, or your whole team | [Background folders](#background-folders) and [global context](#global-context) | Their owners. Your agent only reads them. |
 

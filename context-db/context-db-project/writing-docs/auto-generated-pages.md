@@ -19,6 +19,11 @@ tables are hand-written, and `docs/examples/prompt-output.txt` is a captured
 `prompt` message. Tests compare both with what the script prints, so a change
 to the order of sections or to a prompt file fails until they are updated.
 
+The two audit reports under "See what the agent read" are shortened from a
+trial run of `prompt --audit` in the example, and no test checks them. Run it
+again when the reading order changes: on 2026-11-25 the trail still showed
+the plan read last.
+
 The plain-language summary above each dropdown ("What the agent does") is
 hand-written. When a prompt changes what the agent does, update that summary
 too.

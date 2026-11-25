@@ -73,9 +73,10 @@ folder. Global folders stay where they are, outside context-db/: the
 what the patterns match. Another project's usage folder is the usual thing to
 mount or to match.
 
-`prompt` has the agent look in a fixed order (prompts/prompt.md): the plans for
-the work in progress, then the project folder, then every other folder, which
-is the background folders and the global folders.
+The commands take that knowledge in one order: the plans for the work in
+progress, then the project folder, then every other folder. `prompt` reads in
+that order (prompts/prompt.md). `update` and `maintain` work in it, and write
+only what is this repository's own.
 
 Each of those folders is an Open Knowledge Format (OKF) bundle.
 
@@ -1700,11 +1701,11 @@ def cmd_maintain(args):
         load_prompt("no-duplication"),
         load_prompt("keep-small"),
         navigate_section(config),
-        git_history_section(cdb, config),
-        folders_section(cdb, config),
     ]
-    if has_plans(cdb, config):
+    if has_plans(cdb, config):  # the plans before the notes, as `prompt` lists them
         sections.extend(plan_check_sections(cdb, config))
+    sections.append(git_history_section(cdb, config))
+    sections.append(folders_section(cdb, config))
     if has_usage(cdb, config):
         sections.append(load_prompt("maintain-usage", usage_list=usage_list(cdb, config)))
     sections.append(load_prompt("format"))
